@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+.status {
+  font-weight: 600;
+  color: #c00;
+}
+
+.status.on {
+  color: #080;
+}

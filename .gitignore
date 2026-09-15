@@ -1,0 +1,65 @@
+# ============================================================
+# Everly - .gitignore raíz
+# Cubre Laravel (backend), Angular (tienda/admin) y Node.
+# ============================================================
+
+# --- Credenciales y entornos ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*secret*
+
+# --- Laravel (backend) ---
+/backend/vendor/
+/backend/node_modules/
+/backend/public/build/
+/backend/public/hot
+/backend/storage/*.key
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*.log
+/backend/database/database.sqlite
+/backend/.phpunit.result.cache
+/backend/.phpunit.cache/
+!backend/public/.htaccess
+!backend/storage/framework/cache/.gitignore
+!backend/storage/framework/sessions/.gitignore
+!backend/storage/framework/views/.gitignore
+!backend/storage/app/.gitignore
+
+# --- Node / Angular (tienda y admin) ---
+**/node_modules/
+**/dist/
+**/.angular/cache/
+**/coverage/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# --- Archivos temporales / logs ---
+*.log
+tmp/
+temp/
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDEs ---
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# --- Memorias y caches de pruebas ---
+/dev.log
+/test-results/
+/screenshots/
