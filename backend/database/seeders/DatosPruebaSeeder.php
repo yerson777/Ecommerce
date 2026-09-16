@@ -97,7 +97,7 @@ class DatosPruebaSeeder extends Seeder
             'color' => 'Rojo',
             'costo' => 28.00,
             'precio' => 89.90,
-            'estado' => 'reservado',
+            'estado' => 'reservada',
             'publicado' => true,
             'fecha_ingreso' => now()->subDays(3),
         ]);
@@ -134,7 +134,7 @@ class DatosPruebaSeeder extends Seeder
             'color' => 'Verde esmeralda',
             'costo' => 35.00,
             'precio' => 119.90,
-            'estado' => 'vendido',
+            'estado' => 'vendida',
             'publicado' => true,
             'fecha_ingreso' => now()->subDays(8),
         ]);
@@ -205,7 +205,7 @@ class DatosPruebaSeeder extends Seeder
             'color' => 'Amarillo',
             'costo' => 22.00,
             'precio' => 69.90,
-            'estado' => 'vendido',
+            'estado' => 'vendida',
             'publicado' => true,
             'fecha_ingreso' => now()->subDays(15),
         ]);

@@ -10,6 +10,12 @@ class Reserva extends Model
 {
     use HasFactory;
 
+    public const ESTADO_ACTIVA = 'activa';
+    public const ESTADO_COMPLETADA = 'completada';
+    public const ESTADO_ANULADA = 'anulada';
+    public const ESTADO_EXPIRADA = 'expirada';
+    public const ESTADO_LIBERADA = 'liberada';
+
     protected $table = 'reservas';
 
     protected $fillable = [

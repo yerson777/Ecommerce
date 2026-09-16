@@ -12,6 +12,16 @@ class Producto extends Model
 {
     use HasFactory;
 
+    public const ESTADO_DISPONIBLE = 'disponible';
+    public const ESTADO_RESERVADA = 'reservada';
+    public const ESTADO_VENDIDA = 'vendida';
+
+    public const ESTADOS = [
+        self::ESTADO_DISPONIBLE,
+        self::ESTADO_RESERVADA,
+        self::ESTADO_VENDIDA,
+    ];
+
     protected $table = 'productos';
 
     protected $fillable = [
@@ -66,5 +76,15 @@ class Producto extends Model
     public function ventaItems(): HasMany
     {
         return $this->hasMany(VentaItem::class);
+    }
+
+    public function reservas(): HasMany
+    {
+        return $this->hasMany(Reserva::class);
+    }
+
+    public function historial(): HasMany
+    {
+        return $this->hasMany(ProductoHistorial::class)->orderByDesc('created_at');
     }
 }

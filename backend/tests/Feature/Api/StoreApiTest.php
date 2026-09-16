@@ -1,0 +1,134 @@
+<?php
+
+namespace Tests\Feature\Api;
+
+use App\Models\Categoria;
+use App\Models\Producto;
+use App\Models\ProductoImagen;
+use App\Models\Talla;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+class StoreApiTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Categoria $categoria;
+
+    private Talla $talla;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->categoria = Categoria::create(['nombre' => 'Vestidos', 'slug' => 'vestidos']);
+        $this->talla = Talla::create(['nombre' => 'M']);
+    }
+
+    private function crearProducto(array $sobreescribir = []): Producto
+    {
+        return Producto::create(array_merge([
+            'codigo' => 'EV-' . substr(Str::uuid(), 0, 8),
+            'nombre' => 'Vestido de prueba',
+            'categoria_id' => $this->categoria->id,
+            'talla_id' => $this->talla->id,
+            'costo' => 50.00,
+            'precio' => 120.00,
+            'estado' => 'disponible',
+            'publicado' => true,
+            'fecha_ingreso' => now(),
+        ], $sobreescribir));
+    }
+
+    public function test_listado_publico_solo_muestra_productos_publicados(): void
+    {
+        $publicado = $this->crearProducto();
+        $this->crearProducto(['publicado' => false, 'nombre' => 'Oculto']);
+
+        $response = $this->getJson('/api/v1/store/products');
+
+        $response->assertStatus(200)->assertJsonPath('success', true);
+
+        $nombres = collect($response->json('data'))->pluck('nombre');
+        $this->assertTrue($nombres->contains('Vestido de prueba'));
+        $this->assertFalse($nombres->contains('Oculto'));
+    }
+
+    public function test_listado_publico_no_expone_costo_margen_ni_datos_administrativos(): void
+    {
+        $this->crearProducto(['costo' => 10, 'precio' => 100]);
+
+        $response = $this->getJson('/api/v1/store/products');
+
+        $item = $response->json('data')[0];
+        $this->assertArrayNotHasKey('costo', $item);
+        $this->assertArrayNotHasKey('margen', $item);
+        $this->assertArrayNotHasKey('created_at', $item);
+        $this->assertArrayNotHasKey('updated_at', $item);
+        $this->assertArrayHasKey('precio', $item);
+    }
+
+    public function test_detalle_publico_incluye_relaciones(): void
+    {
+        $producto = $this->crearProducto();
+        ProductoImagen::create([
+            'producto_id' => $producto->id,
+            'ruta' => 'productos/demo.jpg',
+            'es_principal' => true,
+            'orden' => 1,
+        ]);
+
+        $response = $this->getJson("/api/v1/store/products/{$producto->id}");
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonPath('data.categoria.nombre', 'Vestidos')
+            ->assertJsonPath('data.talla.nombre', 'M')
+            ->assertJsonCount(1, 'data.imagenes')
+            ->assertJsonPath('data.imagenes.0.ruta', 'productos/demo.jpg');
+    }
+
+    public function test_detalle_publico_producto_no_publicado_devuelve_404(): void
+    {
+        $oculto = $this->crearProducto(['publicado' => false]);
+
+        $this->getJson("/api/v1/store/products/{$oculto->id}")
+            ->assertStatus(404)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_filtros_por_categoria_y_talla(): void
+    {
+        $otraCategoria = Categoria::create(['nombre' => 'Enterizos', 'slug' => 'enterizos']);
+        $otraTalla = Talla::create(['nombre' => 'L']);
+
+        $this->crearProducto();
+        $this->crearProducto(['categoria_id' => $otraCategoria->id, 'talla_id' => $this->talla->id]);
+        $this->crearProducto(['categoria_id' => $this->categoria->id, 'talla_id' => $otraTalla->id]);
+
+        $response = $this->getJson("/api/v1/store/products?categoria={$this->categoria->id}&talla={$this->talla->id}");
+
+        $this->assertCount(1, $response->json('data'));
+    }
+
+    public function test_categorias_publicas(): void
+    {
+        Categoria::create(['nombre' => 'Inactiva', 'slug' => 'inactiva', 'activo' => false]);
+
+        $response = $this->getJson('/api/v1/store/categories');
+
+        $response->assertStatus(200)->assertJsonPath('success', true);
+        $nombres = collect($response->json('data'))->pluck('nombre');
+        $this->assertTrue($nombres->contains('Vestidos'));
+        $this->assertFalse($nombres->contains('Inactiva'));
+    }
+
+    public function test_tallas_publicas(): void
+    {
+        $response = $this->getJson('/api/v1/store/sizes');
+
+        $response->assertStatus(200)->assertJsonPath('success', true);
+        $this->assertTrue(collect($response->json('data'))->pluck('nombre')->contains('M'));
+    }
+}

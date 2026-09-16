@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('descripcion')->nullable();
             $table->decimal('costo', 10, 2)->default(0);
             $table->decimal('precio', 10, 2);
-            $table->enum('estado', ['disponible', 'reservado', 'vendido'])->default('disponible');
+            $table->enum('estado', ['disponible', 'reservada', 'vendida'])->default('disponible');
             $table->boolean('publicado')->default(false);
             $table->date('fecha_ingreso')->nullable();
             $table->timestamps();

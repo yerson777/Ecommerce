@@ -40,17 +40,17 @@ class ProductoFactory extends Factory
         ]);
     }
 
-    public function reservado(): static
+    public function reservada(): static
     {
         return $this->state(fn (array $attributes) => [
-            'estado' => 'reservado',
+            'estado' => 'reservada',
         ]);
     }
 
-    public function vendido(): static
+    public function vendida(): static
     {
         return $this->state(fn (array $attributes) => [
-            'estado' => 'vendido',
+            'estado' => 'vendida',
         ]);
     }
 }
