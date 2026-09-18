@@ -1,0 +1,90 @@
+<app-modal [title]="'Imágenes — ' + producto().codigo" [width]="'760px'" (closed)="cerrado.emit()">
+  @if (errorBanner) {
+    <div class="error-banner">{{ errorBanner }}</div>
+  }
+
+<div class="subir">
+  <label class="btn btn-primary file-btn">
+    {{ subiendo ? 'Subiendo…' : 'Subir imágenes' }}
+    <input type="file" accept="image/*" multiple (change)="onSubirArchivos($event)" [disabled]="subiendo" />
+  </label>
+  <p class="muted-hint">JPG, PNG, WEBP o GIF · máx. 4 MB c/u · hasta 5 por carga</p>
+</div>
+
+@if (cargando) {
+  <div class="center">
+    <app-spinner [size]="26" />
+  </div>
+}
+
+@if (imagenesOrdenadas().length === 0 && !cargando) {
+  <app-empty-state
+    icon="🖼"
+    title="Sin imágenes"
+    message="Sube la primera foto de esta prenda."
+  />
+}
+
+<div class="galeria">
+  @for (imagen of imagenesOrdenadas(); track imagen.id; let i = $index) {
+    <div class="item">
+      <img class="item-img" [src]="imagen.url" [alt]="imagen.nombre_original ?? ''" />
+
+      <div class="item-overlay">
+        @if (imagen.es_principal) {
+          <app-badge tone="success">Principal</app-badge>
+        } @else {
+          <button type="button" class="btn btn-sm btn-primary" (click)="establecerPrincipal(imagen)">
+            Hacer principal
+          </button>
+        }
+      </div>
+
+      <div class="item-meta">
+        <span class="item-nombre" [title]="imagen.nombre_original ?? ''">{{ imagen.nombre_original ?? 'Imagen' }}</span>
+        <span class="muted">nº {{ imagen.orden }}</span>
+      </div>
+
+      <div class="item-actions">
+        <button
+          type="button"
+          class="btn btn-ghost btn-icon"
+          title="Mover arriba"
+          (click)="subir(i)"
+          [disabled]="i === 0"
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost btn-icon"
+          title="Mover abajo"
+          (click)="bajar(i)"
+          [disabled]="i >= imagenesOrdenadas().length - 1"
+        >
+          ↓
+        </button>
+
+        <label class="btn btn-ghost btn-icon replace-btn" title="Reemplazar archivo">
+          {{ reemplazandoId === imagen.id ? '…' : '⇄' }}
+          <input type="file" accept="image/*" (change)="onReemplazar(imagen, $event)" [disabled]="reemplazandoId === imagen.id" />
+        </label>
+
+        <button type="button" class="btn btn-ghost btn-icon danger" title="Eliminar" (click)="eliminarObjetivo = imagen">
+          🗑
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (eliminarObjetivo; as objetivo) {
+  <app-confirm-dialog
+    title="Eliminar imagen"
+    [message]="'¿Eliminar esta imagen de ' + producto().codigo + '? Se borrará también el archivo.'"
+    confirmLabel="Eliminar"
+    (confirm)="confirmarEliminar()"
+    (cancel)="eliminarObjetivo = null"
+  />
+}
+</app-modal>

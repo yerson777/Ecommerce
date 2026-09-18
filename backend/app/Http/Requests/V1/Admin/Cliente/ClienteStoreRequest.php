@@ -14,6 +14,7 @@ class ClienteStoreRequest extends ApiFormRequest
             'telefono' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('clientes', 'email')],
             'direccion' => ['nullable', 'string'],
+            'ciudad' => ['nullable', 'string', 'max:150'],
             'notas' => ['nullable', 'string'],
         ];
     }

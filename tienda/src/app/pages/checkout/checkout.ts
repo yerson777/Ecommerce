@@ -1,0 +1,157 @@
+import { Component, OnInit, Signal, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { CatalogoService } from '../../core/services/catalogo.service';
+import { CartService, CartItem } from '../../core/services/cart.service';
+import { MetodoEntrega, MetodoPago, CheckoutPayload } from '../../core/models/pedido';
+import { ApiError } from '../../core/models/api-response';
+import { formatearPrecio } from '../../core/utils/precio';
+
+const TELEFONO_RE = /^[0-9+\-\s()]{7,20}$/;
+
+@Component({
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
+  selector: 'app-checkout',
+  styleUrl: './checkout.scss',
+  templateUrl: './checkout.html',
+})
+export class CheckoutComponent implements OnInit {
+  private readonly cartService: CartService;
+  readonly items: Signal<CartItem[]>;
+  readonly subtotal: Signal<number>;
+
+  readonly metodosEntrega = signal<MetodoEntrega[]>([]);
+  readonly metodosPago = signal<MetodoPago[]>([]);
+
+  readonly enviando = signal(false);
+  readonly errorGeneral = signal<string | null>(null);
+  readonly errores = signal<Record<string, string>>({});
+
+  readonly form = new FormGroup({
+    nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
+    telefono: new FormControl('', [Validators.required, Validators.pattern(TELEFONO_RE)]),
+    email: new FormControl('', [Validators.email]),
+    ciudad: new FormControl('', [Validators.required, Validators.minLength(2)]),
+    direccion: new FormControl('', [Validators.required, Validators.minLength(5)]),
+    notas: new FormControl(''),
+    metodoPagoId: new FormControl<number | null>(null, [Validators.required]),
+    metodoEntregaId: new FormControl<number | null>(null, [Validators.required]),
+  });
+
+  constructor(
+    private readonly catalogo: CatalogoService,
+    cartService: CartService,
+    private readonly router: Router,
+  ) {
+    this.cartService = cartService;
+    this.items = cartService.items;
+    this.subtotal = cartService.subtotal;
+  }
+
+  ngOnInit(): void {
+    if (this.items().length === 0) {
+      this.router.navigate(['/']);
+      return;
+    }
+    this.catalogo.metodosEntrega().subscribe({
+      next: (res) => this.metodosEntrega.set(res.data ?? []),
+    });
+    this.catalogo.metodosPago().subscribe({
+      next: (res) => this.metodosPago.set(res.data ?? []),
+    });
+  }
+
+  formatearPrecio(valor: number | string): string {
+    return formatearPrecio(valor);
+  }
+
+  costoEnvio(): number {
+    const entrega = this.metodosEntrega().find(
+      (metodo) => metodo.id === this.form.value.metodoEntregaId,
+    );
+    return entrega ? Number(entrega.costo) : 0;
+  }
+
+  tieneCosto(costo: string): boolean {
+    return Number(costo) > 0;
+  }
+
+  total(): number {
+    return this.subtotal() + this.costoEnvio();
+  }
+
+  erroresDe(campo: string): string | null {
+    return this.errores()[campo] ?? null;
+  }
+
+  enviar(): void {
+    this.errorGeneral.set(null);
+    this.errores.set({});
+    this.form.markAllAsTouched();
+
+    const valores = this.form.value;
+    if (
+      !this.form.valid ||
+      this.items().length === 0 ||
+      valores.metodoPagoId === null ||
+      valores.metodoEntregaId === null ||
+      !valores.nombre ||
+      !valores.telefono ||
+      !valores.ciudad ||
+      !valores.direccion ||
+      this.enviando()
+    ) {
+      return;
+    }
+
+    const payload: CheckoutPayload = {
+      productos: this.items().map((item) => item.producto_id),
+      nombre: valores.nombre.trim(),
+      telefono: valores.telefono.trim(),
+      email: valores.email?.trim() || null,
+      ciudad: valores.ciudad.trim(),
+      direccion: valores.direccion.trim(),
+      notas: valores.notas?.trim() || null,
+      metodo_pago_id: valores.metodoPagoId ?? null,
+      metodo_entrega_id: valores.metodoEntregaId ?? null,
+    };
+
+    this.enviando.set(true);
+    this.catalogo.crearPedido(payload).subscribe({
+      next: (res) => {
+        this.enviando.set(false);
+        if (res.data) {
+          this.cartService.vaciar();
+          try {
+            sessionStorage.setItem('everly_ultimo_pedido', JSON.stringify(res.data));
+          } catch {
+            // Sin persistencia local no bloqueamos la navegación.
+          }
+          this.router.navigate(['/confirmacion'], { state: { order: res.data } });
+        }
+      },
+      error: (error: ApiError) => {
+        this.enviando.set(false);
+        if (error.errors) {
+          const mapeados: Record<string, string> = {};
+          for (const [clave, mensajes] of Object.entries(error.errors)) {
+            if (mensajes.length > 0) {
+              if (clave === 'metodo_pago_id') {
+                mapeados['metodoPagoId'] = mensajes[0];
+              } else if (clave === 'metodo_entrega_id') {
+                mapeados['metodoEntregaId'] = mensajes[0];
+              } else {
+                mapeados[clave] = mensajes[0];
+              }
+            }
+          }
+          this.errores.set(mapeados);
+        }
+        this.errorGeneral.set(
+          error.message || 'No pudimos procesar el pedido. Verificá tus datos e intentá de nuevo.',
+        );
+      },
+    });
+  }
+}

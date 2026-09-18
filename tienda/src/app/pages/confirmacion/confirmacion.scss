@@ -1,0 +1,41 @@
+.estrecho {
+  max-width: 720px;
+}
+
+.confirmacion {
+  text-align: center;
+}
+
+.confirmacion-titulo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.numero-pedido {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0.6rem 0 0.4rem;
+  letter-spacing: 0.04em;
+}
+
+.bloque {
+  text-align: left;
+  padding: 1.3rem;
+  margin-top: 1.25rem;
+}
+
+.bloque h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.6rem;
+}
+
+.confirmar-acciones {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}

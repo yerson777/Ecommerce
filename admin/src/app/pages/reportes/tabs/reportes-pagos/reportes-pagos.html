@@ -1,0 +1,112 @@
+@if (error) {
+  <div class="error-banner">{{ error }}</div>
+}
+
+@if (cargando() && !datos()) {
+  <div class="report-center">
+    <app-spinner [size]="36" />
+  </div>
+}
+
+@if (datos(); as d) {
+  <div class="stack">
+    <section class="card">
+      <div class="stats-grid">
+        <app-stat-card label="Total cobrado" [value]="moneda(d.resumen.total_cobrado)" icon="$$" tone="success" hint="Pagos confirmados" />
+        <app-stat-card label="Total pendiente" [value]="moneda(d.resumen.total_pendiente)" icon="◷" tone="warning" hint="Por cobrar" />
+        <app-stat-card label="Cantidad de pagos" [value]="d.resumen.cantidad_pagos" icon="💳" tone="primary" />
+        <app-stat-card label="Pedidos pagados" [value]="d.resumen.pedidos_pagados" icon="✓" tone="neutral" hint="Totalmente pagados" />
+        <app-stat-card label="Parcialmente pagados" [value]="d.resumen.pedidos_parciales" icon="◑" tone="info" />
+        <app-stat-card label="Pendientes de pago" [value]="d.resumen.pedidos_pendientes" icon="◷" tone="warning" />
+      </div>
+    </section>
+
+    <section class="report-grid-2">
+      <section class="card">
+        <h2 class="card-title">Métodos de pago</h2>
+        @if (porMetodo().length > 0) {
+          <app-chart-donut [datos]="chartMetodos()" [size]="180" />
+        } @else {
+          <app-empty-state icon="💳" title="Sin pagos" message="No hay pagos registrados en este período." />
+        }
+
+        @if (porMetodo().length > 0) {
+          <div class="report-table-wrap" style="margin-top: 0.9rem">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Método</th>
+                  <th>Cantidad</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of porMetodo(); track m.metodo) {
+                  <tr>
+                    <td>{{ m.metodo }}</td>
+                    <td>{{ m.cantidad }}</td>
+                    <td>{{ moneda(m.total_monto) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <section class="card">
+        <div class="row-between">
+          <h2 class="card-title">Detalle de pagos</h2>
+          <label class="field inline-field">
+            <span class="field-label">Método</span>
+            <select class="select" [(ngModel)]="metodoSeleccionado" (ngModelChange)="onMetodoChange()">
+              <option [ngValue]="null">Todos</option>
+              @for (m of metodos(); track m.id) {
+                <option [ngValue]="m.id">{{ m.nombre }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        @if (d.pagos.length > 0) {
+          <div class="report-table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nº pago</th>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Método</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of d.pagos; track p.id) {
+                  <tr>
+                    <td class="mono">{{ p.numero_pago }}</td>
+                    <td>{{ p.pagado_en ?? '—' }}</td>
+                    <td>{{ p.cliente_nombre ?? '—' }}</td>
+                    <td>{{ p.metodo_pago ?? '—' }}</td>
+                    <td>{{ moneda(p.monto) }}</td>
+                    <td>
+                      <app-badge [tone]="tonoEstado(p.estado)">
+                        {{ etiquetaEstado(p.estado) }}
+                      </app-badge>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <app-empty-state
+            icon="💳"
+            title="Sin pagos"
+            message="No hay pagos para los filtros seleccionados."
+          />
+        }
+      </section>
+    </section>
+  </div>
+}

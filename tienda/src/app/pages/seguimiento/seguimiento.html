@@ -1,0 +1,79 @@
+<div class="page">
+  <div class="container estrecho">
+    <div class="seguimiento">
+      <h1 class="titulo">Seguí tu pedido</h1>
+      <p class="muted">
+        Ingresá el número de pedido que recibiste al confirmar tu compra
+        (por ejemplo <span class="mono">PED-20260916-XYZ0</span>) o el código de tu prenda
+        (por ejemplo <span class="mono">EV-1234</span>).
+      </p>
+
+      <div class="buscador">
+        <input
+          class="input"
+          type="text"
+          placeholder="Número de pedido o código de prenda"
+          [(ngModel)]="numero"
+          (keyup.enter)="buscar()"
+          autocomplete="off"
+        />
+        <button class="btn btn-primary" (click)="buscar()" [disabled]="buscando || !numero.trim()">
+          {{ buscando ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </div>
+
+      <p class="muted" *ngIf="buscando" style="margin-top: 0.8rem">Consultando tu pedido…</p>
+
+      <div class="alerta-error" *ngIf="error">{{ error }}</div>
+
+      <div class="card bloque" *ngIf="pedido as pedido">
+        <div class="filas-cabecera">
+          <div>
+            <div class="muted-label">Pedido</div>
+            <div class="numero-pedido">{{ pedido.numero_pedido }}</div>
+          </div>
+          <div>
+            <span class="badge {{ estadoClase(pedido.estado) }}">{{ estadoEtiqueta(pedido.estado) }}</span>
+          </div>
+        </div>
+
+        <p class="muted" style="margin: 0.3rem 0">Fecha: {{ pedido.fecha_pedido }}</p>
+        <p class="muted" style="margin: 0.3rem 0">
+          Pago: {{ pedido.metodo_pago ?? '—' }} · Entrega: {{ pedido.metodo_entrega ?? '—' }}
+        </p>
+
+        <div class="lineas" *ngFor="let item of pedido.items">
+          <img
+            *ngIf="item.producto_imagen"
+            class="linea-foto"
+            [src]="item.producto_imagen"
+            [alt]="item.producto_nombre"
+          />
+          <div class="linea-foto linea-foto--vacia" *ngIf="!item.producto_imagen">—</div>
+          <div class="linea-info">
+            <div class="linea-nombre">{{ item.producto_nombre }}</div>
+            <div class="linea-sub">
+              {{ item.producto_codigo }}
+              <span *ngIf="item.producto_talla"> · Talle {{ item.producto_talla }}</span>
+              <span *ngIf="item.producto_color"> · {{ item.producto_color }}</span>
+            </div>
+          </div>
+          <div class="linea-precio">{{ formatearPrecio(item.precio_unitario) }}</div>
+        </div>
+
+        <div class="resumen-fila">
+          <span class="muted">Subtotal</span>
+          <span>{{ formatearPrecio(pedido.subtotal) }}</span>
+        </div>
+        <div class="resumen-fila">
+          <span class="muted">Envío</span>
+          <span>{{ formatearPrecio(pedido.costo_envio) }}</span>
+        </div>
+        <div class="resumen-total">
+          <span>Total</span>
+          <span>{{ formatearPrecio(pedido.total) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

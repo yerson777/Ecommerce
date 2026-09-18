@@ -16,6 +16,7 @@ class ClienteUpdateRequest extends ApiFormRequest
             'telefono' => ['sometimes', 'nullable', 'string', 'max:30'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('clientes', 'email')->ignore($clienteId)],
             'direccion' => ['sometimes', 'nullable', 'string'],
+            'ciudad' => ['sometimes', 'nullable', 'string', 'max:150'],
             'notas' => ['sometimes', 'nullable', 'string'],
         ];
     }

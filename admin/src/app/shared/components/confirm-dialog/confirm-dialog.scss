@@ -1,0 +1,13 @@
+.message {
+  margin: 0 0 1.25rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}

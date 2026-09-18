@@ -1,0 +1,17 @@
+.paginator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  color: var(--text-muted);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.paginator-info {
+  margin-right: auto;
+}
+
+.paginator-page {
+  font-weight: 500;
+}

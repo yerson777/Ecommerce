@@ -1,0 +1,328 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pagos</h1>
+      <p class="page-subtitle">Registro, verificación y control de cobros por pedido</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="abrirRegistro()">Registrar pago</button>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nº de pago, pedido, cliente o referencia…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="completado">Completado</option>
+          <option value="anulado">Anulado</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Método</label>
+        <select class="select" [(ngModel)]="filtros().metodo_pago_id" (change)="onBuscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (metodo of metodos(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Desde</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_desde" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Hasta</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_hasta" (change)="onBuscar()" />
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="💳"
+          title="Sin pagos"
+          message="No hay pagos que coincidan con los filtros."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Pago</th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Método</th>
+                <th>Monto</th>
+                <th>Total</th>
+                <th>Pagado</th>
+                <th>Saldo</th>
+                <th>Estado</th>
+                <th>Comprobante</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pago of page.data; track pago.id) {
+                <tr>
+                  <td>
+                    <div class="mono">{{ pago.numero_pago }}</div>
+                    <div class="muted small">{{ pago.created_at }}</div>
+                  </td>
+                  <td>
+                    <div class="mono">{{ pago.pedido?.numero_pedido ?? '—' }}</div>
+                    @if (pago.pedido) {
+                      <app-badge [tone]="tonoEstadoPedido(pago.pedido.estado_pago)">
+                        {{ etiquetaEstadoPedido(pago.pedido.estado_pago) }}
+                      </app-badge>
+                    }
+                  </td>
+                  <td>{{ pago.pedido?.cliente ?? '—' }}</td>
+                  <td>{{ pago.metodo_pago ?? '—' }}</td>
+                  <td class="mono">{{ moneda(pago.monto) }}</td>
+                  <td class="muted">{{ moneda(pago.pedido?.total) }}</td>
+                  <td class="muted">{{ moneda(pago.pedido?.total_pagado) }}</td>
+                  <td class="mono">{{ moneda(pago.pedido?.saldo_pendiente) }}</td>
+                  <td>
+                    <app-badge [tone]="tonoEstado(pago.estado)">
+                      {{ etiquetaEstado(pago.estado) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    @if (pago.comprobante) {
+                      <a class="link" (click)="verComprobante(pago.comprobante!, pago.id)">Adjunto</a>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(pago)">
+                        Ver
+                      </button>
+                      @if (pago.estado === 'pendiente') {
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="pedirConfirmar(pago)">
+                          Confirmar
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="pedirAnular(pago)">
+                          Anular
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (detalleAbierto()) {
+  <app-modal [title]="tituloDetalle()" [width]="'680px'" (closed)="cerrarDetalle()">
+    @if (detalle(); as detalle) {
+      <div class="stack">
+        <div class="detail-grid">
+          <div>
+            <span class="muted-label">Estado</span>
+            <app-badge [tone]="tonoEstado(detalle.estado)">
+              {{ etiquetaEstado(detalle.estado) }}
+            </app-badge>
+            @if (detalle.excedente) {
+              <span class="muted small">Excedente confirmado</span>
+            }
+          </div>
+          <div>
+            <span class="muted-label">Método</span>
+            <div>{{ detalle.metodo_pago ?? '—' }}</div>
+            @if (detalle.referencia) {
+              <div class="muted small">Ref. {{ detalle.referencia }}</div>
+            }
+          </div>
+          <div>
+            <span class="muted-label">Fecha de pago</span>
+            <div>{{ detalle.pagado_en ?? '—' }}</div>
+          </div>
+          <div>
+            <span class="muted-label">Pedido</span>
+            <div class="mono">{{ detalle.pedido?.numero_pedido ?? '—' }}</div>
+            @if (detalle.pedido?.cliente) {
+              <div class="muted small">{{ detalle.pedido!.cliente }}</div>
+            }
+          </div>
+          <div>
+            <span class="muted-label">Comprobante</span>
+            @if (detalle.comprobante) {
+              <a class="link" (click)="verComprobante(detalle.comprobante!, detalle.id)">
+                {{ detalle.comprobante.nombre }}
+              </a>
+            } @else {
+              <span class="muted">Sin adjuntar</span>
+            }
+          </div>
+          <div>
+            <span class="muted-label">Monto</span>
+            <div class="mono">{{ moneda(detalle.monto) }}</div>
+          </div>
+        </div>
+
+        @if (detalle.nota) {
+          <p class="hint">{{ detalle.nota }}</p>
+        }
+
+        @if (detalle.pedido) {
+          <div class="totals">
+            <div class="row-between">
+              <span class="muted">Total del pedido</span>
+              <span>{{ moneda(detalle.pedido.total) }}</span>
+            </div>
+            <div class="row-between">
+              <span class="muted">Pagado</span>
+              <span>{{ moneda(detalle.pedido.total_pagado) }}</span>
+            </div>
+            <div class="row-between total-row">
+              <span>Saldo pendiente</span>
+              <span>{{ moneda(detalle.pedido.saldo_pendiente) }}</span>
+            </div>
+          </div>
+
+          <div class="pagos-block">
+            <h3 class="subtitle">Historial del pedido</h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Número</th>
+                    <th>Método</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Comprobante</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (historial of detalle.pedido.pagos; track historial.id) {
+                    <tr>
+                      <td class="mono">{{ historial.numero_pago }}</td>
+                      <td>{{ historial.metodo_pago ?? '—' }}</td>
+                      <td>{{ moneda(historial.monto) }}</td>
+                      <td>
+                        <app-badge [tone]="tonoEstado(historial.estado)">
+                          {{ etiquetaEstado(historial.estado) }}
+                        </app-badge>
+                      </td>
+                      <td>
+                        @if (historial.comprobante) {
+                          <a class="link" (click)="verComprobante(historial.comprobante!, historial.id)">Ver</a>
+                        } @else {
+                          <label class="btn btn-outline btn-sm upload-btn">
+                            @if (adjuntandoId === historial.id) {
+                              <app-spinner [size]="14" />
+                            } @else {
+                              Adjuntar
+                            }
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                              (change)="onAdjuntarComprobante(historial, $event)"
+                              [disabled]="historial.estado === 'anulado'"
+                            />
+                          </label>
+                        }
+                      </td>
+                      <td>
+                        <div class="actions">
+                          @if (historial.estado === 'pendiente') {
+                            <button type="button" class="btn btn-outline btn-sm" (click)="pedirConfirmar(historial)">
+                              Confirmar
+                            </button>
+                            <button type="button" class="btn btn-ghost btn-sm" (click)="pedirAnular(historial)">
+                              Anular
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="center">
+        <app-spinner [size]="26" />
+      </div>
+    }
+  </app-modal>
+}
+
+@if (registrando) {
+  <app-registro-pago-modal
+    [metodos]="metodos()"
+    (registrado)="onRegistrado($event)"
+    (cerrado)="cerrarRegistro()"
+  />
+}
+
+@if (objetivoConfirmar; as objetivo) {
+  <app-confirm-dialog
+    title="Confirmar pago"
+    [message]="'Se confirmará el pago ' + objetivo.numero_pago + ' (' + moneda(objetivo.monto) + '). Contará para el saldo del pedido y generará el ingreso en caja.'"
+    confirmLabel="Confirmar pago"
+    tone="primary"
+    (confirm)="confirmarPago()"
+    (cancel)="cancelarTransicion()"
+  />
+}
+
+@if (objetivoAnular; as objetivo) {
+  <app-confirm-dialog
+    title="Anular pago"
+    [message]="'Se anulará el pago ' + objetivo.numero_pago + ' (' + moneda(objetivo.monto) + '). No contará para el saldo del pedido y se retirará su ingreso de caja.'"
+    confirmLabel="Anular pago"
+    tone="danger"
+    (confirm)="anularPago()"
+    (cancel)="cancelarTransicion()"
+  />
+}

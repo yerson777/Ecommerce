@@ -1,0 +1,134 @@
+.hero-pagina {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+}
+
+.etiqueta {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+.titulo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.7rem;
+}
+
+.bajada {
+  color: var(--text-muted);
+  max-width: 620px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+}
+
+.contacto-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.canales {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.canal {
+  display: flex;
+  gap: 0.9rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.canal-icono {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.canal h3 {
+  margin: 0 0 0.15rem;
+  font-size: 1.02rem;
+}
+
+.canal p {
+  margin: 0 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.canal-dato {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.canal-dato.muted {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.formulario {
+  padding: 1.6rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.formulario h2 {
+  margin: 0 0 0.2rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.4rem;
+}
+
+.formulario > p {
+  margin: 0 0 1.2rem;
+  font-size: 0.92rem;
+}
+
+.exito {
+  background: rgb(63 140 92 / 12%);
+  border: 1px solid rgb(63 140 92 / 30%);
+  color: var(--success);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  margin-bottom: 1rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.botones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 860px) {
+  .contacto-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario {
+    position: static;
+  }
+}

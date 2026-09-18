@@ -1,0 +1,42 @@
+<div class="centro">
+  @if (abierto()) {
+    <div class="centro-backdrop" (click)="cerrar()"></div>
+  }
+
+  <button type="button" class="campana" (click)="alternar()" aria-label="Notificaciones">
+    <span class="campana-icono">🔔</span>
+    @if (noLeidas() > 0) {
+      <span class="insignia">{{ noLeidas() > 99 ? '99+' : noLeidas() }}</span>
+    }
+  </button>
+
+  @if (abierto()) {
+    <div class="panel">
+      <div class="panel-head">
+        <strong>Notificaciones</strong>
+        @if (noLeidas() > 0) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="marcarTodasLeidas()">Marcar leídas</button>
+        }
+      </div>
+
+      @if (cargando() && notificaciones().length === 0) {
+        <p class="panel-vacio">Cargando…</p>
+      } @else if (notificaciones().length === 0) {
+        <p class="panel-vacio">No hay notificaciones pendientes.</p>
+      } @else {
+        <ul class="lista">
+          @for (notificacion of notificaciones(); track notificacion.id) {
+            <li class="item">
+              <span class="item-icono" aria-hidden="true">{{ iconoTipo(notificacion.tipo) }}</span>
+              <span class="item-texto">{{ notificacion.mensaje }}</span>
+            </li>
+          }
+        </ul>
+      }
+
+      <button type="button" class="btn btn-outline btn-sm btn-block panel-cta" (click)="irAPedidos()">
+        Ver pedidos
+      </button>
+    </div>
+  }
+</div>

@@ -12,6 +12,30 @@ class Pedido extends Model
 {
     use HasFactory;
 
+    public const ESTADO_PENDIENTE = 'pendiente';
+    public const ESTADO_CONFIRMADO = 'confirmado';
+    public const ESTADO_CANCELADO = 'cancelado';
+    public const ESTADO_COMPLETADO = 'completado';
+
+    public const ESTADOS = [
+        self::ESTADO_PENDIENTE,
+        self::ESTADO_CONFIRMADO,
+        self::ESTADO_CANCELADO,
+        self::ESTADO_COMPLETADO,
+    ];
+
+    /**
+     * Transiciones de estado permitidas. La máquina de estados queda
+     * centralizada aquí para poder ampliarse con nuevos estados sin
+     * tocar controladores ni servicios.
+     */
+    public const TRANSICIONES = [
+        self::ESTADO_PENDIENTE => [self::ESTADO_CONFIRMADO, self::ESTADO_CANCELADO],
+        self::ESTADO_CONFIRMADO => [self::ESTADO_CANCELADO, self::ESTADO_COMPLETADO],
+        self::ESTADO_CANCELADO => [],
+        self::ESTADO_COMPLETADO => [],
+    ];
+
     protected $table = 'pedidos';
 
     protected $fillable = [
@@ -70,5 +94,54 @@ class Pedido extends Model
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class);
+    }
+
+    public function puedeTransicionarA(string $estado): bool
+    {
+        return in_array($estado, self::TRANSICIONES[$this->estado] ?? [], true);
+    }
+
+    public function estadosSiguientes(): array
+    {
+        return self::TRANSICIONES[$this->estado] ?? [];
+    }
+
+    /**
+     * Estado de pago del pedido, independiente del estado del pedido.
+     * Se deriva de la suma de pagos confirmados ("completado"):
+     * pendiente, parcial, pagado o cancelado (si el pedido está cancelado).
+     */
+    public function estadoPago(): string
+    {
+        if ($this->estado === self::ESTADO_CANCELADO) {
+            return 'cancelado';
+        }
+
+        $total = (float) $this->total;
+        $pagado = isset($this->pagos_completados_total)
+            ? (float) $this->pagos_completados_total
+            : (float) $this->pagos->where('estado', Pago::ESTADO_COMPLETADO)->sum('monto');
+
+        if ($pagado <= 0) {
+            return 'pendiente';
+        }
+
+        return $pagado >= $total - 0.01 ? 'pagado' : 'parcial';
+    }
+
+    public function totalPagado(): string
+    {
+        $pagado = isset($this->pagos_completados_total)
+            ? (float) $this->pagos_completados_total
+            : (float) $this->pagos->where('estado', Pago::ESTADO_COMPLETADO)->sum('monto');
+
+        return number_format($pagado, 2);
+    }
+
+    public function saldoPendiente(): string
+    {
+        $pagado = (float) $this->totalPagado();
+
+        return number_format(max(0.0, (float) $this->total - $pagado), 2);
     }
 }

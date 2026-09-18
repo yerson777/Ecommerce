@@ -1,0 +1,86 @@
+<div class="page" *ngIf="order as pedido">
+  <div class="container estrecho confirmacion">
+    <div class="confirmacion-icono" aria-hidden="true">✓</div>
+    <h1 class="confirmacion-titulo">¡Pedido confirmado!</h1>
+    <p class="muted" style="margin-top: 0.35rem">
+      Guardá este número: lo vas a necesitar para seguir tu compra
+      (también podés usar el código de tu prenda, por ejemplo <span class="mono">EV-1234</span>).
+    </p>
+    <p class="numero-pedido">{{ pedido.numero_pedido }}</p>
+    <span class="badge badge-warning">{{ estadoEtiqueta(pedido.estado) }}</span>
+
+    <div class="card bloque">
+      <h2>Tu pedido</h2>
+      <div class="linea" *ngFor="let item of pedido.items">
+        <div class="linea-foto" *ngIf="item.producto_imagen === null"></div>
+        <img
+          *ngIf="item.producto_imagen"
+          class="linea-foto"
+          [src]="item.producto_imagen"
+          [alt]="item.producto_nombre"
+        />
+        <div class="linea-info">
+          <div class="linea-nombre">{{ item.producto_nombre }}</div>
+          <div class="linea-sub">
+            {{ item.producto_codigo }}
+            <span *ngIf="item.producto_talla"> · Talle {{ item.producto_talla }}</span>
+            <span *ngIf="item.producto_color"> · {{ item.producto_color }}</span>
+          </div>
+        </div>
+        <div class="linea-precio">{{ formatearPrecio(item.precio_unitario) }}</div>
+      </div>
+
+      <div class="resumen-fila" style="margin-top: 0.8rem">
+        <span class="muted">Subtotal</span>
+        <span>{{ formatearPrecio(pedido.subtotal) }}</span>
+      </div>
+      <div class="resumen-fila">
+        <span class="muted">Envío ({{ pedido.metodo_entrega ?? 'sin método' }})</span>
+        <span>{{ formatearPrecio(pedido.costo_envio) }}</span>
+      </div>
+      <div class="resumen-total">
+        <span>Total</span>
+        <span>{{ formatearPrecio(pedido.total) }}</span>
+      </div>
+    </div>
+
+    <div class="card bloque">
+      <h2>Contacto y entrega</h2>
+      <p style="margin: 0.2rem 0">
+        <strong>{{ pedido.cliente?.nombre }}</strong>
+        <span class="muted"> · {{ pedido.cliente?.telefono }}</span>
+      </p>
+      <p class="muted" style="margin: 0.2rem 0" *ngIf="pedido.cliente?.ciudad">
+        {{ pedido.cliente?.ciudad }}
+        <span *ngIf="pedido.cliente?.direccion"> · {{ pedido.cliente?.direccion }}</span>
+      </p>
+      <p class="muted" style="margin: 0.2rem 0">
+        Pago: {{ pedido.metodo_pago ?? '—' }} · Entrega: {{ pedido.metodo_entrega ?? '—' }}
+      </p>
+    </div>
+
+    <div class="card bloque">
+      <h2 style="margin-bottom: 0.1rem">¿Qué sigue?</h2>
+      <ol class="pasos">
+        <li>
+          <span class="num">1</span>
+          <span>Te contactaremos por WhatsApp a <strong>{{ pedido.cliente?.telefono }}</strong> para confirmar la compra y coordinar el pago.</span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span>Tu pedido queda <strong>reservado por 24 horas</strong> mientras tanto.</span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span>Unimos la entrega por el método elegido: {{ pedido.metodo_entrega ?? '—' }}.</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="confirmar-acciones">
+      <a class="btn btn-ghost" routerLink="/">Volver al catálogo</a>
+      <a class="btn btn-outline" routerLink="/seguimiento">Seguir mi pedido</a>
+      <button class="btn btn-outline" (click)="imprimir()">Guardar esta pantalla</button>
+    </div>
+  </div>
+</div>

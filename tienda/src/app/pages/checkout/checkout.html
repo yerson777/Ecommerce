@@ -1,0 +1,136 @@
+<div class="page">
+  <div class="container">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Finalizar pedido</h1>
+        <p class="page-subtitle">Completá tus datos para reservar las prendas seleccionadas.</p>
+      </div>
+    </div>
+
+    <div class="error-banner" *ngIf="errorGeneral()">
+      {{ errorGeneral() }}
+      <button class="btn btn-ghost btn-sm" (click)="errorGeneral.set(null)" style="margin-left: 0.5rem">
+        Cerrar
+      </button>
+    </div>
+
+    <div class="layout-col">
+      <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+        <div class="card panel">
+          <h2 class="panel-titulo">Tus datos</h2>
+          <div class="campo-doble">
+            <div class="field">
+              <label for="nombre">Nombre y apellido *</label>
+              <input id="nombre" class="input" formControlName="nombre" placeholder="Ej: María González" />
+              <span class="field-error" *ngIf="form.controls.nombre.touched && (form.controls.nombre.invalid || erroresDe('nombre'))">
+                {{ erroresDe('nombre') ?? (form.controls.nombre.hasError('required') ? 'Ingresá tu nombre.' : 'El nombre es muy corto.') }}
+              </span>
+            </div>
+            <div class="field">
+              <label for="telefono">Teléfono / WhatsApp *</label>
+              <input id="telefono" class="input" formControlName="telefono" placeholder="Ej: 70123456" />
+              <span class="field-error" *ngIf="form.controls.telefono.touched && (form.controls.telefono.invalid || erroresDe('telefono'))">
+                {{ erroresDe('telefono') ?? 'Ingresá un teléfono válido (7 a 20 caracteres).' }}
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="muted">(opcional)</span></label>
+            <input id="email" class="input" type="email" formControlName="email" placeholder="nombre@email.com" />
+            <span class="field-error" *ngIf="form.controls.email.touched && form.controls.email.invalid">
+              Ingresá un email válido.
+            </span>
+          </div>
+
+          <h2 class="panel-titulo">Entrega</h2>
+          <div class="campo-doble">
+            <div class="field">
+              <label for="ciudad">Ciudad *</label>
+              <input id="ciudad" class="input" formControlName="ciudad" placeholder="Ej: Santa Cruz" />
+              <span class="field-error" *ngIf="form.controls.ciudad.touched && (form.controls.ciudad.invalid || erroresDe('ciudad'))">
+                {{ erroresDe('ciudad') ?? 'Ingresá tu ciudad.' }}
+              </span>
+            </div>
+            <div class="field">
+              <label for="direccion">Dirección *</label>
+              <input id="direccion" class="input" formControlName="direccion" placeholder="Calle, número, barrio" />
+              <span class="field-error" *ngIf="form.controls.direccion.touched && (form.controls.direccion.invalid || erroresDe('direccion'))">
+                {{ erroresDe('direccion') ?? 'Ingresá tu dirección completa.' }}
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="notas">Notas <span class="muted">(opcional)</span></label>
+            <textarea id="notas" class="textarea" rows="2" formControlName="notas" placeholder="Referencias, horarios…"></textarea>
+          </div>
+
+          <h2 class="panel-titulo">Método de entrega y pago</h2>
+          <div class="campo-doble">
+            <div class="field">
+              <label for="metodoEntregaId">Método de entrega *</label>
+              <select id="metodoEntregaId" class="select" formControlName="metodoEntregaId">
+                <option [ngValue]="null" disabled>Elegí una opción</option>
+                <option *ngFor="let metodo of metodosEntrega()" [ngValue]="metodo.id">
+                  {{ metodo.nombre }}{{ tieneCosto(metodo.costo) ? ' · ' + formatearPrecio(metodo.costo) : '' }}
+                </option>
+              </select>
+              <span class="field-error" *ngIf="form.controls.metodoEntregaId.touched && (form.controls.metodoEntregaId.invalid || erroresDe('metodoEntregaId'))">
+                {{ erroresDe('metodoEntregaId') ?? 'Elegí un método de entrega.' }}
+              </span>
+            </div>
+            <div class="field">
+              <label for="metodoPagoId">Método de pago *</label>
+              <select id="metodoPagoId" class="select" formControlName="metodoPagoId">
+                <option [ngValue]="null" disabled>Elegí una opción</option>
+                <option *ngFor="let metodo of metodosPago()" [ngValue]="metodo.id">
+                  {{ metodo.nombre }}
+                </option>
+              </select>
+              <span class="field-error" *ngIf="form.controls.metodoPagoId.touched && (form.controls.metodoPagoId.invalid || erroresDe('metodoPagoId'))">
+                {{ erroresDe('metodoPagoId') ?? 'Elegí un método de pago.' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card resumen">
+        <h2 style="margin: 0 0 0.8rem; font-size: 1.15rem">Tu pedido</h2>
+        <div class="linea-mini" *ngFor="let item of items()">
+          <span class="linea-mini-nombre">
+            {{ item.nombre }}<span class="muted" *ngIf="item.talla"> · {{ item.talla }}</span>
+          </span>
+          <span class="muted">{{ item.codigo }}</span>
+          <span>{{ formatearPrecio(item.precio) }}</span>
+        </div>
+        <div class="resumen-fila" style="margin-top: 0.9rem">
+          <span class="muted">Subtotal ({{ items().length }})</span>
+          <span>{{ formatearPrecio(subtotal()) }}</span>
+        </div>
+        <div class="resumen-fila">
+          <span class="muted">Envío</span>
+          <span>{{ formatearPrecio(costoEnvio()) }}</span>
+        </div>
+        <div class="resumen-total">
+          <span>Total</span>
+          <span>{{ formatearPrecio(total()) }}</span>
+        </div>
+        <button
+          class="btn btn-primary btn-lg btn-block"
+          style="margin-top: 1rem"
+          [disabled]="enviando() || items().length === 0"
+          (click)="enviar()"
+        >
+          {{ enviando() ? 'Procesando…' : 'Confirmar pedido' }}
+        </button>
+        <a class="btn btn-ghost btn-block" style="margin-top: 0.5rem" routerLink="/carrito">
+          Volver al carrito
+        </a>
+        <p class="muted" style="font-size: 0.82rem; margin-top: 0.8rem">
+          Al confirmar, tus prendas quedan reservadas por 24 horas. Te contactamos por
+          WhatsApp para coordinar la entrega y el pago.
+        </p>
+      </aside>
+    </div>
+  </div>
+</div>

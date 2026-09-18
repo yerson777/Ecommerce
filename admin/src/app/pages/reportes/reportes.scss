@@ -1,0 +1,73 @@
+:host {
+  display: block;
+}
+
+.report-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.report-heading {
+  min-width: 240px;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tab:hover:not(.tab--active) {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.tab--active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(161, 58, 117, 0.25);
+}
+
+.tab-icon {
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .report-controls {
+    align-items: stretch;
+  }
+
+  .report-heading {
+    min-width: 100%;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1 1 40%;
+    justify-content: center;
+  }
+}

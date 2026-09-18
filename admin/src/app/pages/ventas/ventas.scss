@@ -1,0 +1,82 @@
+:host {
+  display: block;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 14px;
+  }
+}
+
+.muted-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.mt-min {
+  align-self: flex-start;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 0;
+}
+
+.total-row {
+  font-weight: 700;
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+
+.subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+}
+
+.pagos-block {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

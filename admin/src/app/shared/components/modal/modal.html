@@ -1,0 +1,14 @@
+<div class="modal-overlay" (click)="onBackdropClick($event)">
+  <div class="modal" role="dialog" aria-modal="true" [style.width]="width()">
+    <header class="modal-header">
+      <h2 class="modal-title">{{ title() }}</h2>
+      @if (closable()) {
+        <button type="button" class="modal-close" aria-label="Cerrar" (click)="closed.emit()">✕</button>
+      }
+    </header>
+
+    <div class="modal-body">
+      <ng-content />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,124 @@
+<div class="page">
+  <div class="container">
+    <header class="hero-pagina">
+      <span class="etiqueta">Hablemos</span>
+      <h1 class="titulo">Contacto</h1>
+      <p class="bajada">
+        ¿Tenés una duda, querés un asesoramiento personalizado o buscás algo en
+        particular? Elegí el canal que más te convenga.
+      </p>
+    </header>
+
+    <div class="contacto-grid">
+      <section class="canales">
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">💬</span>
+          <div>
+            <h3>WhatsApp</h3>
+            <p>La vía más rápida. Respondemos de inmediato en horario comercial.</p>
+            <a class="canal-dato" href="https://wa.me/59162640247" target="_blank" rel="noopener">
+              +591 62640247
+            </a>
+          </div>
+        </article>
+
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">✉️</span>
+          <div>
+            <h3>Correo electrónico</h3>
+            <p>Para consultas detalladas, pedidos especiales o facturación.</p>
+            <a class="canal-dato" href="mailto:hola@everlyboutique.com">gutierrezyerson041Qgmail.com</a>
+          </div>
+        </article>
+
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">📞</span>
+          <div>
+            <h3>Teléfono</h3>
+            <p>Atención personalizada de lunes a sábado.</p>
+            <a class="canal-dato" href="tel:+59162640247">+591 62640247</a>
+          </div>
+        </article>
+
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">📍</span>
+          <div>
+            <h3>Showroom</h3>
+            <p>Av. Las Flores 123, Santa Cruz de la Sierra, Bolivia.</p>
+            <a
+              class="canal-dato"
+              href="https://maps.google.com/?q=Av.+Las+Flores+123+Santa+Cruz"
+              target="_blank"
+              rel="noopener"
+            >
+              Ver en el mapa
+            </a>
+          </div>
+        </article>
+
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">🕘</span>
+          <div>
+            <h3>Horarios</h3>
+            <p>Lunes a viernes 9:00 – 19:30 · Sábados 9:30 – 14:00.</p>
+            <span class="canal-dato muted">Domingos y feriados cerrado</span>
+          </div>
+        </article>
+
+        <article class="card canal">
+          <span class="canal-icono" aria-hidden="true">📷</span>
+          <div>
+            <h3>Redes sociales</h3>
+            <p>Seguinos y enterate de los nuevos ingresos.</p>
+            <a
+              class="canal-dato"
+              href="https://www.tiktok.com/@everlyfashion"
+              target="_blank"
+              rel="noopener"
+            >
+              @everlyfashion
+            </a>
+          </div>
+        </article>
+      </section>
+
+      <section class="card formulario">
+        <h2>Escribinos</h2>
+        <p class="muted">Completá el formulario y te respondemos a la brevedad.</p>
+
+        <div class="exito" *ngIf="enviado()">
+          ¡Gracias por escribirnos! Te vamos a responder en menos de 24 horas. 💌
+        </div>
+
+        <form (ngSubmit)="enviarPorWhatsApp()">
+          <div class="field">
+            <label for="c-nombre">Nombre y apellido *</label>
+            <input id="c-nombre" class="input" name="nombre" type="text" [(ngModel)]="nombre" required />
+          </div>
+
+          <div class="field">
+            <label for="c-email">Correo electrónico *</label>
+            <input id="c-email" class="input" name="email" type="email" [(ngModel)]="email" required />
+          </div>
+
+          <div class="field">
+            <label for="c-asunto">Asunto</label>
+            <input id="c-asunto" class="input" name="asunto" type="text" [(ngModel)]="asunto" />
+          </div>
+
+          <div class="field">
+            <label for="c-mensaje">Mensaje *</label>
+            <textarea id="c-mensaje" class="textarea" name="mensaje" rows="5" [(ngModel)]="mensaje" required></textarea>
+          </div>
+
+          <div class="botones">
+            <button class="btn btn-primary btn-block" type="submit">Enviar por WhatsApp</button>
+            <button class="btn btn-outline btn-block" type="button" (click)="enviarPorCorreo()">
+              Enviar por correo
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+@if (error) {
+  <div class="error-banner">{{ error }}</div>
+}
+
+@if (cargando() && !datos()) {
+  <div class="report-center">
+    <app-spinner [size]="36" />
+  </div>
+}
+
+@if (datos(); as d) {
+  <div class="stack">
+    <div class="report-stats">
+      <app-stat-card label="Total de clientes" [value]="d.total" icon="◈" tone="primary" [hint]="d.con_pedidos + ' con pedidos'" />
+      <app-stat-card label="Clientes nuevos" [value]="d.nuevos" icon="✦" tone="info" hint="En el período" />
+      <app-stat-card label="Clientes recurrentes" [value]="d.recurrentes" icon="⟳" tone="success" hint="Con 2 o más pedidos" />
+      <app-stat-card label="Con compras" [value]="d.con_pedidos" icon="✓" tone="neutral" />
+      <app-stat-card label="Sin compras" [value]="d.sin_compras" icon="◌" tone="neutral" hint="Registrados sin pedidos" />
+      <app-stat-card
+        label="Sin compra posterior"
+        [value]="d.sin_recompra"
+        icon="↩"
+        tone="warning"
+        hint="Un solo pedido (no repitieron)"
+      />
+    </div>
+
+    <section class="card">
+      <div class="row-between">
+        <h2 class="card-title">Clientes por monto comprado</h2>
+        <span class="muted">{{ d.topClientes.length }} principales</span>
+      </div>
+
+      @if (d.topClientes.length > 0) {
+        <div class="report-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Pedidos</th>
+                <th>Total comprado</th>
+                <th>Último pedido</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of d.topClientes; track c.cliente_id) {
+                <tr>
+                  <td>{{ c.nombre }}</td>
+                  <td>{{ c.telefono ?? '—' }}</td>
+                  <td>{{ c.total_pedidos }}</td>
+                  <td><strong>{{ moneda(c.total_comprado) }}</strong></td>
+                  <td>{{ c.ultimo_pedido ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state
+          icon="◈"
+          title="Sin clientes con compras"
+          message="Ningún cliente registra pedidos en el período seleccionado."
+        />
+      }
+    </section>
+  </div>
+}

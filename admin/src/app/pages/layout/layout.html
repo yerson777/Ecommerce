@@ -1,0 +1,101 @@
+<div class="shell">
+  <aside class="sidebar" [class.sidebar--abierto]="menuAbierto()">
+    <div class="brand">
+      <span class="brand-emoji">E</span>
+      <div class="brand-text">
+        <span class="brand-name">Everly</span>
+        <span class="brand-sub">Admin</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a
+        class="nav-link"
+        routerLink="/dashboard"
+        routerLinkActive="nav-link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="cerrarMenu()"
+      >
+        <span class="nav-icon">◧</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a class="nav-link" routerLink="/productos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">✧</span>
+        <span class="nav-label">Productos</span>
+      </a>
+      <a class="nav-link" routerLink="/inventario" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">▤</span>
+        <span class="nav-label">Inventario</span>
+      </a>
+      <a class="nav-link" routerLink="/ventas" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">§</span>
+        <span class="nav-label">Ventas</span>
+      </a>
+      <a class="nav-link" routerLink="/pedidos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Pedidos</span>
+      </a>
+      <a class="nav-link" routerLink="/clientes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">◈</span>
+        <span class="nav-label">Clientes</span>
+      </a>
+      <a class="nav-link" routerLink="/pagos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">💳</span>
+        <span class="nav-label">Pagos</span>
+      </a>
+      <a class="nav-link" routerLink="/reportes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Reportes</span>
+      </a>
+      <a class="nav-link" routerLink="/banners" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+        <span class="nav-icon">🖼</span>
+        <span class="nav-label">Banners</span>
+      </a>
+    </nav>
+
+    <div class="user-card">
+      <div class="user-avatar">{{ inicial() }}</div>
+      <div class="user-meta">
+        <span class="user-name">{{ usuario()?.name ?? 'Administrador' }}</span>
+        <span class="user-role">{{ usuario()?.role ?? '' }}</span>
+      </div>
+      <button type="button" class="logout" title="Cerrar sesión" (click)="cerrarSesion()">
+        ⏻
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button
+          type="button"
+          class="menu-toggle"
+          [class.menu-toggle--activo]="menuAbierto()"
+          [attr.aria-expanded]="menuAbierto()"
+          aria-label="Abrir menú"
+          (click)="alternarMenu()"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <h1 class="topbar-title">{{ titulo() }}</h1>
+      </div>
+      <div class="topbar-right">
+        <app-notification-center />
+        <span class="topbar-user">{{ usuario()?.name ?? '…' }}</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+@if (menuAbierto()) {
+  <div class="backdrop" (click)="cerrarMenu()"></div>
+}
+
+<app-toast-container />

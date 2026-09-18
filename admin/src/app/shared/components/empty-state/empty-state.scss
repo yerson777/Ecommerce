@@ -1,0 +1,29 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1.5rem;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.empty-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 420px;
+}
+
+.empty-actions {
+  margin-top: 0.4rem;
+}

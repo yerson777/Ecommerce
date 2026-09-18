@@ -9,12 +9,17 @@ use App\Http\Resources\V1\ProductoHistorialResource;
 use App\Http\Resources\V1\ProductoResource;
 use App\Models\Producto;
 use App\Models\ProductoHistorial;
+use App\Services\ProductoImagenService;
 use App\Support\Api;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class ProductoController extends Controller
 {
+    public function __construct(private readonly ProductoImagenService $imagenes)
+    {
+    }
+
     public function index(Request $request)
     {
         $productos = Producto::query()
@@ -111,6 +116,10 @@ class ProductoController extends Controller
                 409
             );
         }
+
+        // Elimina los archivos físicos de sus imágenes (registros se borran por cascada)
+        // para no dejar archivos huérfanos en el almacenamiento.
+        $this->imagenes->eliminarArchivosDeProducto($producto);
 
         $producto->delete();
 

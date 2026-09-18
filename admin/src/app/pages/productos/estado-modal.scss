@@ -1,0 +1,29 @@
+.intro {
+  margin: 0 0 1rem;
+  line-height: 1.55;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.muted-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.inline-center {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+}

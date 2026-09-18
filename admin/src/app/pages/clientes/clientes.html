@@ -1,0 +1,237 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Clientes</h1>
+      <p class="page-subtitle">Tus clientes, su historial de compras y el último pedido</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nombre, teléfono o número de pedido…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="◈"
+          title="Sin clientes"
+          message="Los clientes se registran automáticamente al hacer un pedido desde la tienda."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Ciudad</th>
+                <th>Pedidos</th>
+                <th>Total comprado</th>
+                <th>Último pedido</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cliente of page.data; track cliente.id) {
+                <tr>
+                  <td>
+                    <div>{{ cliente.nombre }}</div>
+                    @if (cliente.email) {
+                      <div class="muted">{{ cliente.email }}</div>
+                    }
+                  </td>
+                  <td class="muted">{{ cliente.telefono ?? '—' }}</td>
+                  <td class="muted">{{ cliente.ciudad ?? '—' }}</td>
+                  <td>{{ cliente.pedidos_count ?? 0 }}</td>
+                  <td>{{ moneda(cliente.total_comprado) }}</td>
+                  <td class="mono">
+                    @if (cliente.ultimo_pedido) {
+                      <span class="mono">{{ cliente.ultimo_pedido.numero_pedido }}</span>
+                      <div class="muted">{{ cliente.ultimo_pedido.fecha_pedido }}</div>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (cliente.ultimo_pedido) {
+                      <app-badge [tone]="tonoEstado(cliente.ultimo_pedido.estado)">
+                        {{ etiquetaEstado(cliente.ultimo_pedido.estado) }}
+                      </app-badge>
+                    } @else {
+                      <app-badge tone="neutral">Sin pedidos</app-badge>
+                    }
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(cliente)">
+                        Ver
+                      </button>
+                      @if (whatsapp(cliente)) {
+                        <a
+                          class="btn btn-outline btn-sm"
+                          [href]="whatsapp(cliente)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Escribir por WhatsApp"
+                        >
+                          ✆
+                        </a>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (detalleAbierto()) {
+  <app-modal [title]="tituloDetalle()" (closed)="cerrarDetalle()">
+    @if (detalle(); as detalle) {
+      <div class="stack">
+        <div class="detalle-encabezado">
+          <div class="detail-grid">
+            <div>
+              <span class="muted-label">Teléfono</span>
+              <div>{{ detalle.telefono ?? '—' }}</div>
+              @if (whatsapp(detalle)) {
+                <a
+                  class="whatsapp-link"
+                  [href]="whatsapp(detalle)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ✆ Escribir por WhatsApp
+                </a>
+              }
+            </div>
+            <div>
+              <span class="muted-label">Email</span>
+              <div>{{ detalle.email ?? '—' }}</div>
+            </div>
+            <div>
+              <span class="muted-label">Ciudad</span>
+              <div>{{ detalle.ciudad ?? '—' }}</div>
+            </div>
+            <div>
+              <span class="muted-label">Dirección</span>
+              <div>{{ detalle.direccion ?? '—' }}</div>
+            </div>
+            <div>
+              <span class="muted-label">Primer pedido</span>
+              <div>{{ detalle.fecha_primer_pedido ?? '—' }}</div>
+            </div>
+            <div>
+              <span class="muted-label">Último pedido</span>
+              <div>{{ detalle.fecha_ultimo_pedido ?? '—' }}</div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-mini">
+              <span class="stat-numero">{{ detalle.pedidos_count ?? 0 }}</span>
+              <span class="muted-label">Pedidos</span>
+            </div>
+            <div class="stat-mini">
+              <span class="stat-numero">{{ moneda(detalle.total_comprado) }}</span>
+              <span class="muted-label">Total comprado</span>
+            </div>
+          </div>
+
+          @if (detalle.notas) {
+            <div class="observaciones">
+              <span class="muted-label">Observaciones</span>
+              <div>{{ detalle.notas }}</div>
+            </div>
+          }
+        </div>
+
+        <div class="historial">
+          <h3 class="subtitle">Historial de pedidos</h3>
+
+          @if ((detalle.pedidos ?? []).length === 0) {
+            <p class="muted">Este cliente aún no realizó pedidos.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Talla</th>
+                    <th>Precio pagado</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (pedido of detalle.pedidos ?? []; track pedido.id) {
+                    @for (item of pedido.items ?? []; track item.id) {
+                      <tr>
+                        <td class="mono">{{ pedido.numero_pedido }}</td>
+                        <td>{{ pedido.fecha_pedido }}</td>
+                        <td>
+                          <div class="item-nombre">{{ item.producto_nombre ?? 'Prenda' }}</div>
+                          <div class="muted">{{ item.producto_codigo ?? '' }}</div>
+                        </td>
+                        <td>{{ item.producto_talla ?? '—' }}</td>
+                        <td>{{ moneda(item.precio_unitario) }}</td>
+                        <td>
+                          <app-badge [tone]="tonoEstado(pedido.estado)">
+                            {{ etiquetaEstado(pedido.estado) }}
+                          </app-badge>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="center">
+        <app-spinner [size]="26" />
+      </div>
+    }
+  </app-modal>
+}

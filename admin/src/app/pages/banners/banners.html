@@ -1,0 +1,170 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Banners</h1>
+      <p class="page-subtitle">Imágenes del carrusel que se muestra en la portada de la tienda</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="abrirCrear()">Agregar banner</button>
+  </div>
+
+  <section class="card">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (!cargando() && bannersOrdenados().length === 0) {
+      <app-empty-state
+        icon="🖼"
+        title="Sin banners"
+        message="Agregá la primera imagen del carrusel para mostrarla en la tienda."
+      >
+        <button type="button" class="btn btn-outline btn-sm" (click)="abrirCrear()">Agregar banner</button>
+      </app-empty-state>
+    }
+
+    @if (!cargando() && bannersOrdenados().length > 0) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Imagen</th>
+              <th>Texto</th>
+              <th>Enlace</th>
+              <th>Estado</th>
+              <th>Orden</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (banner of bannersOrdenados(); track banner.id; let i = $index) {
+              <tr>
+                <td>
+                  <img class="banner-thumb" [src]="banner.url" [alt]="banner.titulo ?? ''" />
+                </td>
+                <td>
+                  <div class="banner-titulo">{{ banner.titulo ?? 'Sin título' }}</div>
+                  @if (banner.subtitulo) {
+                    <div class="muted">{{ banner.subtitulo }}</div>
+                  }
+                </td>
+                <td>
+                  @if (banner.enlace) {
+                    <span class="mono small">{{ banner.enlace }}</span>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>
+                  <app-badge [tone]="banner.activo ? 'success' : 'neutral'">
+                    {{ banner.activo ? 'Activo' : 'Oculto' }}
+                  </app-badge>
+                </td>
+                <td class="mono">nº {{ banner.orden }}</td>
+                <td>
+                  <div class="actions">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-icon"
+                      title="Mover arriba"
+                      (click)="mover(i, -1)"
+                      [disabled]="i === 0 || reordenandoId !== null"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-icon"
+                      title="Mover abajo"
+                      (click)="mover(i, 1)"
+                      [disabled]="i >= bannersOrdenados().length - 1 || reordenandoId !== null"
+                    >
+                      ↓
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" (click)="abrirEditar(banner)">
+                      Editar
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon danger" (click)="pedirEliminar(banner)">
+                      🗑
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar banner' : 'Nuevo banner'"
+    [width]="'560px'"
+    (closed)="cerrarModal()"
+  >
+    <div class="stack">
+      @if (errorFormulario) {
+        <div class="error-banner">{{ errorFormulario }}</div>
+      }
+
+      @if (editando(); as editado) {
+        <div class="preview">
+          <img class="banner-thumb preview-img" [src]="editado.url" [alt]="editado.titulo ?? 'Banner'" />
+          <span class="muted">Imagen actual · </span>
+          <label class="link file-label">
+            {{ form.archivo ? form.archivo.name : 'Reemplazar imagen…' }}
+            <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
+          </label>
+        </div>
+      } @else {
+        <label class="btn btn-primary file-btn">
+          {{ form.archivo ? form.archivo.name : 'Elegir imagen…' }}
+          <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
+        </label>
+        <p class="muted-hint">JPG, PNG, WEBP o GIF · máx. 4 MB</p>
+      }
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Título</label>
+          <input class="input" type="text" maxlength="120" placeholder="Nueva colección" [(ngModel)]="form.titulo" />
+        </div>
+
+        <div class="field">
+          <label>Subtítulo</label>
+          <input class="input" type="text" maxlength="200" placeholder="Prendas únicas, elegidas para vos" [(ngModel)]="form.subtitulo" />
+        </div>
+
+        <div class="field field-full">
+          <label>Enlace (opcional)</label>
+          <input class="input" type="url" maxlength="255" placeholder="https://…" [(ngModel)]="form.enlace" />
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="form.activo" />
+          <span>Mostrar en el carrusel</span>
+        </label>
+      </div>
+
+      <div class="actions-right">
+        <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
+          {{ guardando ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (eliminarObjetivo; as objetivo) {
+  <app-confirm-dialog
+    title="Eliminar banner"
+    [message]="'¿Eliminar el banner' + (objetivo.titulo ? ' “' + objetivo.titulo + '”' : '') + '? Se borrará también la imagen.'"
+    confirmLabel="Eliminar"
+    (confirm)="confirmarEliminar()"
+    (cancel)="eliminarObjetivo = null"
+  />
+}

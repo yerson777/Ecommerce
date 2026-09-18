@@ -60,7 +60,10 @@ class Producto extends Model
 
     public function imagenes(): HasMany
     {
-        return $this->hasMany(ProductoImagen::class);
+        return $this->hasMany(ProductoImagen::class)
+            ->orderByDesc('es_principal')
+            ->orderBy('orden')
+            ->orderBy('id');
     }
 
     public function reservaActiva(): HasOne

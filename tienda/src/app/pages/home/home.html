@@ -1,5 +1,202 @@
-<h1>Everly</h1>
-<p>Tienda online en preparación.</p>
-<p [class.on]="backendStatus" class="status">
-  Backend: {{ backendStatus ? 'conectado' : 'sin conexión' }}
-</p>
+<div class="page">
+  <div class="container">
+    <div class="hero">
+      <h1>Prendas únicas, elegidas para vos</h1>
+      <p>
+        Cada pieza es una sola unidad. Elegila, reservala al momento de comprar y
+        coordinamos la entrega.
+      </p>
+    </div>
+
+    <div class="carrusel" *ngIf="banners().length > 0">
+      <div
+        class="carrusel-pista"
+        [style.transform]="'translateX(-' + bannerActivo() * 100 + '%)'"
+      >
+        <div
+          class="carrusel-slide"
+          *ngFor="let banner of banners(); let i = index"
+          [class.carrusel-slide--enlace]="!!banner.enlace"
+          (click)="abrirBanner(banner)"
+        >
+          <img class="carrusel-img" [src]="banner.url" [alt]="banner.titulo ?? 'Banner'" />
+          <div class="carrusel-overlay" *ngIf="banner.titulo || banner.subtitulo">
+            <span class="carrusel-titulo" *ngIf="banner.titulo">{{ banner.titulo }}</span>
+            <span class="carrusel-subtitulo" *ngIf="banner.subtitulo">{{ banner.subtitulo }}</span>
+          </div>
+        </div>
+      </div>
+
+      <ng-container *ngIf="banners().length > 1">
+        <button
+          class="carrusel-flecha carrusel-flecha--izq"
+          aria-label="Banner anterior"
+          (click)="bannerAnterior()"
+        >
+          ‹
+        </button>
+        <button
+          class="carrusel-flecha carrusel-flecha--der"
+          aria-label="Banner siguiente"
+          (click)="bannerSiguiente()"
+        >
+          ›
+        </button>
+
+        <div class="carrusel-dots">
+          <button
+            class="carrusel-dot"
+            *ngFor="let banner of banners(); let i = index"
+            [class.carrusel-dot--activo]="bannerActivo() === i"
+            [attr.aria-label]="'Ir al banner ' + (i + 1)"
+            (click)="irBanner(i)"
+          ></button>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="filtros">
+      <div class="buscador">
+        <input
+          class="input"
+          type="search"
+          placeholder="Buscar por nombre o color…"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+          (keydown.enter)="buscar()"
+        />
+        <button class="btn btn-ghost" (click)="buscar()">Buscar</button>
+      </div>
+
+      <div class="filtro-grupo" *ngIf="categorias().length > 0">
+        <span class="filtro-etiqueta">Categoría</span>
+        <div class="chips">
+          <button
+            class="chip"
+            [class.chip--activo]="categoriaActiva() === null"
+            (click)="cambiarCategoria(null)"
+          >
+            Todas
+          </button>
+          <button
+            class="chip"
+            *ngFor="let categoria of categorias()"
+            [class.chip--activo]="categoriaActiva() === categoria.id"
+            (click)="cambiarCategoria(categoria.id)"
+          >
+            {{ categoria.nombre }}
+          </button>
+        </div>
+      </div>
+
+      <div class="filtro-grupo" *ngIf="tallas().length > 0">
+        <span class="filtro-etiqueta">Talla</span>
+        <div class="chips">
+          <button
+            class="chip"
+            [class.chip--activo]="tallaActiva() === null"
+            (click)="cambiarTalla(null)"
+          >
+            Todas
+          </button>
+          <button
+            class="chip"
+            *ngFor="let talla of tallas()"
+            [class.chip--activo]="tallaActiva() === talla.id"
+            (click)="cambiarTalla(talla.id)"
+          >
+            {{ talla.nombre }}
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-ghost btn-sm"
+        *ngIf="busqueda() || categoriaActiva() !== null || tallaActiva() !== null"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+
+    <ng-container *ngIf="!cargando() && !error()">
+      <div class="grid" *ngIf="productos().length > 0">
+        <div
+          class="card producto-card"
+          *ngFor="let producto of productos()"
+          (click)="verDetalle(producto.id)"
+        >
+          <img
+            *ngIf="imagenPrincipal(producto)"
+            class="producto-foto"
+            [src]="imagenPrincipal(producto)"
+            [alt]="producto.nombre"
+            loading="lazy"
+          />
+          <div
+            *ngIf="!imagenPrincipal(producto)"
+            class="producto-foto producto-foto--empty"
+          >
+            Sin foto
+          </div>
+          <div class="producto-body">
+            <div class="producto-nombre">{{ producto.nombre }}</div>
+            <div class="producto-meta">
+              {{ producto.codigo }}
+              <span *ngIf="producto.talla?.nombre"> · Talle {{ producto.talla?.nombre }}</span>
+              <span *ngIf="producto.color"> · {{ producto.color }}</span>
+            </div>
+            <div class="producto-precio">{{ formatearPrecio(producto.precio) }}</div>
+            <button
+              class="btn btn-primary"
+              [class.btn-outline]="enCarrito(producto.id)"
+              [disabled]="enCarrito(producto.id)"
+              (click)="$event.stopPropagation(); agregarAlCarrito(producto)"
+            >
+              {{ enCarrito(producto.id) ? 'En el carrito ✓' : 'Agregar al carrito' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="vacio" *ngIf="productos().length === 0">
+        <span class="vacio-icono" aria-hidden="true">👗</span>
+        <h3>No encontramos prendas con esos filtros</h3>
+        <p>Probá con otros términos o sacá los filtros para ver todo el catálogo.</p>
+        <button class="btn btn-outline" (click)="limpiarFiltros()">Ver todo el catálogo</button>
+      </div>
+
+      <div class="paginacion" *ngIf="ultimaPagina() > 1">
+        <span class="muted">
+          Página {{ pagina() }} de {{ ultimaPagina() }} · {{ total() }} prendas
+        </span>
+        <div class="chips">
+          <button
+            class="btn btn-ghost btn-sm"
+            [disabled]="pagina() <= 1"
+            (click)="cambiarPagina(pagina() - 1)"
+          >
+            ← Anterior
+          </button>
+          <button
+            class="btn btn-ghost btn-sm"
+            [disabled]="pagina() >= ultimaPagina()"
+            (click)="cambiarPagina(pagina() + 1)"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="center" *ngIf="cargando()">
+      <span class="spinner" aria-label="Cargando"></span>
+    </div>
+
+    <div class="vacio" *ngIf="!cargando() && error()">
+      <span class="vacio-icono" aria-hidden="true">⚠️</span>
+      <h3>{{ error() }}</h3>
+      <button class="btn btn-outline" (click)="cargar()">Reintentar</button>
+    </div>
+  </div>
+</div>

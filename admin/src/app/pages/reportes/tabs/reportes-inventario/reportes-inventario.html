@@ -1,0 +1,137 @@
+@if (error) {
+  <div class="error-banner">{{ error }}</div>
+}
+
+<section class="card">
+  <div class="report-filter-toolbar">
+    <label class="field">
+      <span class="field-label">Categoría</span>
+      <select class="select" [(ngModel)]="categoriaSeleccionada">
+        <option [ngValue]="null">Todas</option>
+        @for (c of categorias(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Talla</span>
+      <select class="select" [(ngModel)]="tallaSeleccionada">
+        <option [ngValue]="null">Todas</option>
+        @for (t of tallas(); track t.id) {
+          <option [ngValue]="t.id">{{ t.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Estado</span>
+      <select class="select" [(ngModel)]="estadoSeleccionado">
+        <option value="">Todos</option>
+        @for (e of estados; track e.valor) {
+          <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="report-actions">
+      <button type="button" class="btn btn-primary" (click)="cargar()" [disabled]="cargando()">Aplicar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()" [disabled]="cargando()">Limpiar</button>
+    </div>
+  </div>
+</section>
+
+@if (cargando()) {
+  <div class="report-center">
+    <app-spinner [size]="36" />
+  </div>
+}
+
+@if (!cargando()) {
+  <div class="stack">
+    <div class="report-stats">
+      <app-stat-card label="Total de prendas" [value]="total()" icon="◉" tone="primary" />
+      <app-stat-card label="Disponibles" [value]="disponibles()" icon="✓" tone="success" />
+      <app-stat-card label="Reservadas" [value]="reservadas()" icon="◷" tone="warning" />
+      <app-stat-card label="Vendidas" [value]="vendidas()" icon="★" tone="danger" />
+    </div>
+
+    @if (total() === 0) {
+      <app-empty-state
+        icon="▤"
+        title="Sin productos"
+        message="No existen productos para los filtros seleccionados."
+      />
+    } @else {
+      <section class="report-grid-2">
+        <section class="card">
+          <h2 class="card-title">Distribución por estado</h2>
+          @if (porEstado().length > 0) {
+            <app-chart-donut [datos]="chartEstado()" [esMonto]="false" [size]="170" />
+          } @else {
+            <app-empty-state icon="▦" title="Sin datos" message="No hay prendas en este estado." />
+          }
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">Productos por categoría</h2>
+          @if (porCategoria().length > 0) {
+            <app-chart-donut [datos]="chartCategoria()" [esMonto]="false" [size]="170" />
+          } @else {
+            <app-empty-state icon="🗂" title="Sin datos" message="No hay prendas por categoría." />
+          }
+        </section>
+      </section>
+
+      <section class="report-grid-2">
+        <div>
+          <section class="card">
+            <h2 class="card-title">Resumen por categoría</h2>
+            <div class="report-table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Categoría</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of porCategoria(); track c.nombre) {
+                    <tr>
+                      <td>{{ c.nombre }}</td>
+                      <td>{{ c.total }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section class="card">
+            <h2 class="card-title">Resumen por talla</h2>
+            <div class="report-table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Talla</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of porTalla(); track t.nombre) {
+                    <tr>
+                      <td>{{ t.nombre }}</td>
+                      <td>{{ t.total }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    }
+  </div>
+}

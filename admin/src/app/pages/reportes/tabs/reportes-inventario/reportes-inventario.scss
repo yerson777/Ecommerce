@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+.report-center {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.report-filter-toolbar {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+
+  .field {
+    min-width: 140px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  @media (max-width: 600px) {
+    .field {
+      width: 100%;
+      min-width: 100%;
+    }
+  }
+}

@@ -1,0 +1,179 @@
+<app-modal [title]="'Registrar pago'" [width]="'640px'" (closed)="cerrado.emit()">
+  <div class="form">
+    @if (errorBanner) {
+      <div class="error-banner">{{ errorBanner }}</div>
+    }
+
+    <div class="field">
+      <label>Pedido *</label>
+      <div class="pedido-busqueda">
+        <input
+          class="input"
+          type="text"
+          [(ngModel)]="busqueda"
+          name="busqueda"
+          placeholder="Nº de pedido o cliente…"
+          (keyup.enter)="buscarPedidos()"
+          [disabled]="!!seleccionado"
+        />
+        @if (!seleccionado) {
+          <button type="button" class="btn btn-ghost" (click)="buscarPedidos()" [disabled]="buscando">
+            {{ buscando ? 'Buscando…' : 'Buscar' }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-ghost" (click)="seleccionado = null">Cambiar</button>
+        }
+      </div>
+      @if (errorDe('pedido_id')) {
+        <span class="field-error">{{ errorDe('pedido_id') }}</span>
+      }
+    </div>
+
+    @if (seleccionado; as pedido) {
+      <div class="pedido-card">
+        <div class="pedido-card-row">
+          <span class="mono strong">{{ pedido.numero_pedido }}</span>
+          <span>{{ pedido.cliente?.nombre ?? 'Sin cliente' }}</span>
+          @if (pedido.cliente?.telefono) {
+            <span class="muted">{{ pedido.cliente!.telefono }}</span>
+          }
+        </div>
+        <div class="pedido-card-totales">
+          <div>
+            <span class="muted-label">Total</span>
+            <span class="mono">{{ moneda(pedido.total) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Pagado</span>
+            <span class="mono">{{ moneda(pedido.total_pagado) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Saldo</span>
+            <span class="mono strong">{{ moneda(saldoPendiente()) }}</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (!seleccionado) {
+      @if (busquedaHecha && !buscando) {
+        @if (pedidosEncontrados.length === 0) {
+          <app-empty-state icon="📦" title="Sin pedidos" message="No se encontraron pedidos con esa búsqueda." />
+        } @else {
+          <div class="pedidos-results">
+            @for (pedido of pedidosEncontrados; track pedido.id) {
+              <button type="button" class="pedido-opcion" (click)="seleccionar(pedido)">
+                <span class="mono">{{ pedido.numero_pedido }}</span>
+                <span>{{ pedido.cliente?.nombre ?? 'Sin cliente' }}</span>
+                <span class="mono muted">Saldo {{ moneda(saldoDe(pedido)) }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Monto ($) *</label>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="monto"
+          name="monto"
+        />
+        @if (errorDe('monto')) {
+          <span class="field-error">{{ errorDe('monto') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Método de pago *</label>
+        <select class="select" [(ngModel)]="metodoId" name="metodoId">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (metodo of metodos(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('metodo_pago_id')) {
+          <span class="field-error">{{ errorDe('metodo_pago_id') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="estado" name="estado">
+          <option value="pendiente">Pendiente (a verificar)</option>
+          <option value="completado">Completado (ya con­firmado)</option>
+        </select>
+        @if (errorDe('estado')) {
+          <span class="field-error">{{ errorDe('estado') }}</span>
+        }
+      </div>
+
+      @if (estado === 'completado') {
+        <div class="field">
+          <label>Fecha y hora</label>
+          <input class="input" type="datetime-local" [(ngModel)]="fecha" name="fecha" />
+          <p class="hint">Si no la indicas, se usa la fecha actual.</p>
+        </div>
+      }
+
+      <div class="field">
+        <label>Referencia</label>
+        <input
+          class="input"
+          type="text"
+          [(ngModel)]="referencia"
+          name="referencia"
+          maxlength="191"
+          placeholder="Nº de transferencia, voucher…"
+        />
+      </div>
+
+      <div class="field field-full">
+        <label>Nota / observación</label>
+        <textarea class="textarea" [(ngModel)]="nota" name="nota" maxlength="1000"></textarea>
+      </div>
+
+      @if (montoSuperaSaldo()) {
+        <label class="check field-full">
+          <input type="checkbox" [(ngModel)]="permitirExcedente" name="permitirExcedente" />
+          <span>Registrar excedente (cobro mayor al saldo pendiente)</span>
+        </label>
+      }
+
+      <div class="field field-full">
+        <label>Comprobante</label>
+        @if (comprobante) {
+          <div class="comprobante-seleccionado">
+            <span class="mono small">{{ comprobanteNombre }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="quitarComprobante()">Quitar</button>
+          </div>
+        } @else {
+          <label class="btn btn-outline upload-btn">
+            Seleccionar archivo
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+              (change)="onComprobante($event)"
+            />
+          </label>
+          <p class="hint">Imagen (JPG, PNG, WEBP, GIF) o PDF de hasta 5 MB.</p>
+        }
+        @if (errorDe('comprobante')) {
+          <span class="field-error">{{ errorDe('comprobante') }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Registrando…' : 'Registrar pago' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

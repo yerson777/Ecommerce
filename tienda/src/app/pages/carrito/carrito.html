@@ -1,0 +1,70 @@
+<div class="page">
+  <div class="container">
+    <ng-container *ngIf="items().length > 0">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Tu carrito</h1>
+          <p class="page-subtitle">
+            {{ items().length }} {{ items().length === 1 ? 'prenda seleccionada' : 'prendas seleccionadas' }}
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="vaciar()">Vaciar carrito</button>
+      </div>
+
+      <div class="layout-col">
+        <div class="card" style="padding: 0.5rem 1.25rem">
+          <div class="linea" *ngFor="let item of items()">
+            <img
+              *ngIf="item.imagen"
+              class="linea-foto"
+              [src]="item.imagen"
+              [alt]="item.nombre"
+            />
+            <div *ngIf="!item.imagen" class="linea-foto"></div>
+            <div class="linea-info">
+              <div class="linea-nombre">{{ item.nombre }}</div>
+              <div class="linea-sub">
+                {{ item.codigo }}
+                <span *ngIf="item.talla"> · Talle {{ item.talla }}</span>
+                <span *ngIf="item.color"> · {{ item.color }}</span>
+              </div>
+            </div>
+            <div class="linea-precio">{{ formatearPrecio(item.precio) }}</div>
+            <button class="btn btn-ghost btn-sm" title="Quitar" (click)="quitar(item.producto_id)">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="card resumen">
+          <h2 style="margin: 0 0 0.8rem; font-size: 1.15rem">Resumen</h2>
+          <div class="resumen-fila">
+            <span class="muted">Subtotal ({{ items().length }})</span>
+            <span>{{ formatearPrecio(subtotal()) }}</span>
+          </div>
+          <div class="resumen-fila">
+            <span class="muted">Envío</span>
+            <span class="muted">Se calcula al pagar</span>
+          </div>
+          <div class="resumen-total">
+            <span>Total</span>
+            <span>{{ formatearPrecio(subtotal()) }}</span>
+          </div>
+          <a class="btn btn-primary btn-lg btn-block" style="margin-top: 1rem" routerLink="/checkout">
+            Continuar al pago
+          </a>
+          <a class="btn btn-ghost btn-block" style="margin-top: 0.5rem" routerLink="/">
+            Seguir comprando
+          </a>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="vacio" *ngIf="items().length === 0">
+      <span class="vacio-icono" aria-hidden="true">🛍</span>
+      <h3>Tu carrito está vacío</h3>
+      <p>Mirá el catálogo y elegí tus prendas favoritas.</p>
+      <a class="btn btn-primary" routerLink="/">Ver catálogo</a>
+    </div>
+  </div>
+</div>

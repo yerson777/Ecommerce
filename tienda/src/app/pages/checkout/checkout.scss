@@ -1,0 +1,46 @@
+.panel {
+  padding: 1.4rem;
+}
+
+.panel-titulo {
+  font-size: 1.05rem;
+  margin: 1.1rem 0 0.9rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.panel-titulo:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.campo-doble {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+.linea-mini {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.92rem;
+}
+
+.linea-mini:last-of-type {
+  border-bottom: none;
+}
+
+.linea-mini-nombre {
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .campo-doble {
+    grid-template-columns: 1fr;
+  }
+}

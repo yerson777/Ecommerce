@@ -1,0 +1,96 @@
+.subir {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.file-btn {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.muted-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.9rem;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  background: #faf9fb;
+}
+
+.item-img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.item-overlay {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.item-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 12px;
+  align-items: baseline;
+}
+
+.item-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.25rem;
+
+  .replace-btn {
+    position: relative;
+    overflow: hidden;
+
+    input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+  }
+
+  .danger {
+    color: var(--danger);
+  }
+}

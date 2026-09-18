@@ -1,7 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+
+interface JsonData {
+  success: boolean;
+  message: string;
+  data: unknown;
+  meta?: Record<string, unknown> | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -10,7 +17,9 @@ export class ApiService {
   constructor(protected readonly http: HttpClient) {}
 
   protected get<T>(path: string): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}${path}`);
+    return this.http
+      .get<JsonData>(`${this.baseUrl}${path}`)
+      .pipe(map((response) => this.adaptarPaginado(response) as T));
   }
 
   protected post<T>(path: string, body: unknown): Observable<T> {
@@ -27,5 +36,33 @@ export class ApiService {
 
   protected delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${path}`);
+  }
+
+  private adaptarPaginado(response: JsonData): JsonData {
+    const data = response.data;
+    const meta = response.meta;
+
+    if (Array.isArray(data) && meta && typeof meta === 'object' && 'last_page' in meta) {
+      const pagina = meta as {
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+      };
+
+      return {
+        success: response.success,
+        message: response.message,
+        data: {
+          data,
+          current_page: pagina.current_page ?? 1,
+          last_page: pagina.last_page ?? 1,
+          per_page: pagina.per_page ?? data.length,
+          total: pagina.total ?? 0,
+        },
+      };
+    }
+
+    return response;
   }
 }

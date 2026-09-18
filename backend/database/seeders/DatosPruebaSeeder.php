@@ -10,6 +10,7 @@ use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Models\Categoria;
+use App\Models\Banner;
 use App\Models\Producto;
 use App\Models\ProductoImagen;
 use App\Models\Reserva;
@@ -18,6 +19,7 @@ use App\Models\Setting;
 use App\Models\Venta;
 use App\Models\VentaItem;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatosPruebaSeeder extends Seeder
 {
@@ -56,8 +58,20 @@ class DatosPruebaSeeder extends Seeder
             'publicado' => true,
             'fecha_ingreso' => now()->subDays(10),
         ]);
-        ProductoImagen::create(['producto_id' => $vestidoFloral->id, 'ruta' => 'productos/EV-0100-1.jpg', 'es_principal' => true, 'orden' => 1]);
-        ProductoImagen::create(['producto_id' => $vestidoFloral->id, 'ruta' => 'productos/EV-0100-2.jpg', 'es_principal' => false, 'orden' => 2]);
+        ProductoImagen::create([
+            'producto_id' => $vestidoFloral->id,
+            'ruta' => $this->grabarImagenPlaceholder('productos/EV-0100-1.png'),
+            'nombre_original' => 'vestido-floral-1.png',
+            'es_principal' => true,
+            'orden' => 1,
+        ]);
+        ProductoImagen::create([
+            'producto_id' => $vestidoFloral->id,
+            'ruta' => $this->grabarImagenPlaceholder('productos/EV-0100-2.png'),
+            'nombre_original' => 'vestido-floral-2.png',
+            'es_principal' => false,
+            'orden' => 2,
+        ]);
 
         Producto::create([
             'codigo' => 'EV-0101',
@@ -243,9 +257,49 @@ class DatosPruebaSeeder extends Seeder
             'fecha' => now()->subDays(2),
         ]);
 
-        // ---- 5. Configuración inicial ----
+        // ---- 5. Banners del carrusel de la tienda ----
+        Banner::create([
+            'ruta' => $this->grabarImagenPlaceholder('banners/EV-BANNER-1.png'),
+            'titulo' => 'Nueva colección',
+            'subtitulo' => 'Prendas únicas, elegidas para vos',
+            'enlace' => null,
+            'activo' => true,
+            'orden' => 1,
+        ]);
+        Banner::create([
+            'ruta' => $this->grabarImagenPlaceholder('banners/EV-BANNER-2.png'),
+            'titulo' => 'Vestidos de noche',
+            'subtitulo' => 'Elegancia para tus ocasiones especiales',
+            'enlace' => null,
+            'activo' => true,
+            'orden' => 2,
+        ]);
+        Banner::create([
+            'ruta' => $this->grabarImagenPlaceholder('banners/EV-BANNER-3.png'),
+            'titulo' => 'Última unidad disponible',
+            'subtitulo' => 'Cada prenda es una sola pieza',
+            'enlace' => null,
+            'activo' => false,
+            'orden' => 3,
+        ]);
+
+        // ---- 6. Configuración inicial ----
         Setting::query()->updateOrCreate(['nombre' => 'duracion_reserva_horas'], ['valor' => '24']);
         Setting::query()->updateOrCreate(['nombre' => 'empresa'], ['valor' => 'Everly Boutique']);
         Setting::query()->updateOrCreate(['nombre' => 'moneda'], ['valor' => 'Bs']);
+    }
+
+    /**
+     * Guarda una imagen PNG de 1x1 en el almacenamiento público.
+     * Sirve para que las prendas sembradas tengan archivos reales y
+     * la tienda pueda mostrar alguna imagen durante el desarrollo.
+     */
+    private function grabarImagenPlaceholder(string $ruta): string
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+
+        Storage::disk('public')->put($ruta, $png);
+
+        return $ruta;
     }
 }

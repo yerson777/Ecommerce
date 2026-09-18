@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.report-center {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+}
+
+.inline-field {
+  min-width: 150px;
+
+  .select {
+    padding: 0.35rem 0.6rem;
+    font-size: 13px;
+  }
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.25rem;
+}

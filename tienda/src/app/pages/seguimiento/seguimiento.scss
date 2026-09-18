@@ -1,0 +1,147 @@
+.estrecho {
+  max-width: 720px;
+}
+
+.seguimiento {
+  padding-top: 0.5rem;
+}
+
+.titulo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.buscador {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+
+  .input {
+    flex: 1;
+  }
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+  }
+}
+
+.input {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgb(201 138 45 / 18%);
+  }
+}
+
+.alerta-error {
+  margin-top: 1.1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  background: rgb(178 78 62 / 10%);
+  border: 1px solid rgb(178 78 62 / 28%);
+  color: #a4493a;
+  font-size: 0.95rem;
+}
+
+.bloque {
+  margin-top: 1.4rem;
+  padding: 1.3rem;
+}
+
+.filas-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.muted-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.numero-pedido {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 0.03em;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.lineas {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.linea-foto {
+  width: 46px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.linea-foto--vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.linea-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.linea-nombre {
+  font-weight: 700;
+}
+
+.linea-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.linea-precio {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.resumen-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.resumen-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.6rem;
+  padding-top: 0.7rem;
+}

@@ -24,6 +24,11 @@ class Venta extends Model
         'notas',
     ];
 
+    protected $appends = [
+        'estado',
+        'total_pagado',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -32,6 +37,39 @@ class Venta extends Model
             'total' => 'decimal:2',
             'fecha_venta' => 'date',
         ];
+    }
+
+    /**
+     * Estado de la venta derivado de sus pagos (completados):
+     * pendiente, parcial o pagada.
+     */
+    public function getEstadoAttribute(): string
+    {
+        $total = (float) $this->total;
+
+        if ($this->getPagoTotalAtributo() <= 0) {
+            return 'pendiente';
+        }
+
+        if ($this->getPagoTotalAtributo() >= $total - 0.01) {
+            return 'pagada';
+        }
+
+        return 'parcial';
+    }
+
+    public function getTotalPagadoAttribute(): string
+    {
+        return number_format($this->getPagoTotalAtributo(), 2);
+    }
+
+    private function getPagoTotalAtributo(): float
+    {
+        if (isset($this->pagos_total)) {
+            return (float) $this->pagos_total;
+        }
+
+        return (float) $this->pagos->where('estado', 'completado')->sum('monto');
     }
 
     public function pedido(): BelongsTo

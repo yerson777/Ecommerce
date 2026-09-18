@@ -1,2 +1,167 @@
-<h1>Panel administrativo</h1>
-<p>Bienvenido a Everly. Los módulos de gestión se añadirán en fases posteriores.</p>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Panel de control</h1>
+      <p class="page-subtitle">Resumen del negocio en tiempo real</p>
+    </div>
+    <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
+      {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="error-banner">{{ error }}</div>
+  }
+
+  @if (cargando() && !datos()) {
+    <div class="center">
+      <app-spinner [size]="32" />
+    </div>
+  }
+
+  @if (datos(); as d) {
+    <!-- Totales -->
+    <div class="stats-grid">
+      <app-stat-card label="Productos" [value]="d.productos.total" icon="◉" tone="primary" hint="En catálogo" />
+      <app-stat-card label="Disponibles" [value]="d.productos.disponibles" icon="✓" tone="success" hint="Están listas para vender" />
+      <app-stat-card label="Reservadas" [value]="d.productos.reservadas" icon="◷" tone="warning" hint="Guardadas para clientes" />
+      <app-stat-card label="Vendidas" [value]="d.productos.vendidas" icon="★" tone="danger" hint="Ventas cerradas" />
+      <app-stat-card label="Ventas" [value]="d.ventas.total" icon="§" tone="info" [hint]="moneda(d.ventas.monto) + ' acumulados'" />
+      <app-stat-card label="Pedidos" [value]="d.pedidos" icon="▤" tone="neutral" />
+      <app-stat-card label="Clientes" [value]="d.clientes.total" icon="◈" tone="primary" [hint]="d.clientes.con_pedidos + ' con pedidos'" />
+      <app-stat-card label="Nuevos (30 días)" [value]="d.clientes.nuevos" icon="✦" tone="info" hint="Clientes nuevos" />
+      <app-stat-card label="Recurrentes" [value]="d.clientes.recurrentes" icon="⟳" tone="success" [hint]="'Promedio ' + d.clientes.pedidos_por_cliente + ' pedidos por cliente'" />
+      <app-stat-card label="Caja" [value]="moneda(d.caja.saldo)" icon="$$" tone="success" [hint]="'Ingresos ' + moneda(d.caja.ingresos) + ' · Egresos ' + moneda(d.caja.egresos)" />
+      <app-stat-card label="Total vendido" [value]="moneda(d.pagos.total_vendido)" icon="§" tone="primary" hint="Ventas acumuladas" />
+      <app-stat-card label="Total cobrado" [value]="moneda(d.pagos.total_cobrado)" icon="$$" tone="success" hint="Pagos confirmados" />
+      <app-stat-card label="Total pendiente" [value]="moneda(d.pagos.total_pendiente)" icon="◷" tone="warning" hint="Por cobrar" />
+      <app-stat-card label="Pedidos pagados" [value]="d.pagos.pedidos.pagados" icon="✓" tone="neutral" [hint]="d.pagos.pedidos.pendientes_de_pago + ' pendientes · ' + d.pagos.pedidos.parcialmente_pagados + ' parciales'" />
+    </div>
+
+    <!-- Inventario -->
+    <div class="grid-2">
+      <section class="card">
+        <div class="row-between">
+          <h2 class="card-title">Inventario por estado</h2>
+          <span class="muted">{{ totalInventario() }} prendas</span>
+        </div>
+
+        <div class="stack">
+          @for (item of d.inventario.por_estado; track item.estado) {
+            <app-progress
+              [label]="etiquetaEstado(item.estado)"
+              [value]="item.total"
+              [total]="totalInventario()"
+              [tone]="tonoEstado(item.estado)"
+            />
+          }
+        </div>
+
+        <div class="stack published-row">
+          <div class="row-between">
+            <span class="muted">Publicadas en la tienda</span>
+            <span class="pill">
+              <app-badge tone="success">Sí · {{ d.productos.publicados }}</app-badge>
+              <app-badge tone="neutral">No · {{ d.productos.no_publicados }}</app-badge>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Últimas ventas</h2>
+
+        @if (d.ventas.recientes.length > 0) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Número</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (venta of d.ventas.recientes; track venta.id) {
+                  <tr>
+                    <td>{{ venta.fecha_venta }}</td>
+                    <td class="mono">{{ venta.numero_venta }}</td>
+                    <td>{{ venta.cliente?.nombre ?? '—' }}</td>
+                    <td>{{ moneda(venta.total) }}</td>
+                    <td>
+                      <app-badge [tone]="tonoEstadoVenta(venta.estado)">
+                        {{ etiquetaEstadoVenta(venta.estado) }}
+                      </app-badge>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <app-empty-state
+            icon="📦"
+            title="Sin ventas todavía"
+            message="Las ventas recientes aparecerán aquí."
+          />
+        }
+      </section>
+    </div>
+
+    <!-- Productos recientes -->
+    <section class="card">
+      <h2 class="card-title">Productos recientes</h2>
+
+      @if (d.productos.recientes.length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Talla</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th>Publicado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (producto of d.productos.recientes; track producto.id) {
+                <tr>
+                  <td>
+                    @if (producto.imagenes?.length) {
+                      <img class="thumb" [src]="producto.imagenes![0].url" alt="" />
+                    } @else {
+                      <div class="thumb thumb--empty">—</div>
+                    }
+                  </td>
+                  <td class="mono">{{ producto.codigo }}</td>
+                  <td>{{ producto.nombre }}</td>
+                  <td>{{ producto.categoria?.nombre ?? '—' }}</td>
+                  <td>{{ producto.talla?.nombre ?? '—' }}</td>
+                  <td>{{ moneda(producto.precio) }}</td>
+                  <td>
+                    <app-badge [tone]="tonoEstado(producto.estado)">
+                      {{ etiquetaEstado(producto.estado) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    <app-badge [tone]="producto.publicado ? 'success' : 'neutral'">
+                      {{ producto.publicado ? 'Sí' : 'No' }}
+                    </app-badge>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state icon="🧵" title="Sin productos" message="Crea tu primer producto para empezar." />
+      }
+    </section>
+  }
+</div>

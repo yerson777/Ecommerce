@@ -1,0 +1,25 @@
+<div class="period-filter">
+  <label class="field">
+    <span class="field-label">Período</span>
+    <select class="select" [(ngModel)]="periodo" [disabled]="cargando()">
+      @for (item of periodos; track item[0]) {
+        <option [ngValue]="item[0]">{{ item[1] }}</option>
+      }
+    </select>
+  </label>
+
+  @if (esPersonalizado()) {
+    <label class="field">
+      <span class="field-label">Desde</span>
+      <input class="input" type="date" [(ngModel)]="fechaDesde" [disabled]="cargando()" />
+    </label>
+    <label class="field">
+      <span class="field-label">Hasta</span>
+      <input class="input" type="date" [(ngModel)]="fechaHasta" [disabled]="cargando()" />
+    </label>
+  }
+
+  <button type="button" class="btn btn-primary" (click)="aplicar()" [disabled]="cargando()">
+    <span class="filter-btn">{{ cargando() ? 'Cargando…' : 'Aplicar' }}</span>
+  </button>
+</div>

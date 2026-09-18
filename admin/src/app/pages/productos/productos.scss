@@ -1,0 +1,95 @@
+:host {
+  display: block;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.thumb {
+  cursor: pointer;
+}
+
+.thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .slider {
+      background: var(--success);
+    }
+
+    &:checked + .slider::before {
+      transform: translateX(16px);
+    }
+
+    &:disabled + .slider {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #cfccd4;
+    border-radius: 999px;
+    transition: background 0.15s ease;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.15s ease;
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}

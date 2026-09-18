@@ -1,0 +1,48 @@
+@if (segmentos().length === 0) {
+  <div class="donut-empty">Sin datos para mostrar</div>
+} @else {
+  <div class="donut-layout">
+    <div class="donut-wrap">
+      <svg [attr.viewBox]="'0 0 200 200'" [attr.width]="size()" [attr.height]="size()">
+        <circle
+          cx="100"
+          cy="100"
+          r="70"
+          fill="none"
+          stroke="#eceae4"
+          stroke-width="22"
+        />
+        @for (seg of segmentos(); track $index) {
+          <circle
+            cx="100"
+            cy="100"
+            [attr.r]="seg.radio"
+            fill="none"
+            [attr.stroke]="seg.color"
+            stroke-width="22"
+            [attr.stroke-dasharray]="seg.dash + ' ' + seg.gap"
+            [attr.stroke-dashoffset]="seg.offset"
+            transform="rotate(-90 100 100)"
+          />
+        }
+        <text x="100" y="96" text-anchor="middle" class="donut-total">
+          {{ total() }}
+        </text>
+        <text x="100" y="114" text-anchor="middle" class="donut-total-label">
+          total
+        </text>
+      </svg>
+    </div>
+
+    <div class="donut-legend">
+      @for (seg of segmentos(); track $index) {
+        <div class="legend-item">
+          <span class="legend-dot" [style.background]="seg.color"></span>
+          <span class="legend-label">{{ seg.etiqueta }}</span>
+          <span class="legend-value">{{ formato(seg.valor) }}</span>
+          <span class="legend-pct">{{ porcentaje(seg.valor) }}%</span>
+        </div>
+      }
+    </div>
+  </div>
+}

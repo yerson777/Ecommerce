@@ -1,0 +1,82 @@
+<div class="page">
+  <div class="container">
+    <header class="hero-pagina">
+      <span class="etiqueta">Estamos para ayudarte</span>
+      <h1 class="titulo">Atención al cliente</h1>
+      <p class="bajada">
+        Resolvemos tus dudas sobre compras, envíos y talles. Si no
+        encontrás lo que buscás, escribinos y te respondemos en menos de 24 horas.
+      </p>
+    </header>
+
+    <section class="accesos">
+      <a class="card acceso" routerLink="/seguimiento">
+        <span class="acceso-icono" aria-hidden="true">📦</span>
+        <h3>Seguí tu pedido</h3>
+        <p>Consultá el estado de tu compra con tu número de pedido.</p>
+      </a>
+      <a class="card acceso" routerLink="/contacto">
+        <span class="acceso-icono" aria-hidden="true">💬</span>
+        <h3>Contactanos</h3>
+        <p>Escribinos por WhatsApp, correo o teléfono.</p>
+      </a>
+      <a class="card acceso" routerLink="/carrito">
+        <span class="acceso-icono" aria-hidden="true">🛍</span>
+        <h3>Tu carrito</h3>
+        <p>Revisá las prendas que guardaste y finalizá tu compra.</p>
+      </a>
+    </section>
+
+    <section class="bloque">
+      <h2 class="seccion-titulo">Cómo comprar</h2>
+      <ol class="pasos">
+        <li><span class="num">1</span><div><strong>Elegí tu prenda.</strong> Navegá el catálogo y usá los filtros por categoría, talle o búsqueda.</div></li>
+        <li><span class="num">2</span><div><strong>Sumala al carrito.</strong> Podés agregar varias piezas antes de cerrar la compra.</div></li>
+        <li><span class="num">3</span><div><strong>Completá tus datos.</strong> Ingresá tu información de contacto y elegí el método de entrega y pago.</div></li>
+        <li><span class="num">4</span><div><strong>Confirmá.</strong> Recibirás tu número de pedido para seguirlo en todo momento.</div></li>
+      </ol>
+    </section>
+
+    <section class="bloque">
+      <h2 class="seccion-titulo">Envíos y entregas</h2>
+      <div class="cards-dos">
+        <article class="card info-card">
+          <h3>Entrega en Santa Cruz</h3>
+          <p class="info-dato">24 a 48 horas</p>
+          <ul>
+            <li>Entrega a domicilio o punto de encuentro.</li>
+            <li>Coordinamos día y horario por WhatsApp.</li>
+            <li>Envío sin costo en compras desde Bs 400.</li>
+          </ul>
+        </article>
+        <article class="card info-card">
+          <h3>Resto de Bolivia</h3>
+          <p class="info-dato">3 a 7 días hábiles</p>
+          <ul>
+            <li>Despacho por encomienda o flota.</li>
+            <li>Te compartimos el número de guía.</li>
+            <li>El costo se calcula según destino y peso.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="bloque">
+      <h2 class="seccion-titulo">Preguntas frecuentes</h2>
+      <div class="faq">
+        <details class="faq-item" *ngFor="let faq of faqs">
+          <summary>{{ faq.pregunta }}</summary>
+          <p>{{ faq.respuesta }}</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div>
+        <h2>¿No encontraste tu respuesta?</h2>
+        <p>Nuestro equipo te ayuda a resolver cualquier duda.</p>
+      </div>
+      <a class="btn btn-primary btn-lg" routerLink="/contacto">Escribinos</a>
+    </section>
+  </div>
+</div>

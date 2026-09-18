@@ -1,0 +1,9 @@
+<div class="progress">
+  <div class="progress-head">
+    <span class="progress-label">{{ label() }}</span>
+    <span class="progress-meta">{{ value() }} · {{ porcentaje() }}%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" [class]="'progress-fill--' + tone()" [style.width.%]="porcentaje()"></div>
+  </div>
+</div>

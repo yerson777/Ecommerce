@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ProductoImagenService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,9 +16,12 @@ class ProductoImagen extends Model
     protected $fillable = [
         'producto_id',
         'ruta',
+        'nombre_original',
         'es_principal',
         'orden',
     ];
+
+    protected $appends = ['url'];
 
     protected function casts(): array
     {
@@ -30,5 +34,10 @@ class ProductoImagen extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return app(ProductoImagenService::class)->urlDeRuta($this->ruta);
     }
 }

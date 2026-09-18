@@ -1,0 +1,142 @@
+@if (error) {
+  <div class="error-banner">{{ error }}</div>
+}
+
+@if (cargando() && !datos()) {
+  <div class="report-center">
+    <app-spinner [size]="36" />
+  </div>
+}
+
+@if (datos(); as d) {
+  <div class="resumen-grid">
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-primary">◉</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Productos</h2>
+          <p class="panel-sub">En catálogo</p>
+        </div>
+        <span class="panel-total">{{ d.productos.total }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Disponibles</span>
+          <span class="m-value tone-success">{{ d.productos.disponibles }}</span>
+        </li>
+        <li>
+          <span class="m-label">Reservadas</span>
+          <span class="m-value tone-warning">{{ d.productos.reservadas }}</span>
+        </li>
+        <li>
+          <span class="m-label">Vendidas</span>
+          <span class="m-value tone-danger">{{ d.productos.vendidas }}</span>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-info">📦</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Pedidos</h2>
+          <p class="panel-sub">En el período</p>
+        </div>
+        <span class="panel-total">{{ d.pedidos.total }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Pendientes</span>
+          <span class="m-value tone-warning">{{ d.pedidos.pendientes }}</span>
+        </li>
+        <li>
+          <span class="m-label">Confirmados</span>
+          <span class="m-value tone-info">{{ d.pedidos.confirmados }}</span>
+        </li>
+        <li>
+          <span class="m-label">Completados</span>
+          <span class="m-value tone-success">{{ d.pedidos.completados }}</span>
+        </li>
+        <li>
+          <span class="m-label">Cancelados</span>
+          <span class="m-value tone-danger">{{ d.pedidos.cancelados }}</span>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-primary">§</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Ventas</h2>
+          <p class="panel-sub">{{ d.ventas.total }} ventas registradas</p>
+        </div>
+        <span class="panel-total">{{ moneda(d.ventas.monto) }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Total cobrado</span>
+          <span class="m-value tone-success">{{ moneda(d.ventas.cobrado) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Por cobrar</span>
+          <span class="m-value tone-warning">{{ moneda(d.ventas.pendiente) }}</span>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-info">◈</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Clientes</h2>
+          <p class="panel-sub">{{ d.clientes.con_pedidos }} con pedidos</p>
+        </div>
+        <span class="panel-total">{{ d.clientes.total }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Nuevos</span>
+          <span class="m-value tone-info">{{ d.clientes.nuevos }}</span>
+        </li>
+        <li>
+          <span class="m-label">Recurrentes</span>
+          <span class="m-value tone-success">{{ d.clientes.recurrentes }}</span>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-success">$$</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Pagos</h2>
+          <p class="panel-sub">{{ d.pagos.pagados }} pedidos pagados</p>
+        </div>
+        <span class="panel-total">{{ moneda(d.pagos.total_cobrado) }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Total pendiente</span>
+          <span class="m-value tone-warning">{{ moneda(d.pagos.total_pendiente) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Pagos parciales</span>
+          <span class="m-value tone-info">{{ d.pagos.parciales }}</span>
+        </li>
+        <li>
+          <span class="m-label">Pendientes de pago</span>
+          <span class="m-value tone-warning">{{ d.pagos.pendientes }}</span>
+        </li>
+      </ul>
+    </article>
+  </div>
+
+  @if (d.pedidos.total === 0 && d.ventas.total === 0) {
+    <app-empty-state
+      icon="🗂"
+      title="Sin datos para este período"
+      message="No existen pedidos ni ventas registrados en el período seleccionado. Se muestran valores en cero."
+    />
+  }
+}

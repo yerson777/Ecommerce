@@ -1,0 +1,26 @@
+<div class="toasts">
+  @for (toast of toasts(); track toast.id) {
+    <div
+      class="toast"
+      [class.toast--success]="toast.tipo === 'success'"
+      [class.toast--error]="toast.tipo === 'error'"
+      [class.toast--info]="toast.tipo === 'info'"
+      (click)="quitar(toast.id)"
+    >
+      <span class="toast-icon">
+        @switch (toast.tipo) {
+          @case ('success') {
+            ✓
+          }
+          @case ('error') {
+            ✕
+          }
+          @default {
+            ℹ
+          }
+        }
+      </span>
+      <span class="toast-message">{{ toast.message }}</span>
+    </div>
+  }
+</div>

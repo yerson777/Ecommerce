@@ -1,0 +1,141 @@
+<footer class="footer">
+  <div class="container">
+    <div class="newsletter">
+      <div class="newsletter-texto">
+        <h3>Sumate al Club Everly</h3>
+        <p>Enterate primero de las nuevas piezas, beneficios y ofertas exclusivas.</p>
+      </div>
+
+      <form class="newsletter-form" (ngSubmit)="suscribir()" *ngIf="!suscripto()">
+        <input
+          class="input"
+          type="email"
+          name="email"
+          placeholder="Tu correo electrónico"
+          [(ngModel)]="email"
+          required
+        />
+        <button class="btn btn-primary" type="submit">Suscribirme</button>
+      </form>
+
+      <p class="newsletter-ok" *ngIf="suscripto()">
+        ¡Gracias por sumarte! Muy pronto vas a recibir nuestras novedades. 💌
+      </p>
+    </div>
+
+    <div class="columnas">
+      <div class="col col-marca">
+        <span class="marca">Everly<span>Boutique</span></span>
+        <p class="muted">
+          Prendas únicas seleccionadas a mano, con moda coreana y americana que
+          no se repite.
+        </p>
+
+        <div class="social">
+          <span class="social-titulo">¡Seguinos!</span>
+          <div class="social-links">
+            <a
+              href="https://instagram.com/everlyboutique"
+              target="_blank"
+              rel="noopener"
+              aria-label="Instagram"
+              title="Instagram"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="17.5" cy="6.5" r="1.3" fill="currentColor" />
+              </svg>
+            </a>
+            <a
+              href="https://facebook.com/everlyboutique"
+              target="_blank"
+              rel="noopener"
+              aria-label="Facebook"
+              title="Facebook"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M13.5 21v-7h2.4l.4-3h-2.8V9c0-.9.3-1.5 1.6-1.5H16.5V4.8c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8V11H8.2v3h2.4v7z"
+                />
+              </svg>
+            </a>
+            <a
+              href="https://tiktok.com/@everlyboutique"
+              target="_blank"
+              rel="noopener"
+              aria-label="TikTok"
+              title="TikTok"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M16 3c.3 2.1 1.6 3.6 3.8 3.9v2.6c-1.4.1-2.7-.3-3.9-1v6.1c0 3.2-2.3 5.6-5.4 5.6-3 0-5.5-2.3-5.5-5.4 0-3 2.4-5.3 5.5-5.3.3 0 .6 0 .9.1v2.8c-.3-.1-.6-.2-.9-.2-1.5 0-2.6 1.1-2.6 2.6 0 1.5 1.1 2.6 2.6 2.6 1.6 0 2.6-1.1 2.6-2.8V3z"
+                />
+              </svg>
+            </a>
+            <a
+href="https://wa.me/59162640247"
+              target="_blank"
+              rel="noopener"
+              aria-label="WhatsApp"
+              title="WhatsApp"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 0 1 0 16 8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 0 1 12 4zm-2.7 4c-.2 0-.5.1-.7.3-.2.3-.8.8-.8 1.8s.8 2 .9 2.1c.1.2 1.6 2.5 3.9 3.4 1.9.8 2.3.6 2.7.6.4 0 1.3-.5 1.5-1.1.2-.5.2-1 .1-1.1 0-.1-.2-.2-.4-.3l-1.5-.7c-.2-.1-.4-.1-.5.1l-.6.8c-.1.2-.3.2-.5.1-.2-.1-.9-.3-1.7-1s-1.3-1.5-1.4-1.7c-.1-.2 0-.3.1-.4l.4-.5c.1-.2.1-.3 0-.5l-.7-1.6c-.2-.4-.4-.4-.5-.4z"
+                />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h4>Atención al cliente</h4>
+        <ul>
+          <li><a routerLink="/ayuda">Cómo comprar</a></li>
+          <li><a routerLink="/ayuda">Envíos y entregas</a></li>
+          <li><a routerLink="/ayuda">Preguntas frecuentes</a></li>
+          <li><a routerLink="/seguimiento">Seguí tu pedido</a></li>
+        </ul>
+      </div>
+
+      <div class="col">
+        <h4>Contacto</h4>
+        <ul class="lista-contacto">
+          <li>
+            <a href="https://wa.me/59162640247" target="_blank" rel="noopener">
+              WhatsApp: +591 62640247
+            </a>
+          </li>
+          <li><a href="mailto:hola@everlyboutique.com">gutierrezyerson041@gmail.com</a></li>
+          <li><a href="tel:+59162640247">+591 62640247</a></li>
+          <li>Av. Las Flores 123, Santa Cruz</li>
+          <li>Lun a Sáb · 9:00 a 19:30</li>
+        </ul>
+      </div>
+
+      <div class="col">
+        <h4>Mi cuenta</h4>
+        <ul>
+          <li><a routerLink="/cuenta">Mi cuenta</a></li>
+          <li><a routerLink="/carrito">Mi carrito</a></li>
+          <li><a routerLink="/seguimiento">Mis pedidos</a></li>
+          <li><a routerLink="/ayuda">Consultas frecuentes</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pie">
+      <span class="muted">© {{ anio }} Everly Boutique · Todos los derechos reservados.</span>
+      <nav class="pie-links">
+        <a routerLink="/nosotros">¿Quiénes somos?</a>
+        <a routerLink="/ayuda">Atención al cliente</a>
+        <a routerLink="/contacto">Contacto</a>
+      </nav>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,127 @@
+:host {
+  display: block;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.detalle-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 14px;
+  }
+}
+
+.muted-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.whatsapp-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  margin-top: 0.25rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.stats-row {
+  display: flex;
+  gap: 1.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+}
+
+.stat-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.stat-numero {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.observaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  font-size: 14px;
+}
+
+.historial {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+}
+
+.item-nombre {
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-row {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}

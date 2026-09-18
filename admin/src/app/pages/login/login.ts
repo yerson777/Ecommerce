@@ -29,7 +29,7 @@ export class LoginComponent {
       next: (res) => {
         this.loading = false;
         if (res.success && res.data) {
-          this.auth.saveToken(res.data.token);
+          this.auth.iniciarSesion(res.data);
           this.router.navigate(['/dashboard']);
         }
       },

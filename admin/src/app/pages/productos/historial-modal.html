@@ -1,0 +1,37 @@
+<app-modal [title]="'Historial — ' + producto().codigo" (closed)="cerrado.emit()">
+  @if (error) {
+    <div class="error-banner">{{ error }}</div>
+  }
+
+@if (cargando()) {
+  <div class="center">
+    <app-spinner [size]="26" />
+  </div>
+}
+
+@if (cargando() === false && registros().length === 0) {
+  <app-empty-state icon="🕓" title="Sin movimientos" message="Aún no hay eventos registrados para esta prenda." />
+}
+
+<div class="timeline">
+  @for (registro of registros(); track registro.id) {
+    <div class="entry">
+      <div class="entry-head">
+        <app-badge [tone]="tonoEvento(registro.evento)">{{ registro.evento }}</app-badge>
+        <span class="muted">{{ registro.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+
+      <div class="entry-body">
+        @if (registro.detalle) {
+          <p class="detalle">{{ registro.detalle }}</p>
+        }
+        <p class="trans">
+          {{ etiquetaEstado(registro.estado_anterior) }}
+          <span class="arrow">→</span>
+          {{ etiquetaEstado(registro.estado_nuevo) }}
+        </p>
+      </div>
+    </div>
+  }
+</div>
+</app-modal>

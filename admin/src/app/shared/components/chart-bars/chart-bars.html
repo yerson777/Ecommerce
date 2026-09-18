@@ -1,0 +1,25 @@
+@if (datos().length === 0) {
+  <div class="chart-empty">Sin datos para mostrar</div>
+} @else {
+  <div class="bars" [style.min-height.px]="altura()">
+    @for (dato of datos(); track $index) {
+      <div class="bar-col">
+        <div class="bar-value">
+          {{ $index === 0 ? formato(dato.valor) : '' }}
+        </div>
+        <div
+          class="bar-track"
+          [style.height.px]="altura() - 30"
+        >
+          <div
+            class="bar-fill"
+            [style.height.%]="(dato.valor / maximo()) * 100"
+            [style.background]="dato.color ?? colorBase()"
+            [attr.title]="dato.etiqueta + ': ' + formato(dato.valor)"
+          ></div>
+        </div>
+        <div class="bar-label" [attr.title]="dato.etiqueta">{{ dato.etiqueta }}</div>
+      </div>
+    }
+  </div>
+}

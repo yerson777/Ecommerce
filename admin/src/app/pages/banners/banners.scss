@@ -1,0 +1,110 @@
+:host {
+  display: block;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.mono {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.link {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.banner-thumb {
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: block;
+}
+
+.banner-titulo {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.muted-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.file-btn {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  align-self: flex-start;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.file-label {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.preview-img {
+  width: 120px;
+  height: 68px;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+}
+
+.actions-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}

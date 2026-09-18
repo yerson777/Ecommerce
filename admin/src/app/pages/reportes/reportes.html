@@ -1,0 +1,52 @@
+<div class="page">
+  <section class="card report-controls">
+    <div class="report-heading">
+      <h1 class="page-title">Reportes y estadísticas</h1>
+      <p class="page-subtitle">Análisis del comportamiento del negocio con datos reales</p>
+    </div>
+
+    <app-period-filter
+      [periodo]="periodo()"
+      [fechaDesde]="fechaDesde()"
+      [fechaHasta]="fechaHasta()"
+      (periodoChange)="onPeriodoChange($event)"
+      (fechaDesdeChange)="onFechasChange($event, fechaHasta())"
+      (fechaHastaChange)="onFechasChange(fechaDesde(), $event)"
+    />
+  </section>
+
+  <nav class="tabs">
+    @for (item of tabs; track item.clave) {
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="tab() === item.clave"
+        (click)="seleccionarTab(item.clave)"
+      >
+        <span class="tab-icon">{{ item.icono }}</span>
+        {{ item.etiqueta }}
+      </button>
+    }
+  </nav>
+
+  @switch (tab()) {
+    @case ('resumen') {
+      <app-reportes-resumen [filtros]="filtros()" />
+    }
+    @case ('ventas') {
+      <app-reportes-ventas [filtros]="filtros()" />
+    }
+    @case ('pedidos') {
+      <app-reportes-pedidos [filtros]="filtros()" />
+    }
+    @case ('pagos') {
+      <app-reportes-pagos [filtros]="filtros()" />
+    }
+    @case ('inventario') {
+      <app-reportes-inventario [filtros]="filtros()" />
+    }
+    @case ('clientes') {
+      <app-reportes-clientes [filtros]="filtros()" />
+    }
+  }
+</div>

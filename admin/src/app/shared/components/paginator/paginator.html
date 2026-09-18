@@ -1,0 +1,25 @@
+<div class="paginator">
+  <span class="paginator-info">
+    {{ desde() }}–{{ hasta() }} de {{ total() }}
+  </span>
+
+  <button
+    type="button"
+    class="btn btn-ghost btn-sm"
+    [disabled]="page() <= 1"
+    (click)="irA(page() - 1)"
+  >
+    Anterior
+  </button>
+
+  <span class="paginator-page">Página {{ page() }} de {{ lastPage() }}</span>
+
+  <button
+    type="button"
+    class="btn btn-ghost btn-sm"
+    [disabled]="page() >= lastPage()"
+    (click)="irA(page() + 1)"
+  >
+    Siguiente
+  </button>
+</div>

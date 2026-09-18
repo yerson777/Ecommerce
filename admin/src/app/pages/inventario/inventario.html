@@ -1,0 +1,97 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Inventario</h1>
+      <p class="page-subtitle">Visión general de las prendas por estado, categoría, talla y precio</p>
+    </div>
+    <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
+      {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="error-banner">{{ error }}</div>
+  }
+
+  @if (cargando() && !datos()) {
+    <div class="center">
+      <app-spinner [size]="32" />
+    </div>
+  }
+
+  @if (datos(); as d) {
+    <div class="stats-grid">
+      <app-stat-card label="Total de prendas" [value]="d.total" icon="◉" tone="primary" />
+      <app-stat-card label="Disponibles" [value]="totalPorEstado('disponible')" icon="✓" tone="success" />
+      <app-stat-card label="Reservadas" [value]="totalPorEstado('reservada')" icon="◷" tone="warning" />
+      <app-stat-card label="Vendidas" [value]="totalPorEstado('vendida')" icon="★" tone="danger" />
+      <app-stat-card label="Publicadas" [value]="d.publicados" icon="👁" tone="info" />
+      <app-stat-card label="Sin publicar" [value]="d.no_publicados" icon="▦" tone="neutral" />
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2 class="card-title">Distribución por estado</h2>
+        <div class="stack">
+          @for (item of d.por_estado; track item.estado) {
+            <app-progress
+              [label]="etiquetaEstado(item.estado)"
+              [value]="item.total"
+              [total]="d.total"
+              [tone]="tonoEstado(item.estado)"
+            />
+          }
+          @if (d.por_estado.length === 0) {
+            <app-empty-state icon="🧵" title="Sin prendas" message="No hay prendas registradas todavía." />
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Por talla</h2>
+        <div class="chips">
+          @for (item of d.por_talla; track item.nombre) {
+            <span class="chip">
+              <span class="chip-label">{{ item.nombre }}</span>
+              <app-badge tone="primary">{{ item.total }}</app-badge>
+            </span>
+          }
+          @if (d.por_talla.length === 0) {
+            <span class="muted">Sin datos</span>
+          }
+        </div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2 class="card-title">Por categoría</h2>
+        <div class="stack">
+          @for (item of d.por_categoria; track item.nombre) {
+            <app-progress [label]="item.nombre" [value]="item.total" [total]="suma(d.por_categoria)" tone="primary" />
+          }
+          @if (d.por_categoria.length === 0) {
+            <span class="muted">Sin datos</span>
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Por rango de precio</h2>
+        <div class="stack">
+          @for (item of d.por_rango_precio; track item.nombre) {
+            <app-progress
+              [label]="etiquetaRango(item.nombre)"
+              [value]="item.total"
+              [total]="suma(d.por_rango_precio)"
+              tone="success"
+            />
+          }
+          @if (d.por_rango_precio.length === 0) {
+            <span class="muted">Sin datos</span>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

@@ -1,0 +1,102 @@
+<section class="card">
+  <div class="report-filter-toolbar">
+    <label class="field">
+      <span class="field-label">Estado del pedido</span>
+      <select class="select" [(ngModel)]="estadoPedido">
+        <option value="">Todos</option>
+        @for (e of estadosPedido; track e.valor) {
+          <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Estado del pago</span>
+      <select class="select" [(ngModel)]="estadoPago">
+        <option value="">Todos</option>
+        @for (e of estadosPago; track e.valor) {
+          <option [ngValue]="e.valor">{{ e.etiqueta }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="field grow">
+      <span class="field-label">Cliente</span>
+      <input class="input" type="text" [(ngModel)]="busqueda" placeholder="Nombre o teléfono" />
+    </label>
+
+    <div class="report-actions">
+      <button type="button" class="btn btn-primary" (click)="onBuscar()" [disabled]="cargando()">Aplicar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()" [disabled]="cargando()">Limpiar</button>
+      <button type="button" class="btn btn-outline" (click)="exportar()" [disabled]="cargando()">Exportar CSV</button>
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="error-banner" style="margin-top: 0.8rem">{{ error }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="report-center">
+      <app-spinner [size]="32" />
+    </div>
+  }
+
+  @if (!cargando() && items().length > 0) {
+    <div class="report-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nº pedido</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Pagado</th>
+            <th>Saldo</th>
+            <th>Estado</th>
+            <th>Pago</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td class="mono">{{ item.numero_pedido }}</td>
+              <td>{{ item.cliente }}</td>
+              <td>{{ item.fecha_pedido }}</td>
+              <td>{{ moneda(item.total) }}</td>
+              <td>{{ moneda(item.total_pagado) }}</td>
+              <td>{{ moneda(item.saldo_pendiente) }}</td>
+              <td>
+                <app-badge [tone]="tonoEstado(item.estado)">
+                  {{ etiquetaEstado(item.estado) }}
+                </app-badge>
+              </td>
+              <td>
+                <app-badge [tone]="tonoEstadoPago(item.estado_pago)">
+                  {{ etiquetaEstadoPago(item.estado_pago) }}
+                </app-badge>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="report-pagination">
+      <app-paginator
+        [page]="pagina()"
+        [lastPage]="ultimaPagina()"
+        [total]="total()"
+        [perPage]="porPagina()"
+        (pageChange)="onPagina($event)"
+      />
+      <span class="report-total">{{ total() }} pedidos</span>
+    </div>
+  } @else if (!cargando()) {
+    <app-empty-state
+      icon="📦"
+      title="Sin pedidos"
+      message="No existen pedidos para los filtros seleccionados."
+    />
+  }
+</section>

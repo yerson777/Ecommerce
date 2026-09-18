@@ -1,0 +1,83 @@
+<div class="page">
+  <div class="container">
+    <ng-container *ngIf="!cargando() && !error() && producto() as producto">
+      <a routerLink="/" class="volver">← Volver al catálogo</a>
+
+      <div class="detalle">
+        <div class="galeria">
+          <img
+            *ngIf="fotoActiva()"
+            class="foto-grande"
+            [src]="fotoActiva()"
+            [alt]="producto.nombre"
+          />
+          <div
+            *ngIf="!fotoActiva()"
+            class="foto-grande foto-grande--empty"
+          >
+            Sin foto
+          </div>
+          <div class="miniaturas" *ngIf="producto.imagenes.length > 1">
+            <img
+              *ngFor="let imagen of producto.imagenes"
+              class="miniatura"
+              [class.miniatura--activa]="fotoActiva() === imagen.url"
+              [src]="imagen.url"
+              [alt]="producto.nombre"
+              (click)="cambiarFoto(imagen.url)"
+            />
+          </div>
+        </div>
+
+        <div class="info">
+          <span class="badge badge-neutral">{{ producto.codigo }}</span>
+          <h1 class="detalle-nombre">{{ producto.nombre }}</h1>
+          <p class="detalle-caracteristicas">
+            <span *ngIf="producto.talla?.nombre">Talle {{ producto.talla?.nombre }}</span>
+            <span *ngIf="producto.color"> · {{ producto.color }}</span>
+            <span *ngIf="producto.categoria?.nombre"> · {{ producto.categoria?.nombre }}</span>
+          </p>
+          <div class="detalle-precio">{{ formatearPrecio(producto.precio) }}</div>
+          <p class="descripcion" *ngIf="producto.descripcion">
+            {{ producto.descripcion }}
+          </p>
+
+          <div class="acciones">
+            <button
+              *ngIf="!enCarrito()"
+              class="btn btn-primary btn-lg"
+              (click)="agregarAlCarrito()"
+            >
+              Agregar al carrito
+            </button>
+            <a
+              *ngIf="enCarrito()"
+              class="btn btn-outline btn-lg"
+              routerLink="/carrito"
+            >
+              Ir al carrito ✓
+            </a>
+          </div>
+
+          <p class="muted aviso">
+            Pieza única. Se reserva a tu nombre al completar el pedido y queda guardada por
+            24 horas mientras coordinamos la entrega.
+          </p>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="center" *ngIf="cargando()">
+      <span class="spinner" aria-label="Cargando"></span>
+    </div>
+
+    <div class="vacio" *ngIf="!cargando() && error()">
+      <span class="vacio-icono" aria-hidden="true">⚠️</span>
+      <h3>{{ error() }}</h3>
+      <div class="chips center-gap">
+        <button class="btn btn-outline" (click)="cargar()">Reintentar</button>
+        <a class="btn btn-ghost" routerLink="/">Ver catálogo</a>
+      </div>
+    </div>
+  </div>
+</div>

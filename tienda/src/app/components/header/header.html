@@ -1,0 +1,40 @@
+<header class="header">
+  <div class="container header-inner">
+    <a routerLink="/" class="marca" (click)="cerrarMenu()">Everly<span>Boutique</span></a>
+
+    <button
+      type="button"
+      class="menu-toggle"
+      [class.menu-toggle--activo]="menuAbierto()"
+      [attr.aria-expanded]="menuAbierto()"
+      aria-label="Abrir menú"
+      (click)="alternarMenu()"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="nav" [class.nav--abierto]="menuAbierto()">
+      <a
+        routerLink="/"
+        routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="cerrarMenu()"
+      >
+        Catálogo
+      </a>
+      <a routerLink="/nosotros" routerLinkActive="activo" (click)="cerrarMenu()">
+        ¿Quiénes somos?
+      </a>
+      <a routerLink="/seguimiento" routerLinkActive="activo" (click)="cerrarMenu()">
+        Seguí tu pedido
+      </a>
+      <a routerLink="/carrito" routerLinkActive="activo" class="carrito-link" (click)="cerrarMenu()">
+        <span aria-hidden="true">🛍</span>
+        <span>Carrito</span>
+        <span class="contador" *ngIf="conteo() > 0">{{ conteo() }}</span>
+      </a>
+    </nav>
+  </div>
+</header>

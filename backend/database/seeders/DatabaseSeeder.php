@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ConfiguracionComercialSeeder::class,
             UsuarioAdminSeeder::class,
             DatosPruebaSeeder::class,
+            PlantillaMensajeSeeder::class,
         ]);
     }
 }

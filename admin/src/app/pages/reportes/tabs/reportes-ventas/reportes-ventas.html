@@ -1,0 +1,151 @@
+@if (error) {
+  <div class="error-banner">{{ error }}</div>
+}
+
+@if (cargando()) {
+  <div class="report-center">
+    <app-spinner [size]="36" />
+  </div>
+}
+
+@if (!cargando()) {
+  <div class="stack">
+    <section class="card">
+      <div class="row-between">
+        <div>
+          <h2 class="card-title">Ventas por período</h2>
+          <p class="report-note">Agrupado por {{ etiquetaAgrupacion() }}</p>
+        </div>
+        <app-badge tone="info">{{ etiquetaAgrupacion() }}</app-badge>
+      </div>
+
+      @if ((ventasPeriodo()?.datos?.length ?? 0) > 0) {
+        <app-chart-bars [datos]="chartVentas()" formatoValor="monto" [altura]="190" />
+      } @else {
+        <app-empty-state icon="📉" title="Sin ventas" message="No hay ventas registradas en el período seleccionado." />
+      }
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Productos más vendidos</h2>
+
+      @if (masVendidos().length > 0) {
+        <div class="report-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Talla</th>
+                <th>Precio</th>
+                <th>Última venta</th>
+                <th>Cantidad</th>
+                <th>Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of masVendidos(); track item.producto_id) {
+                <tr>
+                  <td>
+                    <div class="product-cell">
+                      <span class="mono">{{ item.codigo }}</span>
+                      <span>{{ item.nombre }}</span>
+                    </div>
+                  </td>
+                  <td>{{ item.categoria }}</td>
+                  <td>{{ item.talla }}</td>
+                  <td>{{ moneda(item.precio) }}</td>
+                  <td>{{ item.ultima_venta ?? '—' }}</td>
+                  <td><strong>{{ item.cantidad_ventas }}</strong></td>
+                  <td>{{ moneda(item.monto_total) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state
+          icon="🧵"
+          title="Sin productos vendidos"
+          message="No hay ventas de productos en este período."
+        />
+      }
+    </section>
+
+    <section class="report-grid-2">
+      <section class="card">
+        <h2 class="card-title">Ventas por categoría</h2>
+        @if (porCategoria().length > 0) {
+          <app-chart-donut [datos]="chartCategorias()" [size]="170" />
+        } @else {
+          <app-empty-state icon="🗂" title="Sin datos" message="Sin ventas por categoría en el período." />
+        }
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Ventas por talla</h2>
+        @if (porTalla().length > 0) {
+          <app-chart-donut [datos]="chartTallas()" [size]="170" />
+        } @else {
+          <app-empty-state icon="📐" title="Sin datos" message="Sin ventas por talla en el período." />
+        }
+      </section>
+    </section>
+
+    <section class="report-grid-2">
+      <div class="report-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th>Cantidad</th>
+              <th>Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (porCategoria().length > 0) {
+              @for (c of porCategoria(); track c.categoria) {
+                <tr>
+                  <td>{{ c.categoria }}</td>
+                  <td>{{ c.cantidad_productos }}</td>
+                  <td>{{ moneda(c.monto_total) }}</td>
+                </tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="3" class="table-empty">Sin ventas por categoría</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="report-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Talla</th>
+              <th>Cantidad</th>
+              <th>Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (porTalla().length > 0) {
+              @for (t of porTalla(); track t.talla) {
+                <tr>
+                  <td>{{ t.talla }}</td>
+                  <td>{{ t.cantidad_productos }}</td>
+                  <td>{{ moneda(t.monto_total) }}</td>
+                </tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="3" class="table-empty">Sin ventas por talla</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,342 @@
+:host {
+  display: block;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ---------------- Sidebar (rail) ---------------- */
+.sidebar {
+  background: #221b24;
+  color: #ece8ee;
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem 0.5rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: var(--sidebar-rail);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.18s ease;
+  z-index: 50;
+}
+
+.sidebar:hover {
+  width: var(--sidebar-width);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem 1.2rem;
+}
+
+.brand-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  flex: none;
+}
+
+.brand-text {
+  display: none;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.sidebar:hover .brand {
+  justify-content: flex-start;
+}
+
+.sidebar:hover .brand-text {
+  display: flex;
+}
+
+.brand-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.brand-sub {
+  color: #c98fb2;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  color: #cfc8d4;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar:hover .nav-link {
+  justify-content: flex-start;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.nav-link--active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-icon {
+  width: 1.1rem;
+  text-align: center;
+  opacity: 0.9;
+  flex: none;
+}
+
+.nav-label {
+  display: none;
+  white-space: nowrap;
+}
+
+.sidebar:hover .nav-label {
+  display: inline;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar:hover .user-card {
+  justify-content: flex-start;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex: none;
+}
+
+.user-meta {
+  display: none;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar:hover .user-meta {
+  display: flex;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
+  color: #a99fb3;
+}
+
+.logout {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: #cfc8d4;
+  font-size: 16px;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+}
+
+.sidebar:hover .logout {
+  display: block;
+}
+
+.logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* ---------------- Main ---------------- */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.75rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.topbar-user {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.content {
+  flex: 1;
+}
+
+/* ---------------- Menú hamburguesa (móvil/tablet) ---------------- */
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.menu-toggle--activo span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menu-toggle--activo span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle--activo span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(34, 27, 36, 0.45);
+  z-index: 54;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .topbar {
+    z-index: 55;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: min(80vw, var(--sidebar-width));
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--shadow);
+    z-index: 60;
+  }
+
+  .sidebar--abierto {
+    transform: translateX(0);
+  }
+
+  .sidebar .brand,
+  .sidebar .nav-link,
+  .sidebar .user-card {
+    justify-content: flex-start;
+  }
+
+  .sidebar .brand-text,
+  .sidebar .user-meta {
+    display: flex;
+  }
+
+  .sidebar .nav-label {
+    display: inline;
+  }
+
+  .sidebar .logout {
+    display: block;
+  }
+}

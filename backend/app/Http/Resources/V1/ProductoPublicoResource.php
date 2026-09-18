@@ -23,7 +23,7 @@ class ProductoPublicoResource extends JsonResource
             'estado' => $this->estado,
             'categoria' => $this->whenLoaded('categoria', fn () => new CategoriaResource($this->categoria)),
             'talla' => $this->whenLoaded('talla', fn () => new TallaResource($this->talla)),
-            'imagenes' => ProductoImagenResource::collection($this->whenLoaded('imagenes')),
+            'imagenes' => ProductoImagenPublicaResource::collection($this->whenLoaded('imagenes')),
         ];
     }
 }

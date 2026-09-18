@@ -1,0 +1,14 @@
+<div class="stat">
+  <div class="stat-header">
+    @if (icon()) {
+      <span class="stat-icon" [class]="'stat-icon--' + tone()">{{ icon() }}</span>
+    }
+    <span class="stat-label">{{ label() }}</span>
+  </div>
+
+  <div class="stat-value">{{ value() }}</div>
+
+  @if (hint()) {
+    <div class="stat-hint">{{ hint() }}</div>
+  }
+</div>

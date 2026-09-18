@@ -1,18 +1,22 @@
-<h1>Everly Admin</h1>
-<form (ngSubmit)="onSubmit()" class="login-form">
-  <label>
-    Correo
-    <input type="email" [(ngModel)]="email" name="email" required autocomplete="email" />
-  </label>
+<div class="card">
+  <h1 class="brand">Everly <span>Admin</span></h1>
+  <p class="tagline">Panel de administración</p>
 
-  <label>
-    Contraseña
-    <input type="password" [(ngModel)]="password" name="password" required autocomplete="current-password" />
-  </label>
+  <form (ngSubmit)="onSubmit()" class="login-form">
+    <label>
+      Correo
+      <input type="email" [(ngModel)]="email" name="email" required autocomplete="email" placeholder="admin@everly.local" />
+    </label>
 
-  <p *ngIf="errorMessage">{{ errorMessage }}</p>
+    <label>
+      Contraseña
+      <input type="password" [(ngModel)]="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+    </label>
 
-  <button type="submit" [disabled]="loading">
-    {{ loading ? 'Iniciando…' : 'Iniciar sesión' }}
-  </button>
-</form>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <button type="submit" class="submit" [disabled]="loading">
+      {{ loading ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+    </button>
+  </form>
+</div>

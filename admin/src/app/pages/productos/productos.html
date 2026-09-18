@@ -1,0 +1,240 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Productos</h1>
+      <p class="page-subtitle">Catálogo de prendas únicas físicas</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="nuevoProducto()">+ Nuevo producto</button>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Código o nombre…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Categoría</label>
+        <select class="select" [(ngModel)]="filtros().categoria" (change)="onBuscar()">
+          <option [ngValue]="null">Todas</option>
+          @for (categoria of categorias(); track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Talla</label>
+        <select class="select" [(ngModel)]="filtros().talla" (change)="onBuscar()">
+          <option [ngValue]="null">Todas</option>
+          @for (talla of tallas(); track talla.id) {
+            <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option value="">Todos</option>
+          <option value="disponible">Disponible</option>
+          <option value="reservada">Reservada</option>
+          <option value="vendida">Vendida</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Publicado</label>
+        <select class="select" [(ngModel)]="filtros().publicado" (change)="onBuscar()">
+          <option value="">Todos</option>
+          <option value="1">Publicados</option>
+          <option value="0">No publicados</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Precio mín.</label>
+        <input class="input" type="number" min="0" step="0.01" [(ngModel)]="filtros().precio_min" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Precio máx.</label>
+        <input class="input" type="number" min="0" step="0.01" [(ngModel)]="filtros().precio_max" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Por página</label>
+        <select class="select" [ngModel]="perPage()" (ngModelChange)="onPerPage($event)">
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="30">30</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state icon="🧵" title="Sin productos" message="No hay productos que coincidan con los filtros.">
+          <button type="button" class="btn btn-primary btn-sm" (click)="nuevoProducto()">Crear producto</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Talla</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th>Publicado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (producto of page.data; track producto.id) {
+                <tr>
+                  <td>
+                    @if (producto.imagenes?.length) {
+                      <img class="thumb" [src]="producto.imagenes![0].url" alt="" (click)="abrirImagenes(producto)" />
+                    } @else {
+                      <div class="thumb thumb--empty" (click)="abrirImagenes(producto)">—</div>
+                    }
+                  </td>
+                  <td class="mono">{{ producto.codigo }}</td>
+                  <td>
+                    <strong>{{ producto.nombre }}</strong>
+                    @if (producto.color) {
+                      <div class="muted small">{{ producto.color }}</div>
+                    }
+                  </td>
+                  <td>{{ producto.categoria?.nombre ?? '—' }}</td>
+                  <td>{{ producto.talla?.nombre ?? '—' }}</td>
+                  <td>{{ moneda(producto.precio) }}</td>
+                  <td>
+                    <app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge>
+                  </td>
+                  <td>
+                    <label class="switch">
+                      <input
+                        type="checkbox"
+                        [checked]="producto.publicado"
+                        [disabled]="producto.estado === 'vendida'"
+                        (change)="cambiarPublicado(producto)"
+                      />
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost btn-sm" title="Ver" (click)="abrirLectura(producto)">Ver</button>
+                      @if (producto.estado !== 'vendida') {
+                        <button type="button" class="btn btn-ghost btn-sm" title="Editar" (click)="abrirEdicion(producto)">Editar</button>
+                      }
+                      <button type="button" class="btn btn-ghost btn-sm" title="Imágenes" (click)="abrirImagenes(producto)">🖼</button>
+                      <button type="button" class="btn btn-ghost btn-sm" title="Historial" (click)="abrirHistorial(producto)">🕓</button>
+                      @if (producto.estado === 'disponible') {
+                        <button type="button" class="btn btn-outline btn-sm" (click)="abrirEstado(producto, 'reservar')">Reservar</button>
+                        <button type="button" class="btn btn-primary btn-sm" (click)="abrirEstado(producto, 'vender')">Vender</button>
+                      }
+                      @if (producto.estado === 'reservada') {
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="solicitarLiberar(producto)">Liberar</button>
+                        <button type="button" class="btn btn-primary btn-sm" (click)="abrirEstado(producto, 'vender')">Vender</button>
+                      }
+                      @if (producto.estado === 'disponible') {
+                        <button type="button" class="btn btn-ghost btn-sm danger" title="Eliminar" (click)="solicitarEliminar(producto)">Eliminar</button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage()"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+<!-- Formulario crear / editar / ver -->
+@if (modalFormulario().abierto) {
+  <app-producto-form-modal
+    [producto]="modalFormulario().producto"
+    [categorias]="categorias()"
+    [tallas]="tallas()"
+    [soloLectura]="modalFormulario().readonly"
+    (guardado)="cargar(); cerrarFormulario()"
+    (cerrado)="cerrarFormulario()"
+  />
+}
+
+<!-- Imágenes -->
+@if (modalImagenes(); as producto) {
+  <app-imagenes-modal [producto]="producto" (cerrado)="cerrarImagenes()" (cambiada)="cargar()" />
+}
+
+<!-- Estado: reservar / vender -->
+@if (modalEstado().abierto) {
+  <app-estado-modal
+    [producto]="modalEstado().producto!"
+    [tipo]="modalEstado().tipo"
+    (realizado)="cargar(); cerrarEstado()"
+    (cerrado)="cerrarEstado()"
+  />
+}
+
+<!-- Historial -->
+@if (modalHistorial(); as producto) {
+  <app-historial-modal [producto]="producto" (cerrado)="cerrarHistorial()" />
+}
+
+<!-- Eliminar -->
+@if (eliminarObjetivo; as producto) {
+  <app-confirm-dialog
+    title="Eliminar producto"
+    [message]="'¿Eliminar ' + producto.nombre + ' (' + producto.codigo + ')? Esta acción no se puede deshacer.'"
+    confirmLabel="Eliminar"
+    (confirm)="confirmarEliminar()"
+    (cancel)="eliminarObjetivo = null"
+  />
+}
+
+<!-- Liberar reserva -->
+@if (liberarObjetivo; as producto) {
+  <app-confirm-dialog
+    title="Liberar reserva"
+    [message]="'¿Liberar la reserva de ' + producto.nombre + ' (' + producto.codigo + ')? La prenda volverá a estar disponible.'"
+    confirmLabel="Liberar"
+    (confirm)="confirmarLiberar()"
+    (cancel)="liberarObjetivo = null"
+  />
+}

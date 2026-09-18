@@ -13,12 +13,20 @@ class Cliente extends Model
 
     protected $table = 'clientes';
 
+    protected $casts = [
+        'fecha_primer_pedido' => 'date',
+        'fecha_ultimo_pedido' => 'date',
+    ];
+
     protected $fillable = [
         'nombre',
         'telefono',
         'email',
         'direccion',
+        'ciudad',
         'notas',
+        'fecha_primer_pedido',
+        'fecha_ultimo_pedido',
     ];
 
     public function pedidos(): HasMany
