@@ -4,6 +4,7 @@
       <h1 class="page-title">Clientes</h1>
       <p class="page-subtitle">Tus clientes, su historial de compras y el último pedido</p>
     </div>
+    <app-notification-center />
   </div>
 
   <section class="card">
@@ -124,15 +125,40 @@
 </div>
 
 @if (detalleAbierto()) {
-  <app-modal [title]="tituloDetalle()" (closed)="cerrarDetalle()">
+  <app-modal title="Detalle del cliente" (closed)="cerrarDetalle()">
     @if (detalle(); as detalle) {
       <div class="stack">
-        <div class="detalle-encabezado">
-          <div class="detail-grid">
+        <div class="ficha-cabecera">
+          <div>
+            <div class="ficha-metadata">Cliente · desde {{ formatearFecha(detalle.fecha_primer_pedido) }}</div>
+            <h3 class="ficha-nombre">{{ detalle.nombre }}</h3>
+            <div class="ficha-meta-line">
+              {{ detalle.telefono ?? '—' }}
+              @if (detalle.email) {
+                · {{ detalle.email }}
+              }
+            </div>
+          </div>
+          <div class="ficha-badges">
+            @if (detalle.ciudad) {
+              <app-badge tone="neutral">{{ detalle.ciudad }}</app-badge>
+            }
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <span class="muted-label">Dirección</span>
+            <div>{{ detalle.direccion ?? '—' }}</div>
+          </div>
+          <div>
+            <span class="muted-label">Último pedido</span>
+            <div>{{ formatearFecha(detalle.fecha_ultimo_pedido) }}</div>
+          </div>
+          @if (whatsapp(detalle)) {
             <div>
-              <span class="muted-label">Teléfono</span>
-              <div>{{ detalle.telefono ?? '—' }}</div>
-              @if (whatsapp(detalle)) {
+              <span class="muted-label">Contacto</span>
+              <div>
                 <a
                   class="whatsapp-link"
                   [href]="whatsapp(detalle)"
@@ -141,31 +167,12 @@
                 >
                   ✆ Escribir por WhatsApp
                 </a>
-              }
+              </div>
             </div>
-            <div>
-              <span class="muted-label">Email</span>
-              <div>{{ detalle.email ?? '—' }}</div>
-            </div>
-            <div>
-              <span class="muted-label">Ciudad</span>
-              <div>{{ detalle.ciudad ?? '—' }}</div>
-            </div>
-            <div>
-              <span class="muted-label">Dirección</span>
-              <div>{{ detalle.direccion ?? '—' }}</div>
-            </div>
-            <div>
-              <span class="muted-label">Primer pedido</span>
-              <div>{{ detalle.fecha_primer_pedido ?? '—' }}</div>
-            </div>
-            <div>
-              <span class="muted-label">Último pedido</span>
-              <div>{{ detalle.fecha_ultimo_pedido ?? '—' }}</div>
-            </div>
-          </div>
+          }
+        </div>
 
-          <div class="stats-row">
+        <div class="stats-row">
             <div class="stat-mini">
               <span class="stat-numero">{{ detalle.pedidos_count ?? 0 }}</span>
               <span class="muted-label">Pedidos</span>
@@ -182,9 +189,8 @@
               <div>{{ detalle.notas }}</div>
             </div>
           }
-        </div>
 
-        <div class="historial">
+          <div class="historial">
           <h3 class="subtitle">Historial de pedidos</h3>
 
           @if ((detalle.pedidos ?? []).length === 0) {
@@ -207,7 +213,7 @@
                     @for (item of pedido.items ?? []; track item.id) {
                       <tr>
                         <td class="mono">{{ pedido.numero_pedido }}</td>
-                        <td>{{ pedido.fecha_pedido }}</td>
+                        <td>{{ formatearFecha(pedido.fecha_pedido) }}</td>
                         <td>
                           <div class="item-nombre">{{ item.producto_nombre ?? 'Prenda' }}</div>
                           <div class="muted">{{ item.producto_codigo ?? '' }}</div>

@@ -26,6 +26,7 @@ export interface ProductoPublico {
   descripcion: string | null;
   precio: string;
   estado: EstadoProducto;
+  es_nuevo: boolean;
   categoria: CategoriaRef | null;
   talla: TallaRef | null;
   imagenes: ImagenPublica[];

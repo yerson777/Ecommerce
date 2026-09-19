@@ -1,5 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, inject, OnInit, signal } from '@angular/core';
 import { interval } from 'rxjs';
 import { Router } from '@angular/router';
 import { Notificacion, NotificacionesService } from '../../../core/services/notificaciones.service';
@@ -32,6 +32,7 @@ export class NotificationCenterComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly abierto = signal(false);
   readonly cargando = signal(false);
@@ -85,13 +86,15 @@ export class NotificationCenterComponent implements OnInit {
     }
   }
 
-  cerrar(): void {
-    this.abierto.set(false);
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.abierto() && !this.host.nativeElement.contains(event.target as Node)) {
+      this.abierto.set(false);
+    }
   }
 
-  irAPedidos(): void {
+  cerrar(): void {
     this.abierto.set(false);
-    this.router.navigate(['/pedidos']);
   }
 
   marcarTodasLeidas(): void {
@@ -105,6 +108,11 @@ export class NotificationCenterComponent implements OnInit {
       },
       error: () => undefined,
     });
+  }
+
+  irAPedidos(): void {
+    this.abierto.set(false);
+    this.router.navigate(['/pedidos']);
   }
 
   iconoTipo(tipo: string): string {

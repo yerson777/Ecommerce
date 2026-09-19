@@ -53,6 +53,7 @@ class PedidoService
      *     notas?: string|null,
      *     metodo_entrega_id: int,
      *     metodo_pago_id: int,
+     *     comprobante_path?: string|null,
      * }  $datos
      *
      * @throws InventarioException si alguna prenda ya no está disponible.
@@ -111,6 +112,7 @@ class PedidoService
                 'total' => round($subtotal + $costoEnvio, 2),
                 'fecha_pedido' => now()->toDateString(),
                 'notas' => $datos['notas'] ?? null,
+                'comprobante_path' => $datos['comprobante_path'] ?? null,
             ]);
 
             foreach ($unidades as $producto) {

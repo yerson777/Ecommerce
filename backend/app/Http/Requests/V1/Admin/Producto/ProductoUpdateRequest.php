@@ -9,7 +9,7 @@ class ProductoUpdateRequest extends ApiFormRequest
 {
     public function rules(): array
     {
-        $productoId = $this->route('producto')?->id;
+        $productoId = $this->route('id');
 
         return [
             'codigo' => ['sometimes', 'string', 'max:30', Rule::unique('productos', 'codigo')->ignore($productoId)],

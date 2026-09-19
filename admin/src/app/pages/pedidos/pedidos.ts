@@ -10,6 +10,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
@@ -29,6 +30,7 @@ function esEstadoTransicionable(estado: string): estado is EstadoPedido {
     ConfirmDialogComponent,
     EmptyStateComponent,
     ModalComponent,
+    NotificationCenterComponent,
     PaginatorComponent,
     SpinnerComponent,
   ],
@@ -56,8 +58,8 @@ export class PedidosComponent implements OnInit {
   readonly detalle = signal<Pedido | null>(null);
   readonly detalleAbierto = signal(false);
   readonly detalleCargando = signal(false);
-  transicion: TransicionObjetivo | null = null;
-  transicionando = false;
+  readonly transicion = signal<TransicionObjetivo | null>(null);
+  readonly transicionando = signal(false);
 
   readonly perPage = 15;
 
@@ -143,21 +145,16 @@ export class PedidosComponent implements OnInit {
     this.detalle.set(null);
   }
 
-  tituloDetalle(): string {
-    const d = this.detalle();
-    return d ? `Pedido ${d.numero_pedido}` : 'Cargando detalle...';
-  }
-
   pedirTransicion(estado: string): void {
     const detalle = this.detalle();
-    if (!detalle || this.transicion) {
+    if (!detalle || this.transicion()) {
       return;
     }
-    this.transicion = { pedido: detalle, estado: estado as EstadoPedido };
+    this.transicion.set({ pedido: detalle, estado: estado as EstadoPedido });
   }
 
   textoTituloTransicion(): string {
-    const transicion = this.transicion;
+    const transicion = this.transicion();
     if (!transicion) {
       return '';
     }
@@ -171,7 +168,7 @@ export class PedidosComponent implements OnInit {
   }
 
   textoMensajeTransicion(): string {
-    const transicion = this.transicion;
+    const transicion = this.transicion();
     if (!transicion) {
       return '';
     }
@@ -186,33 +183,33 @@ export class PedidosComponent implements OnInit {
   }
 
   etiquetaConfirmar(): string {
-    return this.transicion?.estado === 'cancelado' ? 'Cancelar pedido' : 'Confirmar';
+    return this.transicion()?.estado === 'cancelado' ? 'Cancelar pedido' : 'Confirmar';
   }
 
   confirmarTransicion(): void {
-    const transicion = this.transicion;
-    if (!transicion || this.transicionando) {
+    const transicion = this.transicion();
+    if (!transicion || this.transicionando()) {
       return;
     }
 
-    this.transicionando = true;
+    this.transicionando.set(true);
     this.pedidosService.cambiarEstado(transicion.pedido.id, transicion.estado).subscribe({
       next: () => {
-        this.transicionando = false;
-        this.transicion = null;
+        this.transicionando.set(false);
+        this.transicion.set(null);
         this.toast.success('Estado del pedido actualizado.');
         this.cargar();
         this.verDetalle(transicion.pedido);
       },
       error: (err) => {
-        this.transicionando = false;
+        this.transicionando.set(false);
         this.toast.error(err.message ?? 'No se pudo actualizar el estado.');
       },
     });
   }
 
   cancelarTransicion(): void {
-    this.transicion = null;
+    this.transicion.set(null);
   }
 
   etiquetaEstado(estado: string): string {
@@ -232,5 +229,13 @@ export class PedidosComponent implements OnInit {
   moneda(valor: string | number | null | undefined): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
     return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '—';
+    }
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
   }
 }

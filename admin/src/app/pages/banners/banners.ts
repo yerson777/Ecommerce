@@ -8,6 +8,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 interface Formulario {
@@ -29,6 +30,7 @@ function formularioVacio(): Formulario {
     ConfirmDialogComponent,
     EmptyStateComponent,
     ModalComponent,
+    NotificationCenterComponent,
     SpinnerComponent,
   ],
   selector: 'app-banners',
@@ -45,8 +47,8 @@ export class BannersComponent implements OnInit {
 
   readonly modalAbierto = signal(false);
   readonly editando = signal<Banner | null>(null);
-  guardando = false;
-  errorFormulario = '';
+  readonly guardando = signal(false);
+  readonly errorFormulario = signal('');
 
   form = formularioVacio();
 
@@ -102,12 +104,12 @@ export class BannersComponent implements OnInit {
   }
 
   guardar(): void {
-    if (this.guardando) {
+    if (this.guardando()) {
       return;
     }
 
     if (!this.editando() && !this.form.archivo) {
-      this.errorFormulario = 'Debe adjuntar una imagen para crear el banner.';
+      this.errorFormulario.set('Debe adjuntar una imagen para crear el banner.');
       return;
     }
 
@@ -118,8 +120,8 @@ export class BannersComponent implements OnInit {
       activo: this.form.activo,
     };
 
-    this.errorFormulario = '';
-    this.guardando = true;
+    this.errorFormulario.set('');
+    this.guardando.set(true);
 
     const editando = this.editando();
     const peticion = editando
@@ -128,14 +130,14 @@ export class BannersComponent implements OnInit {
 
     peticion.subscribe({
       next: () => {
-        this.guardando = false;
+        this.guardando.set(false);
         this.toast.success(editando ? 'Banner actualizado.' : 'Banner creado.');
         this.cerrarModal();
         this.cargar();
       },
       error: (err: ApiError) => {
-        this.guardando = false;
-        this.errorFormulario = err.message ?? 'No se pudo guardar el banner.';
+        this.guardando.set(false);
+        this.errorFormulario.set(err.message ?? 'No se pudo guardar el banner.');
       },
     });
   }
@@ -205,6 +207,6 @@ export class BannersComponent implements OnInit {
       activo: banner?.activo ?? true,
       archivo: null,
     };
-    this.errorFormulario = '';
+    this.errorFormulario.set('');
   }
 }

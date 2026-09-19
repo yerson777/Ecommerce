@@ -20,6 +20,7 @@ class PedidoStoreRequest extends ApiFormRequest
             'notas' => ['nullable', 'string', 'max:1000'],
             'metodo_entrega_id' => ['required', 'integer', Rule::exists('metodos_entrega', 'id')->where('activo', true)],
             'metodo_pago_id' => ['required', 'integer', Rule::exists('metodos_pago', 'id')->where('activo', true)],
+            'comprobante' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
         ];
     }
 
@@ -38,6 +39,9 @@ class PedidoStoreRequest extends ApiFormRequest
             'direccion.required' => 'Indica tu dirección o referencia de entrega.',
             'metodo_entrega_id.exists' => 'El método de entrega no está disponible.',
             'metodo_pago_id.exists' => 'El método de pago no está disponible.',
+            'comprobante.image' => 'El comprobante debe ser una imagen.',
+            'comprobante.mimes' => 'El comprobante debe ser JPG, PNG o WebP.',
+            'comprobante.max' => 'El comprobante no puede superar los 4 MB.',
         ];
     }
 }

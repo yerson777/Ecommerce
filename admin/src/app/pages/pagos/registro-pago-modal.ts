@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { MetodoPagoRef, Pago, PagoPayload } from '../../core/models/pago';
@@ -27,9 +27,9 @@ export class RegistroPagoModalComponent {
   private readonly toast = inject(ToastService);
 
   busqueda = '';
-  pedidosEncontrados: Pedido[] = [];
-  buscando = false;
-  busquedaHecha = false;
+  readonly pedidosEncontrados = signal<Pedido[]>([]);
+  readonly buscando = signal(false);
+  readonly busquedaHecha = signal(false);
   seleccionado: Pedido | null = null;
 
   monto: number | null = null;
@@ -42,35 +42,35 @@ export class RegistroPagoModalComponent {
   comprobanteNombre = '';
   permitirExcedente = false;
 
-  guardando = false;
-  errorBanner: string | null = null;
-  errores: Record<string, string[]> | null = null;
+  readonly guardando = signal(false);
+  readonly errorBanner = signal<string | null>(null);
+  readonly errores = signal<Record<string, string[]> | null>(null);
 
   buscarPedidos(): void {
-    this.buscando = true;
-    this.busquedaHecha = true;
-    this.errorBanner = null;
-    this.errores = null;
+    this.buscando.set(true);
+    this.busquedaHecha.set(true);
+    this.errorBanner.set(null);
+    this.errores.set(null);
 
     this.pedidosService
       .listar({ busqueda: this.busqueda.trim() || undefined, per_page: 100 })
       .subscribe({
         next: (res) => {
-          this.buscando = false;
+          this.buscando.set(false);
           if (res.success && res.data) {
-            this.pedidosEncontrados = res.data.data;
+            this.pedidosEncontrados.set(res.data.data);
           }
         },
         error: (err: ApiError) => {
-          this.buscando = false;
-          this.errorBanner = err.message ?? 'No se pudieron buscar pedidos.';
+          this.buscando.set(false);
+          this.errorBanner.set(err.message ?? 'No se pudieron buscar pedidos.');
         },
       });
   }
 
   seleccionar(pedido: Pedido): void {
     this.seleccionado = pedido;
-    this.pedidosEncontrados = [];
+    this.pedidosEncontrados.set([]);
     this.busqueda = pedido.numero_pedido;
     this.monto = this.saldoDe(pedido);
 
@@ -85,8 +85,8 @@ export class RegistroPagoModalComponent {
     this.comprobante = null;
     this.comprobanteNombre = '';
     this.permitirExcedente = false;
-    this.errorBanner = null;
-    this.errores = null;
+    this.errorBanner.set(null);
+    this.errores.set(null);
   }
 
   saldoPendiente(): number {
@@ -133,28 +133,28 @@ export class RegistroPagoModalComponent {
     const pedido = this.seleccionado;
 
     if (!pedido) {
-      this.errorBanner = 'Busca y selecciona el pedido a cobrar.';
-      this.errores = null;
+      this.errorBanner.set('Busca y selecciona el pedido a cobrar.');
+      this.errores.set(null);
       return;
     }
 
     const monto = this.monto;
 
     if (monto == null || monto <= 0) {
-      this.errorBanner = 'Indica un monto mayor a cero.';
-      this.errores = null;
+      this.errorBanner.set('Indica un monto mayor a cero.');
+      this.errores.set(null);
       return;
     }
 
     if (this.metodoId == null) {
-      this.errorBanner = 'Selecciona el método de pago.';
-      this.errores = null;
+      this.errorBanner.set('Selecciona el método de pago.');
+      this.errores.set(null);
       return;
     }
 
     if (monto > this.saldoPendiente() && !this.permitirExcedente) {
-      this.errorBanner = `El monto supera el saldo pendiente (Bs ${this.saldoPendiente().toFixed(2)}). Marca la opción de excedente para confirmar.`;
-      this.errores = null;
+      this.errorBanner.set(`El monto supera el saldo pendiente (Bs ${this.saldoPendiente().toFixed(2)}). Marca la opción de excedente para confirmar.`);
+      this.errores.set(null);
       return;
     }
 
@@ -174,28 +174,28 @@ export class RegistroPagoModalComponent {
       comprobante: this.comprobante,
     };
 
-    this.guardando = true;
-    this.errorBanner = null;
-    this.errores = null;
+    this.guardando.set(true);
+    this.errorBanner.set(null);
+    this.errores.set(null);
 
     this.pagosService.registrar(payload).subscribe({
       next: (res) => {
-        this.guardando = false;
+        this.guardando.set(false);
         if (res.success && res.data) {
           this.toast.success('Pago registrado.');
           this.registrado.emit(res.data);
         }
       },
       error: (err: ApiError) => {
-        this.guardando = false;
-        this.errorBanner = err.message ?? 'No se pudo registrar el pago.';
-        this.errores = err.errors ?? null;
+        this.guardando.set(false);
+        this.errorBanner.set(err.message ?? 'No se pudo registrar el pago.');
+        this.errores.set(err.errors ?? null);
       },
     });
   }
 
   errorDe(campo: string): string | undefined {
-    return this.errores?.[campo]?.[0];
+    return this.errores()?.[campo]?.[0];
   }
 
   moneda(valor: string | number | null | undefined): string {

@@ -16,6 +16,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { EstadoModalComponent } from './estado-modal';
@@ -47,6 +48,7 @@ interface ModalEstado {
     EstadoModalComponent,
     HistorialModalComponent,
     ImagenesModalComponent,
+    NotificationCenterComponent,
   ],
   selector: 'app-productos',
   standalone: true,

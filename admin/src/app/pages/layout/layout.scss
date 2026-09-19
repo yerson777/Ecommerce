@@ -206,49 +206,11 @@
   min-height: 100vh;
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 1.75rem;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--border);
+/* ---------------- Notificaciones (en el header de cada página) ---------------- */
+.notif {
+  display: none;
 }
 
-.topbar-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.topbar-user {
-  font-size: 13px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-}
-
-.content {
-  flex: 1;
-}
-
-/* ---------------- Menú hamburguesa (móvil/tablet) ---------------- */
 .menu-toggle {
   display: none;
   flex-direction: column;
@@ -286,6 +248,11 @@
   transform: translateY(-6px) rotate(-45deg);
 }
 
+.content {
+  flex: 1;
+}
+
+/* ---------------- Menú hamburguesa (móvil/tablet) ---------------- */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -298,12 +265,14 @@
     grid-template-columns: 1fr;
   }
 
-  .menu-toggle {
-    display: inline-flex;
+  .notif {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem 0.35rem;
   }
 
-  .topbar {
-    z-index: 55;
+  .menu-toggle {
+    display: inline-flex;
   }
 
   .sidebar {

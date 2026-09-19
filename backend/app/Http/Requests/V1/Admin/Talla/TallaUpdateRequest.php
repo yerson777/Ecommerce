@@ -9,7 +9,7 @@ class TallaUpdateRequest extends ApiFormRequest
 {
     public function rules(): array
     {
-        $tallaId = $this->route('talla')?->id;
+        $tallaId = $this->route('id');
 
         return [
             'nombre' => ['sometimes', 'string', 'max:20', Rule::unique('tallas', 'nombre')->ignore($tallaId)],

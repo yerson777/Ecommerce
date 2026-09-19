@@ -117,6 +117,37 @@ class ProductoInventarioTest extends TestCase
             ->assertJsonPath('data.precio', '75.00');
     }
 
+    public function test_editar_producto_manteniendo_codigo(): void
+    {
+        $producto = $this->crearProducto();
+
+        $this->withHeaders($this->headers())->putJson("/api/v1/admin/productos/{$producto->id}", [
+            'codigo' => $producto->codigo,
+            'nombre' => 'Nombre actualizado',
+            'categoria_id' => $this->categoria->id,
+            'talla_id' => $this->talla->id,
+            'costo' => 45,
+            'precio' => 80,
+            'publicado' => true,
+        ])
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.codigo', $producto->codigo)
+            ->assertJsonPath('data.nombre', 'Nombre actualizado');
+    }
+
+    public function test_cambiar_codigo_a_uno_existente_no_se_permite(): void
+    {
+        $otro = $this->crearProducto(['codigo' => 'EV-OCUPADO']);
+        $producto = $this->crearProducto();
+
+        $this->withHeaders($this->headers())->putJson("/api/v1/admin/productos/{$producto->id}", [
+            'codigo' => $otro->codigo,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('codigo');
+    }
+
     public function test_publicar_producto(): void
     {
         $producto = $this->crearProducto(['publicado' => false]);

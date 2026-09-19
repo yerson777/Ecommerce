@@ -48,6 +48,16 @@ class ClienteController extends Controller
         return Api::collection(ClienteResource::collection($clientes), 'Listado de clientes.');
     }
 
+    public function opciones()
+    {
+        $opciones = Cliente::query()
+            ->select('id', 'nombre', 'telefono')
+            ->orderBy('nombre')
+            ->get();
+
+        return Api::success($opciones, 'Opciones de clientes.');
+    }
+
     public function store(ClienteStoreRequest $request)
     {
         $cliente = Cliente::create($request->validated());

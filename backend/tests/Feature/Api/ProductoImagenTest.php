@@ -307,7 +307,7 @@ class ProductoImagenTest extends TestCase
         $rutaOriginal = $imagen->ruta;
 
         $this->withHeaders($this->headers())
-            ->put("/api/v1/admin/productos/{$producto->id}/imagenes/{$imagen->id}", [
+            ->post("/api/v1/admin/productos/{$producto->id}/imagenes/{$imagen->id}", [
                 'imagen' => $this->imagenValida('nueva.png'),
             ])
             ->assertOk();

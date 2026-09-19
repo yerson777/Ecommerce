@@ -4,6 +4,7 @@
       <h1 class="page-title">Pedidos</h1>
       <p class="page-subtitle">Gestioná los pedidos de la tienda y su ciclo de vida</p>
     </div>
+    <app-notification-center />
   </div>
 
   <section class="card">
@@ -118,39 +119,37 @@
 </div>
 
 @if (detalleAbierto()) {
-  <app-modal [title]="tituloDetalle()" (closed)="cerrarDetalle()">
+  <app-modal title="Detalle del pedido" (closed)="cerrarDetalle()">
     @if (detalle(); as detalle) {
       <div class="stack">
-        <div class="detail-grid">
+        <div class="ficha-cabecera">
           <div>
-            <span class="muted-label">Cliente</span>
-            <div>{{ detalle.cliente?.nombre ?? '—' }}</div>
-            @if (detalle.cliente?.telefono) {
-              <div class="muted">{{ detalle.cliente!.telefono }}</div>
-            }
-            @if (detalle.cliente?.email) {
-              <div class="muted">{{ detalle.cliente!.email }}</div>
-            }
+            <div class="ficha-metadata">Pedido · {{ formatearFecha(detalle.fecha_pedido) }}</div>
+            <h3 class="ficha-nombre">{{ detalle.numero_pedido }}</h3>
+            <div class="ficha-meta-line">
+              {{ detalle.cliente?.nombre ?? 'Cliente' }}
+              @if (detalle.cliente?.telefono) {
+                · {{ detalle.cliente!.telefono }}
+              }
+              @if (detalle.cliente?.email) {
+                · {{ detalle.cliente!.email }}
+              }
+            </div>
           </div>
+          <div class="ficha-badges">
+            <app-badge [tone]="tonoEstado(detalle.estado)">
+              {{ etiquetaEstado(detalle.estado) }}
+            </app-badge>
+          </div>
+        </div>
+
+        <div class="detail-grid">
           <div>
             <span class="muted-label">Entrega</span>
             <div>{{ detalle.cliente?.ciudad ?? '—' }}</div>
             @if (detalle.cliente?.direccion) {
               <div class="muted">{{ detalle.cliente!.direccion }}</div>
             }
-          </div>
-          <div>
-            <span class="muted-label">Estado</span>
-            <app-badge [tone]="tonoEstado(detalle.estado)" class="mt-min">
-              {{ etiquetaEstado(detalle.estado) }}
-            </app-badge>
-            @if (detalle.numero_venta) {
-              <div class="muted mt-min">Venta: {{ detalle.numero_venta }}</div>
-            }
-          </div>
-          <div>
-            <span class="muted-label">Fecha</span>
-            <div>{{ detalle.fecha_pedido }}</div>
           </div>
           <div>
             <span class="muted-label">Método de pago</span>
@@ -160,6 +159,20 @@
             <span class="muted-label">Entrega elegida</span>
             <div>{{ detalle.metodo_entrega ?? '—' }}</div>
           </div>
+          @if (detalle.numero_venta) {
+            <div>
+              <span class="muted-label">Venta</span>
+              <div class="mono">{{ detalle.numero_venta }}</div>
+            </div>
+          }
+          @if (detalle.comprobante_url) {
+            <div>
+              <span class="muted-label">Comprobante</span>
+              <div>
+                <a [href]="detalle.comprobante_url" target="_blank" rel="noopener">Ver archivo</a>
+              </div>
+            </div>
+          }
         </div>
 
         <div class="items-block">
@@ -257,7 +270,7 @@
   </app-modal>
 }
 
-@if (transicion; as objetivo) {
+@if (transicion(); as objetivo) {
   <app-confirm-dialog
     [title]="textoTituloTransicion()"
     [message]="textoMensajeTransicion()"

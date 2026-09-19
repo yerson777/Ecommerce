@@ -18,7 +18,7 @@ class PlantillaMensajeUpdateRequest extends ApiFormRequest
                 'string',
                 'max:64',
                 'regex:/^[a-z0-9_]+$/',
-                Rule::unique('plantillas_mensajes', 'clave')->ignore($this->route('plantilla')),
+                Rule::unique('plantillas_mensajes', 'clave')->ignore($this->route('id')),
             ],
             'nombre' => ['required', 'string', 'max:255'],
             'mensaje' => ['required', 'string', 'max:5000'],

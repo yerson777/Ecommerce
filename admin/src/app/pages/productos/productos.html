@@ -4,7 +4,10 @@
       <h1 class="page-title">Productos</h1>
       <p class="page-subtitle">Catálogo de prendas únicas físicas</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="nuevoProducto()">+ Nuevo producto</button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="nuevoProducto()">+ Nuevo producto</button>
+      <app-notification-center />
+    </div>
   </div>
 
   <section class="card">

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Admin\PlantillaMensajeStoreRequest;
-use App\Http\Requests\Api\V1\Admin\PlantillaMensajeUpdateRequest;
+use App\Http\Requests\V1\Admin\PlantillaMensaje\PlantillaMensajeStoreRequest;
+use App\Http\Requests\V1\Admin\PlantillaMensaje\PlantillaMensajeUpdateRequest;
 use App\Http\Resources\V1\PlantillaMensajeResource;
 use App\Models\PlantillaMensaje;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

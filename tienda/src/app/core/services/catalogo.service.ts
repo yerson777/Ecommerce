@@ -41,6 +41,10 @@ export class CatalogoService extends ApiService {
     return this.get<ApiResponse<ProductoPublico>>(`/v1/store/products/${id}`);
   }
 
+  relacionados(id: number, limit = 8): Observable<ApiResponse<ProductoPublico[]>> {
+    return this.get<ApiResponse<ProductoPublico[]>>(`/v1/store/products/${id}/related?limit=${limit}`);
+  }
+
   categorias(): Observable<ApiResponse<CategoriaRef[]>> {
     return this.get<ApiResponse<CategoriaRef[]>>('/v1/store/categories');
   }
@@ -61,8 +65,31 @@ export class CatalogoService extends ApiService {
     return this.get<ApiResponse<MetodoPago[]>>('/v1/store/metodos-pago');
   }
 
-  crearPedido(payload: CheckoutPayload): Observable<ApiResponse<PedidoPublico>> {
-    return this.post<ApiResponse<PedidoPublico>>('/v1/store/pedidos', payload);
+  crearPedido(payload: CheckoutPayload, comprobante?: File | null): Observable<ApiResponse<PedidoPublico>> {
+    const url = '/v1/store/pedidos';
+
+    if (!comprobante) {
+      return this.post<ApiResponse<PedidoPublico>>(url, payload);
+    }
+
+    const form = new FormData();
+    for (const id of payload.productos) {
+      form.append('productos[]', String(id));
+    }
+    form.append('nombre', payload.nombre);
+    form.append('telefono', payload.telefono);
+    if (payload.email) {
+      form.append('email', payload.email);
+    }
+    form.append('ciudad', payload.ciudad);
+    form.append('direccion', payload.direccion);
+    if (payload.notas) {
+      form.append('notas', payload.notas);
+    }
+    form.append('metodo_pago_id', String(payload.metodo_pago_id ?? ''));
+    form.append('metodo_entrega_id', String(payload.metodo_entrega_id ?? ''));
+    form.append('comprobante', comprobante, comprobante.name);
+    return this.post<ApiResponse<PedidoPublico>>(url, form);
   }
 
   seguirPedido(numeroPedido: string): Observable<ApiResponse<PedidoPublico>> {

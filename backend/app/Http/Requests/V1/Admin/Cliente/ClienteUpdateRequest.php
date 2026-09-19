@@ -9,7 +9,7 @@ class ClienteUpdateRequest extends ApiFormRequest
 {
     public function rules(): array
     {
-        $clienteId = $this->route('cliente')?->id;
+        $clienteId = $this->route('id');
 
         return [
             'nombre' => ['sometimes', 'string', 'max:255'],

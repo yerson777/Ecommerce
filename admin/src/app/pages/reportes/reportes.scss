@@ -2,18 +2,6 @@
   display: block;
 }
 
-.report-controls {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem 1.5rem;
-  flex-wrap: wrap;
-}
-
-.report-heading {
-  min-width: 240px;
-}
-
 .tabs {
   display: flex;
   gap: 0.35rem;
@@ -54,14 +42,6 @@
 }
 
 @media (max-width: 600px) {
-  .report-controls {
-    align-items: stretch;
-  }
-
-  .report-heading {
-    min-width: 100%;
-  }
-
   .tabs {
     flex-wrap: wrap;
   }

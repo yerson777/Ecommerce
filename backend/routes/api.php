@@ -26,6 +26,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::prefix('store')->name('store.')->group(function () {
         Route::get('/products', [App\Http\Controllers\Api\V1\Store\ProductoController::class, 'index'])->name('productos.index');
         Route::get('/products/{id}', [App\Http\Controllers\Api\V1\Store\ProductoController::class, 'show'])->name('productos.show');
+        Route::get('/products/{id}/related', [App\Http\Controllers\Api\V1\Store\ProductoController::class, 'relacionados'])->name('productos.relacionados');
         Route::get('/categories', [App\Http\Controllers\Api\V1\Store\CategoriaController::class, 'index'])->name('categorias.index');
         Route::get('/sizes', [App\Http\Controllers\Api\V1\Store\TallaController::class, 'index'])->name('tallas.index');
         Route::get('/banners', [App\Http\Controllers\Api\V1\Store\BannerController::class, 'index'])->name('banners.index');
@@ -68,7 +69,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::post('/productos/{id}/imagenes', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'store'])->name('productos.imagenes.store');
             Route::put('/productos/{id}/imagenes/orden', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'reorder'])->name('productos.imagenes.orden');
             Route::put('/productos/{id}/imagenes/{imagen}/principal', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'setPrincipal'])->name('productos.imagenes.principal');
-            Route::put('/productos/{id}/imagenes/{imagen}', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'replace'])->name('productos.imagenes.replace');
+            Route::post('/productos/{id}/imagenes/{imagen}', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'replace'])->name('productos.imagenes.replace');
             Route::delete('/productos/{id}/imagenes/{imagen}', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'destroy'])->name('productos.imagenes.destroy');
 
             Route::get('/categorias', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'index'])->name('categorias.index');
@@ -85,6 +86,7 @@ Route::group(['prefix' => 'v1'], function () {
 
             Route::get('/clientes', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'index'])->name('clientes.index');
             Route::post('/clientes', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'store'])->name('clientes.store');
+            Route::get('/clientes/opciones', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'opciones'])->name('clientes.opciones');
             Route::get('/clientes/{id}', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'show'])->name('clientes.show');
             Route::put('/clientes/{id}', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'update'])->name('clientes.update');
             Route::delete('/clientes/{id}', [App\Http\Controllers\Api\V1\Admin\ClienteController::class, 'destroy'])->name('clientes.destroy');
@@ -109,7 +111,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'index'])->name('banners.index');
             Route::post('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'store'])->name('banners.store');
             Route::put('/banners/orden', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'reorder'])->name('banners.orden');
-            Route::put('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'update'])->name('banners.update');
+            Route::post('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'update'])->name('banners.update');
             Route::delete('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'destroy'])->name('banners.destroy');
 
             Route::get('/gastos', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'index'])->name('gastos.index');

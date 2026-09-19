@@ -128,6 +128,22 @@ class ClientesApiTest extends TestCase
         $this->getJson('/api/v1/admin/clientes')->assertStatus(401);
     }
 
+    public function test_admin_opciones_clientes_es_liviano_y_sirve_id_y_nombre(): void
+    {
+        $producto = $this->crearProducto();
+        $this->hacerPedido($producto);
+
+        $this->withToken($this->token)->getJson('/api/v1/admin/clientes/opciones')
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'data');
+
+        $opcion = data_get($this->withToken($this->token)->getJson('/api/v1/admin/clientes/opciones')->json(), 'data.0');
+        $this->assertArrayHasKey('id', $opcion);
+        $this->assertArrayHasKey('nombre', $opcion);
+        $this->assertArrayNotHasKey('pedidos_count', $opcion);
+    }
+
     public function test_admin_incluye_pedidos_total_y_ultimo_pedido(): void
     {
         $primero = $this->crearProducto();
@@ -241,6 +257,38 @@ class ClientesApiTest extends TestCase
         $this->assertSame($producto->id, $data['items'][0]['producto_id']);
         $this->assertSame(2, Cliente::count());
         $this->assertSame(2, Pedido::count());
+    }
+
+    /* ===================== Admin: actualización ===================== */
+
+    public function test_admin_edita_cliente_manteniendo_su_email(): void
+    {
+        $cliente = Cliente::create([
+            'nombre' => 'Lucía Fernández',
+            'telefono' => '70123456',
+            'email' => 'lucia@example.com',
+        ]);
+
+        $this->withToken($this->token)->putJson("/api/v1/admin/clientes/{$cliente->id}", [
+            'email' => 'lucia@example.com',
+            'nombre' => 'Lucía Fernández Gómez',
+            'ciudad' => 'Santa Cruz',
+        ])
+            ->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.nombre', 'Lucía Fernández Gómez');
+    }
+
+    public function test_admin_cambiar_email_a_uno_existente_no_se_permite(): void
+    {
+        Cliente::create(['nombre' => 'Marta Ruiz', 'telefono' => '60111111', 'email' => 'marta@example.com']);
+        $cliente = Cliente::create(['nombre' => 'Lucía Fernández', 'telefono' => '70123456', 'email' => 'lucia@example.com']);
+
+        $this->withToken($this->token)->putJson("/api/v1/admin/clientes/{$cliente->id}", [
+            'email' => 'marta@example.com',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
     }
 
     /* ===================== Dashboard ===================== */

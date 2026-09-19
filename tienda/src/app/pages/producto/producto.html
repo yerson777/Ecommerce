@@ -5,17 +5,28 @@
 
       <div class="detalle">
         <div class="galeria">
-          <img
-            *ngIf="fotoActiva()"
-            class="foto-grande"
-            [src]="fotoActiva()"
-            [alt]="producto.nombre"
-          />
           <div
-            *ngIf="!fotoActiva()"
-            class="foto-grande foto-grande--empty"
+            #zoomOrigen
+            class="zoom-origen"
+            [class.zoom-origen--activo]="zoomActivo()"
+            (mousemove)="onZoomMover($event)"
+            (mouseenter)="zoomActivo.set(true)"
+            (mouseleave)="zoomActivo.set(false)"
           >
-            Sin foto
+            <img
+              *ngIf="fotoActiva()"
+              class="foto-grande"
+              [class.foto-grande--zoom]="zoomActivo()"
+              [ngStyle]="zoomActivo() ? zoomImagenEstilo() : null"
+              [src]="fotoActiva()"
+              [alt]="producto.nombre"
+            />
+            <div
+              *ngIf="!fotoActiva()"
+              class="foto-grande foto-grande--empty"
+            >
+              Sin foto
+            </div>
           </div>
           <div class="miniaturas" *ngIf="producto.imagenes.length > 1">
             <img
@@ -65,6 +76,64 @@
           </p>
         </div>
       </div>
+
+      <section class="relacionados" *ngIf="relacionados().length > 0">
+        <h2 class="relacionados-titulo">También te puede interesar</h2>
+
+        <div class="relacionados-pos">
+          <div
+            #relacionadosPista
+            class="relacionados-pista"
+            (scroll)="actualizarFlechasRelacionados()"
+          >
+            <article
+              class="rel-card"
+              *ngFor="let item of relacionados()"
+              (click)="verRelacionado(item.id)"
+            >
+              <div class="rel-foto-wrap">
+                <img
+                  *ngIf="imagenRelacionado(item)"
+                  class="rel-foto"
+                  [src]="imagenRelacionado(item)"
+                  [alt]="item.nombre"
+                  loading="lazy"
+                />
+                <div *ngIf="!imagenRelacionado(item)" class="rel-foto rel-foto--empty">
+                  Sin foto
+                </div>
+                <span class="badge badge-success rel-nuevo" *ngIf="item.es_nuevo">Nuevo ingreso</span>
+              </div>
+              <div class="rel-body">
+                <div class="rel-meta">{{ item.codigo }}</div>
+                <div class="rel-nombre">{{ item.nombre }}</div>
+                <div class="rel-precio">{{ formatearPrecio(item.precio) }}</div>
+              </div>
+            </article>
+          </div>
+
+          <button
+            type="button"
+            class="rel-flecha rel-flecha--izq"
+            [disabled]="flechasRelacionados().alInicio"
+            [style.top.px]="alturaMediaRelacionados()"
+            aria-label="Productos anteriores"
+            (click)="desplazarRelacionados(-1)"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            class="rel-flecha rel-flecha--der"
+            [disabled]="flechasRelacionados().alFinal"
+            [style.top.px]="alturaMediaRelacionados()"
+            aria-label="Más productos"
+            (click)="desplazarRelacionados(1)"
+          >
+            →
+          </button>
+        </div>
+      </section>
     </ng-container>
 
     <div class="center" *ngIf="cargando()">

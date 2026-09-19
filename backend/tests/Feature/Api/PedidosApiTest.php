@@ -13,6 +13,8 @@ use App\Models\Talla;
 use App\Models\User;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -225,6 +227,61 @@ class PedidosApiTest extends TestCase
         $this->getJson('/api/v1/store/metodos-pago')
             ->assertStatus(200)
             ->assertJsonPath('data.0.nombre', 'Efectivo');
+    }
+
+    public function test_checkout_rechaza_pago_qr_sin_comprobante(): void
+    {
+        $producto = $this->crearProducto();
+        $qr = MetodoPago::create(['nombre' => 'QR', 'activo' => true, 'orden' => 1]);
+
+        $this->postJson('/api/v1/store/pedidos', $this->datosCheckout([$producto], ['metodo_pago_id' => $qr->id]))
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath(
+                'errors.comprobante.0',
+                'Debes adjuntar el comprobante de pago para confirmar tu pedido.'
+            );
+
+        $this->assertSame(0, Pedido::count());
+        $this->assertSame('disponible', $producto->fresh()->estado);
+    }
+
+    public function test_checkout_pago_qr_guarda_el_comprobante(): void
+    {
+        $producto = $this->crearProducto();
+        $qr = MetodoPago::create(['nombre' => 'QR', 'activo' => true, 'orden' => 1]);
+
+        $payload = $this->datosCheckout([$producto], ['metodo_pago_id' => $qr->id]);
+        $payload['comprobante'] = UploadedFile::fake()->create('comprobante.jpg', 200, 'image/jpeg');
+
+        $response = $this->post('/api/v1/store/pedidos', $payload);
+
+        $response
+            ->assertStatus(201)
+            ->assertJsonPath('data.metodo_pago', 'QR')
+            ->assertJsonPath('data.total', '115.00');
+
+        $pedido = Pedido::firstOrFail();
+        $this->assertNotNull($pedido->comprobante_path);
+        $this->assertFileExists(Storage::disk('public')->path($pedido->comprobante_path));
+        $this->assertStringContainsString('/storage/comprobantes/', $response->json('data.comprobante_url'));
+
+        Storage::disk('public')->delete($pedido->comprobante_path);
+    }
+
+    public function test_checkout_rechaza_comprobante_que_no_es_imagen(): void
+    {
+        $producto = $this->crearProducto();
+        $qr = MetodoPago::create(['nombre' => 'QR', 'activo' => true, 'orden' => 1]);
+
+        $payload = $this->datosCheckout([$producto], ['metodo_pago_id' => $qr->id]);
+        $payload['comprobante'] = UploadedFile::fake()->create('nota.txt', 10, 'text/plain');
+
+        $this->post('/api/v1/store/pedidos', $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+
+        $this->assertSame(0, Pedido::count());
     }
 
     /* ===================== Administración ===================== */

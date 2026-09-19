@@ -23,7 +23,7 @@ export class HistorialModalComponent implements OnInit {
 
   readonly registros = signal<ProductoHistorialEntry[]>([]);
   readonly cargando = signal(true);
-  error: string | null = null;
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     this.cargar();
@@ -31,7 +31,7 @@ export class HistorialModalComponent implements OnInit {
 
   cargar(): void {
     this.cargando.set(true);
-    this.error = null;
+    this.error.set(null);
 
     this.productosService.historial(this.producto().id).subscribe({
       next: (res) => {
@@ -42,7 +42,7 @@ export class HistorialModalComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        this.error = err.message ?? 'No se pudo cargar el historial.';
+        this.error.set(err.message ?? 'No se pudo cargar el historial.');
       },
     });
   }

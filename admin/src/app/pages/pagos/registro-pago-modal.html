@@ -1,7 +1,7 @@
 <app-modal [title]="'Registrar pago'" [width]="'640px'" (closed)="cerrado.emit()">
   <div class="form">
-    @if (errorBanner) {
-      <div class="error-banner">{{ errorBanner }}</div>
+    @if (errorBanner()) {
+      <div class="error-banner">{{ errorBanner() }}</div>
     }
 
     <div class="field">
@@ -17,8 +17,8 @@
           [disabled]="!!seleccionado"
         />
         @if (!seleccionado) {
-          <button type="button" class="btn btn-ghost" (click)="buscarPedidos()" [disabled]="buscando">
-            {{ buscando ? 'Buscando…' : 'Buscar' }}
+          <button type="button" class="btn btn-ghost" (click)="buscarPedidos()" [disabled]="buscando()">
+            {{ buscando() ? 'Buscando…' : 'Buscar' }}
           </button>
         } @else {
           <button type="button" class="btn btn-ghost" (click)="seleccionado = null">Cambiar</button>
@@ -56,12 +56,12 @@
     }
 
     @if (!seleccionado) {
-      @if (busquedaHecha && !buscando) {
-        @if (pedidosEncontrados.length === 0) {
+      @if (busquedaHecha() && !buscando()) {
+        @if (pedidosEncontrados().length === 0) {
           <app-empty-state icon="📦" title="Sin pedidos" message="No se encontraron pedidos con esa búsqueda." />
         } @else {
           <div class="pedidos-results">
-            @for (pedido of pedidosEncontrados; track pedido.id) {
+            @for (pedido of pedidosEncontrados(); track pedido.id) {
               <button type="button" class="pedido-opcion" (click)="seleccionar(pedido)">
                 <span class="mono">{{ pedido.numero_pedido }}</span>
                 <span>{{ pedido.cliente?.nombre ?? 'Sin cliente' }}</span>
@@ -170,9 +170,9 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
-        {{ guardando ? 'Registrando…' : 'Registrar pago' }}
+      <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Registrando…' : 'Registrar pago' }}
       </button>
     </div>
   </div>

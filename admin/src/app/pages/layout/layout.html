@@ -66,27 +66,20 @@
   </aside>
 
   <div class="main">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button
-          type="button"
-          class="menu-toggle"
-          [class.menu-toggle--activo]="menuAbierto()"
-          [attr.aria-expanded]="menuAbierto()"
-          aria-label="Abrir menú"
-          (click)="alternarMenu()"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-        <h1 class="topbar-title">{{ titulo() }}</h1>
-      </div>
-      <div class="topbar-right">
-        <app-notification-center />
-        <span class="topbar-user">{{ usuario()?.name ?? '…' }}</span>
-      </div>
-    </header>
+    <div class="notif">
+      <button
+        type="button"
+        class="menu-toggle"
+        [class.menu-toggle--activo]="menuAbierto()"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-label="Abrir menú"
+        (click)="alternarMenu()"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
 
     <main class="content">
       <router-outlet />

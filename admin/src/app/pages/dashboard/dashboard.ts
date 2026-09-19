@@ -7,6 +7,7 @@ import { ETIQUETA_ESTADO, TONO_ESTADO } from '../../core/models/producto';
 import { ETIQUETA_ESTADO_VENTA, TONO_ESTADO_VENTA } from '../../core/models/venta';
 import { BadgeComponent } from '../../shared/components/badge/badge';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { ProgressComponent } from '../../shared/components/progress/progress';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card';
@@ -18,6 +19,7 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card';
     ProgressComponent,
     EmptyStateComponent,
     SpinnerComponent,
+    NotificationCenterComponent,
   ],
   selector: 'app-dashboard',
   standalone: true,

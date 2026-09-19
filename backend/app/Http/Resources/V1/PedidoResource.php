@@ -4,6 +4,7 @@ namespace App\Http\Resources\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class PedidoResource extends JsonResource
 {
@@ -19,6 +20,7 @@ class PedidoResource extends JsonResource
             'total' => $this->total,
             'fecha_pedido' => $this->fecha_pedido?->toDateString(),
             'notas' => $this->notas,
+            'comprobante_url' => $this->comprobante_path ? Storage::disk('public')->url($this->comprobante_path) : null,
             'estado_pago' => $this->estadoPago(),
             'total_pagado' => $this->totalPagado(),
             'saldo_pendiente' => $this->saldoPendiente(),

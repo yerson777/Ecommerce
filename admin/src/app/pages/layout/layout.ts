@@ -2,11 +2,10 @@ import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, NotificationCenterComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
   selector: 'app-layout',
   standalone: true,
   templateUrl: './layout.html',
@@ -31,12 +30,12 @@ export class LayoutComponent implements OnInit {
     }
   }
 
-  alternarMenu(): void {
-    this.menuAbierto.set(!this.menuAbierto());
-  }
-
   cerrarMenu(): void {
     this.menuAbierto.set(false);
+  }
+
+  alternarMenu(): void {
+    this.menuAbierto.set(!this.menuAbierto());
   }
 
   @HostListener('window:resize')
@@ -49,37 +48,6 @@ export class LayoutComponent implements OnInit {
   cerrarSesion(): void {
     this.auth.cerrarSesion();
     this.router.navigate(['/login']);
-  }
-
-  titulo(): string {
-    const url = this.router.url;
-
-    if (url.startsWith('/productos')) {
-      return 'Productos';
-    }
-    if (url.startsWith('/inventario')) {
-      return 'Inventario';
-    }
-    if (url.startsWith('/ventas')) {
-      return 'Ventas';
-    }
-    if (url.startsWith('/pedidos')) {
-      return 'Pedidos';
-    }
-    if (url.startsWith('/clientes')) {
-      return 'Clientes';
-    }
-    if (url.startsWith('/pagos')) {
-      return 'Pagos';
-    }
-    if (url.startsWith('/reportes')) {
-      return 'Reportes';
-    }
-    if (url.startsWith('/banners')) {
-      return 'Banners';
-    }
-
-    return 'Dashboard';
   }
 
   inicial(): string {

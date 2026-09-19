@@ -1,6 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { PeriodoReporte, ReporteFiltros } from '../../core/models/reporte';
 import { PeriodFilterComponent } from '../../shared/components/period-filter/period-filter';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { ReportesClientesComponent } from './tabs/reportes-clientes/reportes-clientes';
 import { ReportesInventarioComponent } from './tabs/reportes-inventario/reportes-inventario';
 import { ReportesPagosComponent } from './tabs/reportes-pagos/reportes-pagos';
@@ -13,6 +14,7 @@ export type TabReporte = 'resumen' | 'ventas' | 'pedidos' | 'pagos' | 'inventari
 @Component({
   imports: [
     PeriodFilterComponent,
+    NotificationCenterComponent,
     ReportesResumenComponent,
     ReportesVentasComponent,
     ReportesPedidosComponent,

@@ -91,6 +91,23 @@
               </span>
             </div>
           </div>
+
+          <div class="qr-bloque" *ngIf="pagoEsQR()">
+            <img class="qr-imagen" [src]="qrImagen" alt="Código QR de pago Everly" />
+            <p class="qr-pagar">Pagar a: Gutierrez Choque Yerson</p>
+            <p class="qr-texto">Descarga el QR, págalo desde tu banco y adjunta la foto del comprobante.</p>
+            <button type="button" class="btn btn-outline btn-sm" (click)="descargarQR()">Descargar QR</button>
+            <div class="field qr-adjuntar">
+              <label for="comprobante">Foto del comprobante *</label>
+              <input id="comprobante" class="input" type="file" accept="image/*" (change)="onComprobante($event)" />
+              <img class="comprobante-preview" *ngIf="comprobantePreview()" [src]="comprobantePreview()" alt="Vista previa del comprobante" />
+              <span class="field-error" *ngIf="comprobanteError()">{{ comprobanteError() }}</span>
+              <span class="muted" *ngIf="comprobante() && !comprobanteError()">Adjunto: {{ comprobante()?.name }}</span>
+            </div>
+            <p class="field-error qr-aviso" *ngIf="!comprobante() && !comprobanteError()">
+              Debes adjuntar el comprobante de pago para confirmar tu pedido.
+            </p>
+          </div>
         </div>
       </form>
 
@@ -118,7 +135,7 @@
         <button
           class="btn btn-primary btn-lg btn-block"
           style="margin-top: 1rem"
-          [disabled]="enviando() || items().length === 0"
+          [disabled]="enviando() || items().length === 0 || (pagoEsQR() && !comprobante())"
           (click)="enviar()"
         >
           {{ enviando() ? 'Procesando…' : 'Confirmar pedido' }}

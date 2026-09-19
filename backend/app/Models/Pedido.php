@@ -49,6 +49,7 @@ class Pedido extends Model
         'total',
         'fecha_pedido',
         'notas',
+        'comprobante_path',
     ];
 
     protected function casts(): array

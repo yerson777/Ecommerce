@@ -1,19 +1,22 @@
 <div class="page">
-  <section class="card report-controls">
-    <div class="report-heading">
+  <div class="page-header">
+    <div>
       <h1 class="page-title">Reportes y estadísticas</h1>
       <p class="page-subtitle">Análisis del comportamiento del negocio con datos reales</p>
     </div>
 
-    <app-period-filter
-      [periodo]="periodo()"
-      [fechaDesde]="fechaDesde()"
-      [fechaHasta]="fechaHasta()"
-      (periodoChange)="onPeriodoChange($event)"
-      (fechaDesdeChange)="onFechasChange($event, fechaHasta())"
-      (fechaHastaChange)="onFechasChange(fechaDesde(), $event)"
-    />
-  </section>
+    <div class="header-actions">
+      <app-period-filter
+        [periodo]="periodo()"
+        [fechaDesde]="fechaDesde()"
+        [fechaHasta]="fechaHasta()"
+        (periodoChange)="onPeriodoChange($event)"
+        (fechaDesdeChange)="onFechasChange($event, fechaHasta())"
+        (fechaHastaChange)="onFechasChange(fechaDesde(), $event)"
+      />
+      <app-notification-center />
+    </div>
+  </div>
 
   <nav class="tabs">
     @for (item of tabs; track item.clave) {

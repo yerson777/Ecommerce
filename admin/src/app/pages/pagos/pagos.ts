@@ -21,6 +21,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { RegistroPagoModalComponent } from './registro-pago-modal';
@@ -42,6 +43,7 @@ interface PagoObjetivo {
     ConfirmDialogComponent,
     EmptyStateComponent,
     ModalComponent,
+    NotificationCenterComponent,
     PaginatorComponent,
     SpinnerComponent,
     RegistroPagoModalComponent,
@@ -180,11 +182,6 @@ export class PagosComponent implements OnInit {
   cerrarDetalle(): void {
     this.detalleAbierto.set(false);
     this.detalle.set(null);
-  }
-
-  tituloDetalle(): string {
-    const d = this.detalle();
-    return d ? `Pago ${d.numero_pago}` : 'Cargando pago...';
   }
 
   pedirConfirmar(pago: PagoObjetivo): void {
@@ -327,6 +324,14 @@ export class PagosComponent implements OnInit {
   moneda(valor: string | number | null | undefined): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
     return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '—';
+    }
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
   }
 }
 

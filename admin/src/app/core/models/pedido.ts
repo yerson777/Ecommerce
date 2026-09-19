@@ -25,6 +25,7 @@ export interface Pedido {
   total: string;
   fecha_pedido: string;
   notas: string | null;
+  comprobante_url?: string | null;
   cliente?: Cliente | null;
   metodo_pago?: string | null;
   metodo_entrega?: string | null;

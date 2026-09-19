@@ -32,10 +32,10 @@ class DatosPruebaSeeder extends Seeder
         $tallaM = Talla::where('nombre', 'M')->firstOrFail();
         $tallaL = Talla::where('nombre', 'L')->firstOrFail();
 
-        $metodoEfectivo = MetodoPago::where('nombre', 'Efectivo')->firstOrFail();
         $metodoQR = MetodoPago::where('nombre', 'QR')->firstOrFail();
-        $entregaTienda = MetodoEntrega::where('nombre', 'Retiro en tienda')->firstOrFail();
-        $entregaDomicilio = MetodoEntrega::where('nombre', 'Entrega a domicilio')->firstOrFail();
+        $metodoTransferencia = MetodoPago::where('nombre', 'Transferencia')->firstOrFail();
+        $entregaTienda = MetodoEntrega::where('nombre', 'Retiro presencial (plaza Corazonistas)')->firstOrFail();
+        $entregaDomicilio = MetodoEntrega::where('nombre', 'Envío por Yando desde la plaza Corazonistas')->firstOrFail();
 
         $cliente = Cliente::create([
             'nombre' => 'María González',
@@ -156,7 +156,7 @@ class DatosPruebaSeeder extends Seeder
         $pedidoVenta = Pedido::create([
             'numero_pedido' => 'PED-2026-0002',
             'cliente_id' => $cliente->id,
-            'metodo_pago_id' => $metodoEfectivo->id,
+            'metodo_pago_id' => $metodoTransferencia->id,
             'metodo_entrega_id' => $entregaDomicilio->id,
             'estado' => 'confirmado',
             'subtotal' => 119.90,
@@ -196,7 +196,7 @@ class DatosPruebaSeeder extends Seeder
             'numero_pago' => 'PAG-2026-0001',
             'venta_id' => $ventaVíaPedido->id,
             'pedido_id' => $pedidoVenta->id,
-            'metodo_pago_id' => $metodoEfectivo->id,
+            'metodo_pago_id' => $metodoTransferencia->id,
             'monto' => 134.90,
             'estado' => 'completado',
             'pagado_en' => now()->subDay(),

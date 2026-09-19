@@ -40,6 +40,7 @@ export interface PedidoPublico {
   created_at: string | null;
   metodo_pago: string | null;
   metodo_entrega: string | null;
+  comprobante_url: string | null;
   cliente: PedidoPublicoCliente | null;
   items: PedidoPublicoItem[];
 }

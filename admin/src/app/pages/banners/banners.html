@@ -4,7 +4,10 @@
       <h1 class="page-title">Banners</h1>
       <p class="page-subtitle">Imágenes del carrusel que se muestra en la portada de la tienda</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="abrirCrear()">Agregar banner</button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">Agregar banner</button>
+      <app-notification-center />
+    </div>
   </div>
 
   <section class="card">
@@ -106,8 +109,8 @@
     (closed)="cerrarModal()"
   >
     <div class="stack">
-      @if (errorFormulario) {
-        <div class="error-banner">{{ errorFormulario }}</div>
+      @if (errorFormulario()) {
+        <div class="error-banner">{{ errorFormulario() }}</div>
       }
 
       @if (editando(); as editado) {
@@ -151,8 +154,8 @@
 
       <div class="actions-right">
         <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
-          {{ guardando ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}
+        <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}
         </button>
       </div>
     </div>

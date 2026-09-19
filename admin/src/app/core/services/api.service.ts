@@ -43,7 +43,7 @@ export class ApiService {
   }
 
   protected putFormData<T>(path: string, formData: FormData): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}${path}`, formData);
+    return this.http.post<T>(`${this.baseUrl}${path}`, formData);
   }
 
   private adaptarPaginado(response: JsonData): JsonData {

@@ -4,6 +4,7 @@
       <h1 class="page-title">Ventas</h1>
       <p class="page-subtitle">Consulta y seguimiento de ventas registradas</p>
     </div>
+    <app-notification-center />
   </div>
 
   <section class="card">
@@ -137,27 +138,27 @@
 </div>
 
 @if (detalleAbierto()) {
-  <app-modal [title]="tituloDetalle()" (closed)="cerrarDetalle()">
+  <app-modal title="Detalle de la venta" (closed)="cerrarDetalle()">
     @if (detalle(); as detalle) {
       <div class="stack">
-        <div class="detail-grid">
+        <div class="ficha-cabecera">
           <div>
-            <span class="muted-label">Cliente</span>
-            <div>{{ detalle.cliente?.nombre ?? '—' }}</div>
-            @if (detalle.cliente?.telefono) {
-              <div class="muted">{{ detalle.cliente!.telefono }}</div>
-            }
+            <div class="ficha-metadata">Venta · {{ formatearFecha(detalle.fecha_venta) }}</div>
+            <h3 class="ficha-nombre">{{ detalle.numero_venta }}</h3>
+            <div class="ficha-meta-line">
+              {{ detalle.cliente?.nombre ?? 'Cliente' }}
+              @if (detalle.cliente?.telefono) {
+                · {{ detalle.cliente!.telefono }}
+              }
+              @if (detalle.pedido?.numero_pedido) {
+                · Pedido {{ detalle.pedido!.numero_pedido }}
+              }
+            </div>
           </div>
-          <div>
-            <span class="muted-label">Fecha</span>
-            <div>{{ detalle.fecha_venta }}</div>
-            <app-badge [tone]="tonoEstado(detalle.estado)" class="mt-min">
+          <div class="ficha-badges">
+            <app-badge [tone]="tonoEstado(detalle.estado)">
               {{ etiquetaEstado(detalle.estado) }}
             </app-badge>
-          </div>
-          <div>
-            <span class="muted-label">Pedido</span>
-            <div>{{ detalle.pedido?.numero_pedido ?? 'Sin pedido' }}</div>
           </div>
         </div>
 

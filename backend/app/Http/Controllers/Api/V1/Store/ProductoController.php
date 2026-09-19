@@ -34,4 +34,49 @@ class ProductoController extends Controller
 
         return Api::resource(new ProductoPublicoResource($producto), 'Detalle del producto.');
     }
+
+    public function relacionados(Request $request, int $id)
+    {
+        $producto = Producto::query()
+            ->where('publicado', true)
+            ->where('estado', Producto::ESTADO_DISPONIBLE)
+            ->findOrFail($id);
+
+        $limite = $request->integer('limit', 8);
+        $limite = max(1, min($limite, 20));
+
+        $base = Producto::query()
+            ->where('publicado', true)
+            ->where('estado', Producto::ESTADO_DISPONIBLE)
+            ->where('id', '!=', $id);
+
+        $mismaCategoria = (clone $base)
+            ->where('categoria_id', $producto->categoria_id)
+            ->with(['categoria', 'talla', 'imagenes'])
+            ->orderByDesc('created_at')
+            ->limit($limite)
+            ->get();
+
+        $faltantes = $limite - $mismaCategoria->count();
+        if ($faltantes > 0) {
+            $otrasCategorias = $base
+                ->where(function ($query) use ($producto) {
+                    $query->where('categoria_id', '!=', $producto->categoria_id)
+                        ->orWhereNull('categoria_id');
+                })
+                ->with(['categoria', 'talla', 'imagenes'])
+                ->orderByDesc('created_at')
+                ->limit($faltantes)
+                ->get();
+
+            $relacionados = $mismaCategoria->concat($otrasCategorias);
+        } else {
+            $relacionados = $mismaCategoria;
+        }
+
+        return Api::collection(
+            ProductoPublicoResource::collection($relacionados),
+            'Productos recomendados.'
+        );
+    }
 }

@@ -16,6 +16,7 @@ import { VentasService } from '../../core/services/ventas.service';
 import { BadgeComponent } from '../../shared/components/badge/badge';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
@@ -25,6 +26,7 @@ import { SpinnerComponent } from '../../shared/components/spinner/spinner';
     BadgeComponent,
     EmptyStateComponent,
     ModalComponent,
+    NotificationCenterComponent,
     PaginatorComponent,
     SpinnerComponent,
   ],
@@ -162,11 +164,6 @@ export class VentasComponent implements OnInit {
     this.detalle.set(null);
   }
 
-  tituloDetalle(): string {
-    const d = this.detalle();
-    return d ? `Venta ${d.numero_venta}` : 'Cargando venta...';
-  }
-
   nombreProducto(productoId: number): string {
     return this.productosOpciones().find((p) => p.id === productoId)?.nombre ?? 'Prenda';
   }
@@ -182,5 +179,13 @@ export class VentasComponent implements OnInit {
   moneda(valor: string | number | null | undefined): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
     return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '—';
+    }
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
   }
 }

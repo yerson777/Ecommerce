@@ -72,9 +72,16 @@ textarea {
 
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -312,6 +319,44 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/* ---------- Ficha de detalle (modales Ver) ---------- */
+.ficha-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ficha-metadata {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 0 0 0.2rem;
+}
+
+.ficha-nombre {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.3rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.ficha-meta-line {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.ficha-badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .row-between {

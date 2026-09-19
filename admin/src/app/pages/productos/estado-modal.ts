@@ -1,6 +1,5 @@
-import { Component, inject, input, OnInit, output } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Cliente } from '../../core/models/cliente';
 import { Producto } from '../../core/models/producto';
 import { ClientesService } from '../../core/services/clientes.service';
 import { InventarioService } from '../../core/services/inventario.service';
@@ -26,16 +25,15 @@ export class EstadoModalComponent implements OnInit {
   private readonly clientesService = inject(ClientesService);
   private readonly toast = inject(ToastService);
 
-  guardando = false;
-  errorBanner: string | null = null;
+  readonly guardando = signal(false);
+  readonly errorBanner = signal<string | null>(null);
+  readonly cargandoClientes = signal(false);
+  readonly clientes = signal<{ id: number; nombre: string }[]>([]);
 
-  venceEn = '';
-  clienteId: number | null = null;
-  costoEnvio = 0;
-  notas = '';
-
-  clientes: Cliente[] = [];
-  cargandoClientes = false;
+  readonly venceEn = signal('');
+  readonly clienteId = signal<number | null>(null);
+  readonly costoEnvio = signal<number>(0);
+  readonly notas = signal('');
 
   ngOnInit(): void {
     if (this.tipo() === 'vender') {
@@ -52,18 +50,18 @@ export class EstadoModalComponent implements OnInit {
   }
 
   private cargarClientes(): void {
-    this.cargandoClientes = true;
+    this.cargandoClientes.set(true);
 
-    this.clientesService.listar({ per_page: 200, page: 1 }).subscribe({
+    this.clientesService.opciones().subscribe({
       next: (res) => {
-        this.cargandoClientes = false;
+        this.cargandoClientes.set(false);
         if (res.success && res.data) {
-          this.clientes = res.data.data;
+          this.clientes.set(res.data);
         }
       },
       error: (err) => {
-        this.cargandoClientes = false;
-        this.errorBanner = err.message ?? 'No se pudieron cargar los clientes.';
+        this.cargandoClientes.set(false);
+        this.errorBanner.set(err.message ?? 'No se pudieron cargar los clientes.');
       },
     });
   }
@@ -72,54 +70,59 @@ export class EstadoModalComponent implements OnInit {
     const producto = this.producto();
 
     if (this.esVender()) {
-      if (!this.clienteId) {
-        this.errorBanner = 'Selecciona un cliente.';
+      if (!this.clienteId()) {
+        this.errorBanner.set('Selecciona un cliente.');
         return;
       }
 
-      this.guardando = true;
-      this.errorBanner = null;
+      this.guardando.set(true);
+      this.errorBanner.set(null);
 
       this.inventarioService
         .vender({
           producto_id: producto.id,
-          cliente_id: this.clienteId,
-          costo_envio: Number(this.costoEnvio) || 0,
-          notas: this.notas.trim() || null,
+          cliente_id: this.clienteId() as number,
+          costo_envio: Number(this.costoEnvio()) || 0,
+          notas: this.notas().trim() || null,
         })
         .subscribe({
           next: (res) => {
-            this.guardando = false;
+            this.guardando.set(false);
             if (res.success) {
               this.toast.success(res.message ?? 'Venta registrada.');
               this.realizado.emit();
             }
           },
           error: (err) => {
-            this.guardando = false;
-            this.errorBanner = err.message ?? 'No se pudo registrar la venta.';
+            this.guardando.set(false);
+            this.errorBanner.set(err.message ?? 'No se pudo registrar la venta.');
           },
         });
 
       return;
     }
 
-    this.guardando = true;
-    this.errorBanner = null;
+    this.guardando.set(true);
+    this.errorBanner.set(null);
 
     this.inventarioService
-      .reservar(producto.id, this.venceEn ? new Date(this.venceEn).toISOString().slice(0, 19).replace('T', ' ') : undefined)
+      .reservar(
+        producto.id,
+        this.venceEn()
+          ? new Date(this.venceEn()).toISOString().slice(0, 19).replace('T', ' ')
+          : undefined,
+      )
       .subscribe({
         next: (res) => {
-          this.guardando = false;
+          this.guardando.set(false);
           if (res.success) {
             this.toast.success(res.message ?? 'Prenda reservada.');
             this.realizado.emit();
           }
         },
         error: (err) => {
-          this.guardando = false;
-          this.errorBanner = err.message ?? 'No se pudo reservar la prenda.';
+          this.guardando.set(false);
+          this.errorBanner.set(err.message ?? 'No se pudo reservar la prenda.');
         },
       });
   }

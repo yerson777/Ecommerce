@@ -117,7 +117,7 @@ class BannerTest extends TestCase
         $banner = $this->crearBanner(['titulo' => 'Viejo']);
 
         $this->withHeaders($this->headers())
-            ->putJson("/api/v1/admin/banners/{$banner->id}", [
+            ->postJson("/api/v1/admin/banners/{$banner->id}", [
                 'titulo' => 'Nuevo título',
                 'enlace' => 'https://example.com/categoria/vestidos',
                 'activo' => false,
@@ -137,7 +137,7 @@ class BannerTest extends TestCase
         Storage::disk('public')->put($rutaOriginal, base64_decode(self::PNG_BYTES));
 
         $this->withHeaders($this->headers())
-            ->put("/api/v1/admin/banners/{$banner->id}", [
+            ->post("/api/v1/admin/banners/{$banner->id}", [
                 'imagen' => $this->imagenValida('nuevo.png'),
                 'titulo' => 'Cambio de foto',
             ])
@@ -188,7 +188,7 @@ class BannerTest extends TestCase
     public function test_no_se_puede_actualizar_banner_inexistente(): void
     {
         $this->withHeaders($this->headers())
-            ->putJson('/api/v1/admin/banners/999', ['titulo' => 'X'])
+            ->postJson('/api/v1/admin/banners/999', ['titulo' => 'X'])
             ->assertStatus(404);
     }
 

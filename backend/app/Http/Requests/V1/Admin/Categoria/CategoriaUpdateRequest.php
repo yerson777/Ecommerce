@@ -9,7 +9,7 @@ class CategoriaUpdateRequest extends ApiFormRequest
 {
     public function rules(): array
     {
-        $categoriaId = $this->route('categoria')?->id;
+        $categoriaId = $this->route('id');
 
         return [
             'nombre' => ['sometimes', 'string', 'max:100'],

@@ -1,6 +1,6 @@
 <app-modal [title]="esReservar() ? 'Reservar prenda' : 'Vender prenda'" (closed)="cerrado.emit()">
-  @if (errorBanner) {
-    <div class="error-banner">{{ errorBanner }}</div>
+  @if (errorBanner()) {
+    <div class="error-banner">{{ errorBanner() }}</div>
   }
 
 @if (esReservar()) {
@@ -24,12 +24,12 @@
 
   <div class="field">
     <label>Cliente *</label>
-    @if (cargandoClientes) {
+    @if (cargandoClientes()) {
       <div class="inline-center"><app-spinner [size]="16" /></div>
     } @else {
       <select class="select" [(ngModel)]="clienteId" name="cliente_id">
         <option [ngValue]="null">Selecciona un cliente…</option>
-        @for (cliente of clientes; track cliente.id) {
+        @for (cliente of clientes(); track cliente.id) {
           <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
         }
       </select>
@@ -48,9 +48,9 @@
 }
 
 <div class="modal-actions">
-  <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando">Cancelar</button>
-  <button type="button" class="btn btn-primary" (click)="confirmar()" [disabled]="guardando">
-    {{ guardando ? 'Procesando…' : esReservar() ? 'Reservar prenda' : 'Registrar venta' }}
+  <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando()">Cancelar</button>
+  <button type="button" class="btn btn-primary" (click)="confirmar()" [disabled]="guardando()">
+    {{ guardando() ? 'Procesando…' : esReservar() ? 'Reservar prenda' : 'Registrar venta' }}
   </button>
 </div>
 </app-modal>

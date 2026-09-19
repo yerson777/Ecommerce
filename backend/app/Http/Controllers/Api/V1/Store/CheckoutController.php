@@ -19,13 +19,32 @@ class CheckoutController extends Controller
 
     public function crear(PedidoStoreRequest $request)
     {
-        $pedido = $this->pedidos->crearDesdeTienda($request->validated());
+        $datos = $request->validated();
+
+        if ($this->esMetodoQr((int) $datos['metodo_pago_id']) && ! $request->hasFile('comprobante')) {
+            $mensaje = 'Debes adjuntar el comprobante de pago para confirmar tu pedido.';
+
+            return Api::error($mensaje, 422, ['comprobante' => [$mensaje]]);
+        }
+
+        if ($request->hasFile('comprobante')) {
+            $datos['comprobante_path'] = $request->file('comprobante')->store('comprobantes', 'public');
+        }
+
+        $pedido = $this->pedidos->crearDesdeTienda($datos);
 
         return Api::resource(
             new PedidoPublicoResource($pedido),
             'Pedido creado correctamente. Te contactaremos para confirmar la entrega.',
             201
         );
+    }
+
+    private function esMetodoQr(int $metodoPagoId): bool
+    {
+        $metodo = MetodoPago::query()->find($metodoPagoId);
+
+        return $metodo !== null && mb_strtolower($metodo->nombre) === 'qr';
     }
 
     public function metodosEntrega()

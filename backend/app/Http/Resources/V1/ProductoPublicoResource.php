@@ -21,9 +21,17 @@ class ProductoPublicoResource extends JsonResource
             'descripcion' => $this->descripcion,
             'precio' => $this->precio,
             'estado' => $this->estado,
+            'es_nuevo' => $this->esNuevo(),
             'categoria' => $this->whenLoaded('categoria', fn () => new CategoriaResource($this->categoria)),
             'talla' => $this->whenLoaded('talla', fn () => new TallaResource($this->talla)),
             'imagenes' => ProductoImagenPublicaResource::collection($this->whenLoaded('imagenes')),
         ];
+    }
+
+    private function esNuevo(): bool
+    {
+        $fechaIngreso = $this->fecha_ingreso ?? $this->created_at;
+
+        return $fechaIngreso !== null && $fechaIngreso->isToday();
     }
 }

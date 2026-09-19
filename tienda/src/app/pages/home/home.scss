@@ -179,6 +179,19 @@
   flex-wrap: wrap;
 }
 
+.producto-card {
+  position: relative;
+}
+
+.producto-nuevo {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 1;
+  background: rgb(63 140 92 / 92%);
+  color: #fff;
+}
+
 .spinner {
   width: 42px;
   height: 42px;

@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, Signal, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -9,6 +9,7 @@ import { ApiError } from '../../core/models/api-response';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const TELEFONO_RE = /^[0-9+\-\s()]{7,20}$/;
+const QR_IMAGEN = 'assets/images/qr.jpeg';
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
@@ -16,7 +17,7 @@ const TELEFONO_RE = /^[0-9+\-\s()]{7,20}$/;
   styleUrl: './checkout.scss',
   templateUrl: './checkout.html',
 })
-export class CheckoutComponent implements OnInit {
+export class CheckoutComponent implements OnInit, OnDestroy {
   private readonly cartService: CartService;
   readonly items: Signal<CartItem[]>;
   readonly subtotal: Signal<number>;
@@ -27,6 +28,11 @@ export class CheckoutComponent implements OnInit {
   readonly enviando = signal(false);
   readonly errorGeneral = signal<string | null>(null);
   readonly errores = signal<Record<string, string>>({});
+
+  readonly qrImagen = QR_IMAGEN;
+  readonly comprobante = signal<File | null>(null);
+  readonly comprobantePreview = signal<string | null>(null);
+  readonly comprobanteError = signal<string | null>(null);
 
   readonly form = new FormGroup({
     nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -81,6 +87,45 @@ export class CheckoutComponent implements OnInit {
     return this.subtotal() + this.costoEnvio();
   }
 
+  pagoEsQR(): boolean {
+    const seleccionado = this.metodosPago().find(
+      (metodo) => metodo.id === this.form.value.metodoPagoId,
+    );
+    return seleccionado !== undefined && seleccionado.nombre.toLowerCase() === 'qr';
+  }
+
+  onComprobante(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    this.comprobante.set(archivo);
+
+    const previaPrevia = this.comprobantePreview();
+    if (previaPrevia) {
+      URL.revokeObjectURL(previaPrevia);
+    }
+    this.comprobantePreview.set(archivo ? URL.createObjectURL(archivo) : null);
+
+    if (archivo) {
+      this.comprobanteError.set(null);
+    }
+  }
+
+  ngOnDestroy(): void {
+    const previa = this.comprobantePreview();
+    if (previa) {
+      URL.revokeObjectURL(previa);
+    }
+  }
+
+  descargarQR(): void {
+    const enlace = document.createElement('a');
+    enlace.href = this.qrImagen;
+    enlace.download = 'qr-everly-pago.jpeg';
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+  }
+
   erroresDe(campo: string): string | null {
     return this.errores()[campo] ?? null;
   }
@@ -88,9 +133,11 @@ export class CheckoutComponent implements OnInit {
   enviar(): void {
     this.errorGeneral.set(null);
     this.errores.set({});
+    this.comprobanteError.set(null);
     this.form.markAllAsTouched();
 
     const valores = this.form.value;
+    const faltaComprobante = this.pagoEsQR() && !this.comprobante();
     if (
       !this.form.valid ||
       this.items().length === 0 ||
@@ -100,8 +147,12 @@ export class CheckoutComponent implements OnInit {
       !valores.telefono ||
       !valores.ciudad ||
       !valores.direccion ||
+      faltaComprobante ||
       this.enviando()
     ) {
+      if (faltaComprobante) {
+        this.comprobanteError.set('Debes adjuntar el comprobante de pago para confirmar tu pedido.');
+      }
       return;
     }
 
@@ -118,7 +169,7 @@ export class CheckoutComponent implements OnInit {
     };
 
     this.enviando.set(true);
-    this.catalogo.crearPedido(payload).subscribe({
+    this.catalogo.crearPedido(payload, this.comprobante()).subscribe({
       next: (res) => {
         this.enviando.set(false);
         if (res.data) {
@@ -141,6 +192,8 @@ export class CheckoutComponent implements OnInit {
                 mapeados['metodoPagoId'] = mensajes[0];
               } else if (clave === 'metodo_entrega_id') {
                 mapeados['metodoEntregaId'] = mensajes[0];
+              } else if (clave === 'comprobante') {
+                this.comprobanteError.set(mensajes[0]);
               } else {
                 mapeados[clave] = mensajes[0];
               }

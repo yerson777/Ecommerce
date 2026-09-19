@@ -4,6 +4,7 @@ namespace App\Http\Resources\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Representación de un pedido para la tienda (confirmación).
@@ -21,6 +22,7 @@ class PedidoPublicoResource extends JsonResource
             'total' => $this->total,
             'fecha_pedido' => $this->fecha_pedido?->toDateString(),
             'created_at' => $this->created_at?->toISOString(),
+            'comprobante_url' => $this->comprobante_path ? Storage::disk('public')->url($this->comprobante_path) : null,
             'metodo_pago' => $this->whenLoaded('metodoPago', fn () => $this->metodoPago->nombre),
             'metodo_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega->nombre),
             'cliente' => $this->whenLoaded('cliente', fn () => [

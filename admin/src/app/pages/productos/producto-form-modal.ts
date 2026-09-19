@@ -1,15 +1,18 @@
-import { Component, inject, input, OnInit, output } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import {
   CategoriaRef,
+  ETIQUETA_ESTADO,
   Producto,
   ProductoPayload,
   TallaRef,
+  TONO_ESTADO,
 } from '../../core/models/producto';
 import { ImagenesService } from '../../core/services/imagenes.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ToastService } from '../../core/services/toast.service';
+import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ModalComponent } from '../../shared/components/modal/modal';
 
 interface ImagenPendiente {
@@ -31,7 +34,7 @@ export interface FormaProducto {
 }
 
 @Component({
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, BadgeComponent, ModalComponent],
   selector: 'app-producto-form-modal',
   standalone: true,
   styleUrl: './producto-form-modal.scss',
@@ -65,11 +68,11 @@ export class ProductoFormModalComponent implements OnInit {
 
   esEdicion = false;
   readonly = false;
-  guardando = false;
-  errorBanner: string | null = null;
-  errores: Record<string, string[]> | null = null;
+  readonly guardando = signal(false);
+  readonly errorBanner = signal<string | null>(null);
+  readonly errores = signal<Record<string, string[]> | null>(null);
 
-  readonly imagenesPendientes: ImagenPendiente[] = [];
+  readonly imagenesPendientes = signal<ImagenPendiente[]>([]);
 
   ngOnInit(): void {
     const actual = this.producto();
@@ -94,7 +97,7 @@ export class ProductoFormModalComponent implements OnInit {
   }
 
   errorDe(campo: string): string | undefined {
-    return this.errores?.[campo]?.[0];
+    return this.errores()?.[campo]?.[0];
   }
 
   guardar(): void {
@@ -103,14 +106,14 @@ export class ProductoFormModalComponent implements OnInit {
     const tallaId = f.talla_id;
 
     if (!f.codigo.trim() || !f.nombre.trim() || categoriaId == null || tallaId == null || f.costo == null || f.precio == null) {
-      this.errorBanner = 'Completa los campos obligatorios.';
-      this.errores = null;
+      this.errorBanner.set('Completa los campos obligatorios.');
+      this.errores.set(null);
       return;
     }
 
     if (f.precio < f.costo) {
-      this.errorBanner = `El precio (${f.precio}) es menor que el costo (${f.costo}).`;
-      this.errores = null;
+      this.errorBanner.set(`El precio (${f.precio}) es menor que el costo (${f.costo}).`);
+      this.errores.set(null);
       return;
     }
 
@@ -131,9 +134,9 @@ export class ProductoFormModalComponent implements OnInit {
       data.estado = 'disponible';
     }
 
-    this.guardando = true;
-    this.errorBanner = null;
-    this.errores = null;
+    this.guardando.set(true);
+    this.errorBanner.set(null);
+    this.errores.set(null);
 
     const peticion = this.esEdicion
       ? this.productosService.actualizar(this.producto()!.id, data)
@@ -141,10 +144,10 @@ export class ProductoFormModalComponent implements OnInit {
 
     peticion.subscribe({
       next: (res) => {
-        this.guardando = false;
+        this.guardando.set(false);
         if (res.success && res.data) {
           this.toast.success(this.esEdicion ? 'Producto actualizado.' : 'Producto creado.');
-          if (this.imagenesPendientes.length > 0) {
+          if (this.imagenesPendientes().length > 0) {
             this.subirImagenesPendientes(res.data);
           } else {
             this.limpiarPreviews();
@@ -153,15 +156,15 @@ export class ProductoFormModalComponent implements OnInit {
         }
       },
       error: (err: ApiError) => {
-        this.guardando = false;
-        this.errorBanner = err.message ?? 'No se pudo guardar el producto.';
-        this.errores = err.errors ?? null;
+        this.guardando.set(false);
+        this.errorBanner.set(err.message ?? 'No se pudo guardar el producto.');
+        this.errores.set(err.errors ?? null);
       },
     });
   }
 
   private subirImagenesPendientes(producto: Producto): void {
-    const archivos = this.imagenesPendientes.map((img) => img.archivo);
+    const archivos = this.imagenesPendientes().map((img) => img.archivo);
 
     this.imagenesService.subir(producto.id, archivos).subscribe({
       next: (res) => {
@@ -199,21 +202,46 @@ export class ProductoFormModalComponent implements OnInit {
       this.toast.error('Algunos archivos superan el tamaño máximo de 4 MB.');
     }
 
+    const pendientes = this.imagenesPendientes();
     for (const archivo of validos) {
-      this.imagenesPendientes.push({ archivo, preview: URL.createObjectURL(archivo) });
+      pendientes.push({ archivo, preview: URL.createObjectURL(archivo) });
     }
+    this.imagenesPendientes.set(pendientes);
   }
 
   quitarImagen(indice: number): void {
-    const [quitar] = this.imagenesPendientes.splice(indice, 1);
+    const actual = this.imagenesPendientes();
+    const [quitar] = actual.splice(indice, 1);
     URL.revokeObjectURL(quitar.preview);
+    this.imagenesPendientes.set(actual);
   }
 
   private limpiarPreviews(): void {
-    for (const img of this.imagenesPendientes) {
+    for (const img of this.imagenesPendientes()) {
       URL.revokeObjectURL(img.preview);
     }
-    this.imagenesPendientes.length = 0;
+    this.imagenesPendientes.set([]);
+  }
+
+  etiquetaEstado(estado: string): string {
+    return ETIQUETA_ESTADO[estado as keyof typeof ETIQUETA_ESTADO] ?? estado;
+  }
+
+  tonoEstado(estado: string): string {
+    return TONO_ESTADO[estado as keyof typeof TONO_ESTADO] ?? 'neutral';
+  }
+
+  moneda(valor: string | number): string {
+    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
+    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+  }
+
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '—';
+    }
+    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
   }
 
   cerrar(): void {

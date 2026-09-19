@@ -4,9 +4,12 @@
       <h1 class="page-title">Inventario</h1>
       <p class="page-subtitle">Visión general de las prendas por estado, categoría, talla y precio</p>
     </div>
-    <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
-      {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
-    </button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
+        {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+      <app-notification-center />
+    </div>
   </div>
 
   @if (error) {

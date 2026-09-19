@@ -22,4 +22,10 @@ export class ClientesService extends ApiService {
   detalle(id: number): Observable<ApiResponse<Cliente>> {
     return this.get<ApiResponse<Cliente>>(`/v1/admin/clientes/${id}`);
   }
+
+  opciones(): Observable<ApiResponse<{ id: number; nombre: string; telefono: string | null }[]>> {
+    return this.get<ApiResponse<{ id: number; nombre: string; telefono: string | null }[]>>(
+      '/v1/admin/clientes/opciones',
+    );
+  }
 }

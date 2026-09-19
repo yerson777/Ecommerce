@@ -3,100 +3,100 @@
   (closed)="cerrar()"
 >
 <div class="form">
-  @if (errorBanner) {
-    <div class="error-banner">{{ errorBanner }}</div>
-  }
+  @if (!readonly) {
+    @if (errorBanner()) {
+      <div class="error-banner">{{ errorBanner() }}</div>
+    }
 
-  <div class="form-grid">
-    <div class="field">
-      <label>Código *</label>
-      <input class="input" type="text" [(ngModel)]="forma.codigo" name="codigo" [disabled]="readonly" maxlength="30" />
-      @if (errorDe('codigo')) {
-        <span class="field-error">{{ errorDe('codigo') }}</span>
-      }
-    </div>
-
-    <div class="field">
-      <label>Nombre *</label>
-      <input class="input" type="text" [(ngModel)]="forma.nombre" name="nombre" [disabled]="readonly" maxlength="255" />
-      @if (errorDe('nombre')) {
-        <span class="field-error">{{ errorDe('nombre') }}</span>
-      }
-    </div>
-
-    <div class="field">
-      <label>Categoría *</label>
-      <select class="select" [(ngModel)]="forma.categoria_id" name="categoria_id" [disabled]="readonly">
-        <option [ngValue]="null">Selecciona…</option>
-        @for (categoria of categorias(); track categoria.id) {
-          <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+    <div class="form-grid">
+      <div class="field">
+        <label>Código *</label>
+        <input class="input" type="text" [(ngModel)]="forma.codigo" name="codigo" maxlength="30" />
+        @if (errorDe('codigo')) {
+          <span class="field-error">{{ errorDe('codigo') }}</span>
         }
-      </select>
-      @if (errorDe('categoria_id')) {
-        <span class="field-error">{{ errorDe('categoria_id') }}</span>
-      }
-    </div>
+      </div>
 
-    <div class="field">
-      <label>Talla *</label>
-      <select class="select" [(ngModel)]="forma.talla_id" name="talla_id" [disabled]="readonly">
-        <option [ngValue]="null">Selecciona…</option>
-        @for (talla of tallas(); track talla.id) {
-          <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+      <div class="field">
+        <label>Nombre *</label>
+        <input class="input" type="text" [(ngModel)]="forma.nombre" name="nombre" maxlength="255" />
+        @if (errorDe('nombre')) {
+          <span class="field-error">{{ errorDe('nombre') }}</span>
         }
-      </select>
-      @if (errorDe('talla_id')) {
-        <span class="field-error">{{ errorDe('talla_id') }}</span>
-      }
-    </div>
+      </div>
 
-    <div class="field">
-      <label>Color</label>
-      <input class="input" type="text" [(ngModel)]="forma.color" name="color" [disabled]="readonly" maxlength="100" />
-    </div>
+      <div class="field">
+        <label>Categoría *</label>
+        <select class="select" [(ngModel)]="forma.categoria_id" name="categoria_id">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (categoria of categorias(); track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('categoria_id')) {
+          <span class="field-error">{{ errorDe('categoria_id') }}</span>
+        }
+      </div>
 
-    <div class="field">
-      <label>Fecha de ingreso</label>
-      <input class="input" type="date" [(ngModel)]="forma.fecha_ingreso" name="fecha_ingreso" [disabled]="readonly" />
-    </div>
+      <div class="field">
+        <label>Talla *</label>
+        <select class="select" [(ngModel)]="forma.talla_id" name="talla_id">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (talla of tallas(); track talla.id) {
+            <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('talla_id')) {
+          <span class="field-error">{{ errorDe('talla_id') }}</span>
+        }
+      </div>
 
-    <div class="field">
-      <label>Costo ($) *</label>
-      <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.costo" name="costo" [disabled]="readonly" />
-      @if (errorDe('costo')) {
-        <span class="field-error">{{ errorDe('costo') }}</span>
-      }
-    </div>
+      <div class="field">
+        <label>Color</label>
+        <input class="input" type="text" [(ngModel)]="forma.color" name="color" maxlength="100" />
+      </div>
 
-    <div class="field">
-      <label>Precio ($) *</label>
-      <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.precio" name="precio" [disabled]="readonly" />
-      @if (errorDe('precio')) {
-        <span class="field-error">{{ errorDe('precio') }}</span>
-      }
-    </div>
+      <div class="field">
+        <label>Fecha de ingreso</label>
+        <input class="input" type="date" [(ngModel)]="forma.fecha_ingreso" name="fecha_ingreso" />
+      </div>
 
-    <div class="field field-full">
-      <label>Descripción</label>
-      <textarea class="textarea" [(ngModel)]="forma.descripcion" name="descripcion" [disabled]="readonly"></textarea>
-    </div>
+      <div class="field">
+        <label>Costo ($) *</label>
+        <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.costo" name="costo" />
+        @if (errorDe('costo')) {
+          <span class="field-error">{{ errorDe('costo') }}</span>
+        }
+      </div>
 
-    <label class="check">
-      <input type="checkbox" [(ngModel)]="forma.publicado" name="publicado" [disabled]="readonly" />
-      <span>Publicado en la tienda</span>
-    </label>
+      <div class="field">
+        <label>Precio ($) *</label>
+        <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.precio" name="precio" />
+        @if (errorDe('precio')) {
+          <span class="field-error">{{ errorDe('precio') }}</span>
+        }
+      </div>
 
-    @if (!readonly) {
+      <div class="field field-full">
+        <label>Descripción</label>
+        <textarea class="textarea" [(ngModel)]="forma.descripcion" name="descripcion"></textarea>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="forma.publicado" name="publicado" />
+        <span>Publicado en la tienda</span>
+      </label>
+
       <div class="field field-full">
         <label>Fotos</label>
         <label class="btn btn-outline file-btn">
-          {{ imagenesPendientes.length ? 'Agregar más fotos' : 'Subir fotos' }}
+          {{ imagenesPendientes().length ? 'Agregar más fotos' : 'Subir fotos' }}
           <input type="file" accept="image/*" multiple (change)="onSeleccionarImagenes($event)" />
         </label>
 
-        @if (imagenesPendientes.length) {
+        @if (imagenesPendientes().length) {
           <div class="previews">
-            @for (imagen of imagenesPendientes; track $index) {
+            @for (imagen of imagenesPendientes(); track $index) {
               <div class="preview">
                 <img [src]="imagen.preview" [alt]="imagen.archivo.name" />
                 <button type="button" class="btn btn-icon preview-quitar" title="Quitar" (click)="quitarImagen($index)">✕</button>
@@ -106,22 +106,85 @@
           <p class="hint">Las fotos se subirán al producto al guardar. JPG, PNG, WEBP o GIF · máx. 4 MB c/u.</p>
         }
       </div>
-    }
 
-    @if (esEdicion) {
-      <p class="hint field-full">El estado de la prenda se gestiona con las operaciones de inventario (reservar, liberar, vender).</p>
-    }
-  </div>
+      @if (esEdicion) {
+        <p class="hint field-full">El estado de la prenda se gestiona con las operaciones de inventario (reservar, liberar, vender).</p>
+      }
+    </div>
 
-  <div class="form-actions">
-    @if (readonly) {
-      <button type="button" class="btn btn-ghost" (click)="cerrar()">Cerrar</button>
-    } @else {
-      <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
-        {{ guardando ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear producto' }}
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear producto' }}
       </button>
+    </div>
+  } @else {
+    @let p = producto();
+    @if (p) {
+      <div class="ver">
+        <div class="ver-cabecera">
+          <div>
+            <div class="ver-codigo">Código {{ p.codigo }}</div>
+            <h3 class="ver-nombre">{{ p.nombre }}</h3>
+          </div>
+          <div class="ver-badges">
+            <app-badge [tone]="tonoEstado(p.estado)">{{ etiquetaEstado(p.estado) }}</app-badge>
+            <app-badge [tone]="p.publicado ? 'success' : 'neutral'">
+              {{ p.publicado ? 'Publicado' : 'No publicado' }}
+            </app-badge>
+          </div>
+        </div>
+
+        <dl class="ver-grid">
+          <div class="ver-item">
+            <dt>Categoría</dt>
+            <dd>{{ p.categoria?.nombre ?? '—' }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Talla</dt>
+            <dd>{{ p.talla?.nombre ?? '—' }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Color</dt>
+            <dd>{{ p.color || '—' }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Fecha de ingreso</dt>
+            <dd>{{ formatearFecha(p.fecha_ingreso) }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Costo</dt>
+            <dd>{{ moneda(p.costo) }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Precio</dt>
+            <dd>{{ moneda(p.precio) }}</dd>
+          </div>
+        </dl>
+
+        @if (p.descripcion) {
+          <div class="ver-section">
+            <h4>Descripción</h4>
+            <p class="ver-texto">{{ p.descripcion }}</p>
+          </div>
+        }
+
+        @if (p.imagenes?.length) {
+          <div class="ver-section">
+            <h4>Fotos</h4>
+            <div class="ver-fotos">
+              @for (imagen of p.imagenes; track imagen.id) {
+                <img class="ver-foto" [src]="imagen.url" [alt]="imagen.nombre_original ?? p.nombre" />
+              }
+            </div>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" (click)="cerrar()">Cerrar</button>
+        </div>
+      </div>
     }
-  </div>
+  }
 </div>
 </app-modal>

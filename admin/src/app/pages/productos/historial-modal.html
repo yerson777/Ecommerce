@@ -1,6 +1,6 @@
 <app-modal [title]="'Historial — ' + producto().codigo" (closed)="cerrado.emit()">
-  @if (error) {
-    <div class="error-banner">{{ error }}</div>
+  @if (error()) {
+    <div class="error-banner">{{ error() }}</div>
   }
 
 @if (cargando()) {

@@ -109,6 +109,62 @@ class StoreApiTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
+    public function test_detalle_publico_marca_es_nuevo_solo_el_dia_de_ingreso(): void
+    {
+        $hoy = $this->crearProducto(['fecha_ingreso' => now()]);
+        $ayer = $this->crearProducto(['nombre' => 'Vestido de ayer', 'fecha_ingreso' => now()->subDay()]);
+
+        $recientes = $this->getJson("/api/v1/store/products/{$hoy->id}")->json('data');
+        $viejos = $this->getJson("/api/v1/store/products/{$ayer->id}")->json('data');
+
+        $this->assertTrue($recientes['es_nuevo']);
+        $this->assertFalse($viejos['es_nuevo']);
+    }
+
+    public function test_productos_relacionados_excluyen_el_producto_actual(): void
+    {
+        $actual = $this->crearProducto();
+        $this->crearProducto(['nombre' => 'Otra prenda A']);
+        $this->crearProducto(['nombre' => 'Otra prenda B']);
+
+        $response = $this->getJson("/api/v1/store/products/{$actual->id}/related");
+
+        $response->assertStatus(200)->assertJsonPath('success', true);
+
+        $ids = collect($response->json('data'))->pluck('id');
+        $this->assertFalse($ids->contains($actual->id));
+        $this->assertCount(2, $ids);
+    }
+
+    public function test_productos_relacionados_priorizan_la_misma_categoria(): void
+    {
+        $otraCategoria = Categoria::create(['nombre' => 'Enterizos', 'slug' => 'enterizos']);
+
+        $actual = $this->crearProducto();
+        $mismaCategoria = $this->crearProducto(['nombre' => 'Vestido hermano', 'categoria_id' => $this->categoria->id]);
+        $otra = $this->crearProducto(['categoria_id' => $otraCategoria->id]);
+
+        $response = $this->getJson("/api/v1/store/products/{$actual->id}/related");
+
+        $data = $response->json('data');
+        $this->assertSame($mismaCategoria->id, $data[0]['id']);
+        $this->assertSame($mismaCategoria->precio, $data[0]['precio']);
+        $this->assertSame($otra->id, $data[1]['id']);
+    }
+
+    public function test_productos_relacionados_no_incluyen_ocultos_ni_vendidos(): void
+    {
+        $actual = $this->crearProducto();
+        $oculto = $this->crearProducto(['publicado' => false]);
+        $vendido = $this->crearProducto(['estado' => 'vendida']);
+
+        $response = $this->getJson("/api/v1/store/products/{$actual->id}/related");
+
+        $ids = collect($response->json('data'))->pluck('id');
+        $this->assertFalse($ids->contains($oculto->id));
+        $this->assertFalse($ids->contains($vendido->id));
+    }
+
     public function test_filtros_por_categoria_y_talla(): void
     {
         $otraCategoria = Categoria::create(['nombre' => 'Enterizos', 'slug' => 'enterizos']);

@@ -4,7 +4,10 @@
       <h1 class="page-title">Pagos</h1>
       <p class="page-subtitle">Registro, verificación y control de cobros por pedido</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="abrirRegistro()">Registrar pago</button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirRegistro()">Registrar pago</button>
+      <app-notification-center />
+    </div>
   </div>
 
   <section class="card">
@@ -158,29 +161,34 @@
 </div>
 
 @if (detalleAbierto()) {
-  <app-modal [title]="tituloDetalle()" [width]="'680px'" (closed)="cerrarDetalle()">
+  <app-modal title="Detalle del pago" [width]="'680px'" (closed)="cerrarDetalle()">
     @if (detalle(); as detalle) {
       <div class="stack">
-        <div class="detail-grid">
+        <div class="ficha-cabecera">
           <div>
-            <span class="muted-label">Estado</span>
+            <div class="ficha-metadata">Pago · {{ formatearFecha(detalle.pagado_en) }}</div>
+            <h3 class="ficha-nombre">{{ detalle.numero_pago }}</h3>
+            <div class="ficha-meta-line">
+              {{ detalle.metodo_pago ?? 'Método no informado' }}
+              @if (detalle.referencia) {
+                · Ref. {{ detalle.referencia }}
+              }
+            </div>
+          </div>
+          <div class="ficha-badges">
             <app-badge [tone]="tonoEstado(detalle.estado)">
               {{ etiquetaEstado(detalle.estado) }}
             </app-badge>
             @if (detalle.excedente) {
-              <span class="muted small">Excedente confirmado</span>
+              <app-badge tone="neutral">Excedente</app-badge>
             }
           </div>
+        </div>
+
+        <div class="detail-grid">
           <div>
-            <span class="muted-label">Método</span>
-            <div>{{ detalle.metodo_pago ?? '—' }}</div>
-            @if (detalle.referencia) {
-              <div class="muted small">Ref. {{ detalle.referencia }}</div>
-            }
-          </div>
-          <div>
-            <span class="muted-label">Fecha de pago</span>
-            <div>{{ detalle.pagado_en ?? '—' }}</div>
+            <span class="muted-label">Monto</span>
+            <div class="mono">{{ moneda(detalle.monto) }}</div>
           </div>
           <div>
             <span class="muted-label">Pedido</span>
@@ -198,10 +206,6 @@
             } @else {
               <span class="muted">Sin adjuntar</span>
             }
-          </div>
-          <div>
-            <span class="muted-label">Monto</span>
-            <div class="mono">{{ moneda(detalle.monto) }}</div>
           </div>
         </div>
 

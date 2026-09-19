@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit, output } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { Producto, ProductoImagen } from '../../core/models/producto';
 import { ImagenesService } from '../../core/services/imagenes.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -24,35 +24,34 @@ export class ImagenesModalComponent implements OnInit {
   private readonly imagenesService = inject(ImagenesService);
   private readonly toast = inject(ToastService);
 
-  readonly imagenes = ([] as ProductoImagen[]).slice();
-  cargando = true;
-  subiendo = false;
-  errorBanner: string | null = null;
+  readonly imagenes = signal<ProductoImagen[]>([]);
+  readonly cargando = signal(true);
+  readonly subiendo = signal(false);
+  readonly errorBanner = signal<string | null>(null);
 
-  eliminarObjetivo: ProductoImagen | null = null;
-  reemplazandoId: number | null = null;
+  readonly eliminarObjetivo = signal<ProductoImagen | null>(null);
+  readonly reemplazandoId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.cargar();
   }
 
   imagenesOrdenadas(): ProductoImagen[] {
-    return [...this.imagenes].sort((a, b) => Number(a.es_principal) - Number(b.es_principal) || a.orden - b.orden);
+    return [...this.imagenes()].sort((a, b) => Number(a.es_principal) - Number(b.es_principal) || a.orden - b.orden);
   }
 
   cargar(): void {
     this.imagenesService.listar(this.producto().id).subscribe({
       next: (res) => {
-        this.cargando = false;
-        this.errorBanner = null;
+        this.cargando.set(false);
+        this.errorBanner.set(null);
         if (res.success && res.data) {
-          (this.imagenes as ProductoImagen[]).length = 0;
-          this.imagenes.push(...res.data);
+          this.imagenes.set(res.data);
         }
       },
       error: (err) => {
-        this.cargando = false;
-        this.errorBanner = err.message ?? 'No se pudieron cargar las imágenes.';
+        this.cargando.set(false);
+        this.errorBanner.set(err.message ?? 'No se pudieron cargar las imágenes.');
       },
     });
   }
@@ -83,18 +82,18 @@ export class ImagenesModalComponent implements OnInit {
       return;
     }
 
-    this.subiendo = true;
+    this.subiendo.set(true);
 
     this.imagenesService.subir(this.producto().id, validos).subscribe({
       next: (res) => {
-        this.subiendo = false;
+        this.subiendo.set(false);
         if (res.success) {
           this.toast.success(res.message ?? 'Imágenes subidas.');
           this.refrescar();
         }
       },
       error: (err) => {
-        this.subiendo = false;
+        this.subiendo.set(false);
         this.toast.error(err.message ?? 'No se pudieron subir las imágenes.');
       },
     });
@@ -163,39 +162,39 @@ export class ImagenesModalComponent implements OnInit {
       return;
     }
 
-    this.reemplazandoId = imagen.id;
+    this.reemplazandoId.set(imagen.id);
 
     this.imagenesService.reemplazar(this.producto().id, imagen.id, archivo).subscribe({
       next: (res) => {
-        this.reemplazandoId = null;
+        this.reemplazandoId.set(null);
         if (res.success) {
           this.toast.success('Imagen reemplazada.');
           this.refrescar();
         }
       },
       error: (err) => {
-        this.reemplazandoId = null;
+        this.reemplazandoId.set(null);
         this.toast.error(err.message ?? 'No se pudo reemplazar la imagen.');
       },
     });
   }
 
   confirmarEliminar(): void {
-    const objetivo = this.eliminarObjetivo;
+    const objetivo = this.eliminarObjetivo();
     if (!objetivo) {
       return;
     }
 
     this.imagenesService.eliminar(this.producto().id, objetivo.id).subscribe({
       next: (res) => {
-        this.eliminarObjetivo = null;
+        this.eliminarObjetivo.set(null);
         if (res.success) {
           this.toast.success('Imagen eliminada.');
           this.refrescar();
         }
       },
       error: (err) => {
-        this.eliminarObjetivo = null;
+        this.eliminarObjetivo.set(null);
         this.toast.error(err.message ?? 'No se pudo eliminar la imagen.');
       },
     });

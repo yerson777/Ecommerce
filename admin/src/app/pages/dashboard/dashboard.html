@@ -4,9 +4,12 @@
       <h1 class="page-title">Panel de control</h1>
       <p class="page-subtitle">Resumen del negocio en tiempo real</p>
     </div>
-    <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
-      {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
-    </button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
+        {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+      <app-notification-center />
+    </div>
   </div>
 
   @if (error) {
