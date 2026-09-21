@@ -52,6 +52,6 @@ export class ReportesClientesComponent {
 
   moneda(valor: string | null | undefined): string {
     const numero = parseFloat(String(valor ?? '0'));
-    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 }

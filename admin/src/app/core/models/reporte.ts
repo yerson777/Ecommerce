@@ -28,6 +28,14 @@ export interface ReporteResumen {
     cobrado: string;
     pendiente: string;
   };
+  rentabilidad: {
+    ingresos: string;
+    costo_mercaderia: string;
+    gastos_operativos: string;
+    ganancia_neta: string;
+    ticket_promedio: string;
+    cantidad_ventas: number;
+  };
   clientes: {
     total: number;
     con_pedidos: number;

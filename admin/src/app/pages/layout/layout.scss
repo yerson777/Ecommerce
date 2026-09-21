@@ -85,6 +85,95 @@
   flex: 1;
 }
 
+.nav-group__label {
+  display: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #8a8192;
+  padding: 0.9rem 0.7rem 0.2rem;
+  white-space: nowrap;
+}
+
+.nav-group__label:first-child {
+  padding-top: 0.3rem;
+}
+
+.sidebar:hover .nav-group__label {
+  display: block;
+}
+
+/* ---------------- Grupos colapsables (submenú 1 nivel) ---------------- */
+.nav-group {
+  position: relative;
+}
+
+.nav-group__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #cfc8d4;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-group__toggle:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.nav-group--abierto .nav-group__toggle {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar:hover .nav-group__toggle {
+  justify-content: flex-start;
+}
+
+.nav-group__chevron {
+  display: none;
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.85;
+  flex: none;
+  transition: transform 0.18s ease;
+}
+
+.sidebar:hover .nav-group__chevron {
+  display: inline;
+}
+
+.nav-group--abierto .nav-group__chevron {
+  transform: rotate(180deg);
+}
+
+.nav-group__items {
+  display: none;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0.1rem 0 0.2rem;
+  padding: 0.2rem 0;
+}
+
+.nav-group--abierto .nav-group__items {
+  display: flex;
+}
+
+/* en rail colapsado (sin hover), aunque esté abierto ocultamos items: solo icono */
+.sidebar:not(:hover) .nav-group--abierto .nav-group__items {
+  display: none;
+}
+
 .nav-link {
   display: flex;
   align-items: center;

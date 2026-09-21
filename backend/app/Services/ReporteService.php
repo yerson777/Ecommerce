@@ -8,6 +8,7 @@ use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Models\Cliente;
+use App\Models\Gasto;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
@@ -49,8 +50,9 @@ class ReporteService
         $ventas = $this->estadisticasVentas($inicio, $fin);
         $clientes = $this->estadisticasClientes($inicio, $fin);
         $pagos = $this->estadisticasPagos($inicio, $fin);
+        $rentabilidad = $this->estadisticasRentabilidad($inicio, $fin);
 
-        return compact('productos', 'pedidos', 'ventas', 'clientes', 'pagos');
+        return compact('productos', 'pedidos', 'ventas', 'clientes', 'pagos', 'rentabilidad');
     }
 
     private function estadisticasProductos(): array
@@ -102,6 +104,46 @@ class ReporteService
             'monto' => number_format($totalMonto, 2, '.', ''),
             'cobrado' => number_format($totalCobrado, 2, '.', ''),
             'pendiente' => number_format($totalPendiente, 2, '.', ''),
+        ];
+    }
+
+    /**
+     * Rentabilidad del período: margen real = ventas - costo de mercadería - gastos operativos.
+     */
+    private function estadisticasRentabilidad(?Carbon $inicio, ?Carbon $fin): array
+    {
+        $query = Venta::query();
+
+        if ($inicio && $fin) {
+            $query->whereBetween('fecha_venta', [$inicio, $fin]);
+        }
+
+        $cantidadVentas = (clone $query)->count();
+        $totalMonto = (float) (clone $query)->sum('total');
+
+        $costoMercaderia = (float) DB::table('venta_items')
+            ->join('ventas', 'venta_items.venta_id', '=', 'ventas.id')
+            ->join('productos', 'venta_items.producto_id', '=', 'productos.id')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]))
+            ->sum('productos.costo');
+
+        $gastosOperativos = (float) Gasto::when(
+            $inicio && $fin,
+            fn ($q) => $q->whereBetween('fecha_gasto', [$inicio, $fin])
+        )->sum('monto');
+
+        $gananciaNeta = $totalMonto - $costoMercaderia - $gastosOperativos;
+        $ticketPromedio = $cantidadVentas > 0 ? $totalMonto / $cantidadVentas : 0.0;
+
+        $fmt = fn (float $v): string => number_format($v, 2, '.', '');
+
+        return [
+            'ingresos' => $fmt($totalMonto),
+            'costo_mercaderia' => $fmt($costoMercaderia),
+            'gastos_operativos' => $fmt($gastosOperativos),
+            'ganancia_neta' => $fmt($gananciaNeta),
+            'ticket_promedio' => $fmt($ticketPromedio),
+            'cantidad_ventas' => $cantidadVentas,
         ];
     }
 

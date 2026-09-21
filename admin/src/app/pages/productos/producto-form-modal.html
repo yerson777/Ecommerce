@@ -62,7 +62,7 @@
       </div>
 
       <div class="field">
-        <label>Costo ($) *</label>
+        <label>Costo (Bs) *</label>
         <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.costo" name="costo" />
         @if (errorDe('costo')) {
           <span class="field-error">{{ errorDe('costo') }}</span>
@@ -70,7 +70,7 @@
       </div>
 
       <div class="field">
-        <label>Precio ($) *</label>
+        <label>Precio (Bs) *</label>
         <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.precio" name="precio" />
         @if (errorDe('precio')) {
           <span class="field-error">{{ errorDe('precio') }}</span>

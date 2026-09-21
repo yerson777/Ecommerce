@@ -1,0 +1,88 @@
+<app-modal [title]="'Registrar gasto'" [width]="'560px'" (closed)="cerrado.emit()">
+  <div class="form">
+    @if (errorBanner()) {
+      <div class="error-banner">{{ errorBanner() }}</div>
+    }
+
+    <div class="field">
+      <label>Concepto *</label>
+      <input
+        class="input"
+        type="text"
+        [(ngModel)]="concepto"
+        name="concepto"
+        maxlength="255"
+        placeholder="Ej. Envío de paquetes, publicidad…"
+      />
+      @if (errorDe('concepto')) {
+        <span class="field-error">{{ errorDe('concepto') }}</span>
+      }
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Monto (Bs) *</label>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="monto"
+          name="monto"
+        />
+        @if (errorDe('monto')) {
+          <span class="field-error">{{ errorDe('monto') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Fecha del gasto *</label>
+        <input class="input" type="date" [(ngModel)]="fecha" name="fecha" />
+        @if (errorDe('fecha_gasto')) {
+          <span class="field-error">{{ errorDe('fecha_gasto') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Categoría *</label>
+        <select class="select" [(ngModel)]="categoriaId" name="categoriaId">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (categoria of categorias(); track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('categoria_gasto_id')) {
+          <span class="field-error">{{ errorDe('categoria_gasto_id') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Método de pago *</label>
+        <select class="select" [(ngModel)]="metodoId" name="metodoId">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (metodo of metodos(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('metodo_pago_id')) {
+          <span class="field-error">{{ errorDe('metodo_pago_id') }}</span>
+        }
+      </div>
+
+      <div class="field field-full">
+        <label>Observación</label>
+        <textarea class="textarea" [(ngModel)]="observacion" name="observacion" maxlength="1000"></textarea>
+        @if (errorDe('observacion')) {
+          <span class="field-error">{{ errorDe('observacion') }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Registrando…' : 'Registrar gasto' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

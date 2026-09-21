@@ -6,8 +6,12 @@ use App\Events\PedidoCreado;
 use App\Events\PedidoEstadoCambiado;
 use App\Exceptions\InventarioException;
 use App\Models\Cliente;
+use App\Models\Cupon;
+use App\Models\Devolucion;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
+use App\Models\Movimiento;
+use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Models\Producto;
@@ -17,6 +21,7 @@ use App\Models\Venta;
 use App\Models\VentaItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Ciclo de vida completo de un pedido de tienda.
@@ -54,6 +59,7 @@ class PedidoService
      *     metodo_entrega_id: int,
      *     metodo_pago_id: int,
      *     comprobante_path?: string|null,
+     *     cupon_codigo?: string|null,
      * }  $datos
      *
      * @throws InventarioException si alguna prenda ya no está disponible.
@@ -86,6 +92,16 @@ class PedidoService
             $subtotal = (float) array_sum(array_map(fn (Producto $p) => (float) $p->precio, $unidades));
             $costoEnvio = (float) $metodoEntrega->costo;
 
+            $cupon = null;
+            $descuento = 0.0;
+            if (! empty($datos['cupon_codigo'])) {
+                $aplicado = app(CuponService::class)->aplicar(trim($datos['cupon_codigo']), $subtotal);
+                $cupon = $aplicado['cupon'];
+                $descuento = $aplicado['descuento'];
+            }
+
+            $total = max(0.0, $subtotal - $descuento) + $costoEnvio;
+
             $cliente = Cliente::query()->firstOrNew(['telefono' => $datos['telefono']]);
             $cliente->fill([
                 'nombre' => trim($datos['nombre']),
@@ -109,7 +125,9 @@ class PedidoService
                 'estado' => Pedido::ESTADO_PENDIENTE,
                 'subtotal' => $subtotal,
                 'costo_envio' => $costoEnvio,
-                'total' => round($subtotal + $costoEnvio, 2),
+                'descuento' => $descuento,
+                'cupon_id' => $cupon?->id,
+                'total' => round($total, 2),
                 'fecha_pedido' => now()->toDateString(),
                 'notas' => $datos['notas'] ?? null,
                 'comprobante_path' => $datos['comprobante_path'] ?? null,
@@ -178,6 +196,123 @@ class PedidoService
 
             return $pedido->fresh(['cliente', 'metodoPago', 'metodoEntrega', 'items.producto.talla', 'items.producto.imagenes', 'venta']);
         });
+    }
+
+    /**
+     * Registra una devolución controlada del pedido.
+     *
+     * Efectos dentro de una sola transacción:
+     *  - Los pagos confirmados quedan marcados como "reembolsados".
+     *  - Se registra la devolución con su motivo y monto devuelto.
+     *  - Si hay dinero devuelto, se crea el egreso de caja correspondiente.
+     *  - Las prendas vendidas vuelven a estar disponibles en el catálogo.
+     *
+     * @throws InventarioException si el pedido no admite una devolución.
+     */
+    public function devolver(int $pedidoId, string $motivo, ?float $montoReembolso): Pedido
+    {
+        return DB::transaction(function () use ($pedidoId, $motivo, $montoReembolso) {
+            /** @var Pedido|null $pedido */
+            $pedido = Pedido::query()
+                ->with(['items', 'pagos', 'cliente', 'metodoPago', 'metodoEntrega'])
+                ->whereKey($pedidoId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $pedido) {
+                throw new ModelNotFoundException('El pedido no existe.');
+            }
+
+            if (! in_array($pedido->estado, [Pedido::ESTADO_CONFIRMADO, Pedido::ESTADO_COMPLETADO], true)) {
+                throw new InventarioException(
+                    sprintf('El pedido "%s" no puede devolverse desde su estado actual.', $pedido->numero_pedido)
+                );
+            }
+
+            if ($pedido->devolucion()->exists()) {
+                throw new InventarioException('El pedido ya tiene una devolución registrada.');
+            }
+
+            $pagado = (float) $pedido->pagos
+                ->where('estado', 'completado')
+                ->sum('monto');
+
+            $aReembolsar = round(min($montoReembolso ?? $pagado, $pagado), 2);
+
+            // Cierra los pagos confirmados: el dinero vuelve al cliente.
+            $pedido->pagos()
+                ->where('estado', Pago::ESTADO_COMPLETADO)
+                ->update(['estado' => Pago::ESTADO_REEMBOLSADO]);
+
+            Devolucion::create([
+                'pedido_id' => $pedido->id,
+                'monto_reembolsado' => $aReembolsar,
+                'motivo' => $motivo,
+                'devuelto_en' => now(),
+            ]);
+
+            // Si hubo dinero devuelto, sale de la caja como egreso (reembolso).
+            if ($aReembolsar > 0) {
+                Movimiento::create([
+                    'tipo' => 'egreso',
+                    'monto' => $aReembolsar,
+                    'fuente' => 'ajuste',
+                    'descripcion' => 'Reembolso del pedido ' . $pedido->numero_pedido . ' · ' . $motivo,
+                    'fecha' => now()->toDateString(),
+                ]);
+            }
+
+            // Las prendas vendidas vuelven al catálogo; las reservadas se liberan.
+            foreach ($pedido->items as $item) {
+                $producto = Producto::query()->whereKey($item->producto_id)->lockForUpdate()->first();
+
+                if (! $producto) {
+                    continue;
+                }
+
+                $anterior = $producto->estado;
+
+                match ($producto->estado) {
+                    Producto::ESTADO_VENDIDA => $this->devolverPrenda($producto, $anterior, $pedido),
+                    Producto::ESTADO_RESERVADA => $this->inventario->liberar($producto->id),
+                    default => null,
+                };
+            }
+
+            $estadoAnterior = $pedido->estado;
+            $pedido->forceFill(['estado' => Pedido::ESTADO_DEVUELTO])->save();
+
+            event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
+
+            return $pedido->fresh([
+                'cliente',
+                'metodoPago',
+                'metodoEntrega',
+                'items.producto.talla',
+                'items.producto.imagenes',
+                'venta',
+                'devolucion',
+            ]);
+        });
+    }
+
+    /**
+     * Reingresa una prenda vendida al catálogo y registra el movimiento.
+     */
+    private function devolverPrenda(Producto $producto, string $estadoAnterior, Pedido $pedido): void
+    {
+        $producto->forceFill([
+            'estado' => Producto::ESTADO_DISPONIBLE,
+            'publicado' => true,
+        ])->save();
+
+        $this->inventario->registrarHistorial(
+            $producto->id,
+            $estadoAnterior,
+            Producto::ESTADO_DISPONIBLE,
+            'Devuelta. Pedido ' . $pedido->numero_pedido,
+            'devuelta'
+        );
     }
 
     /**

@@ -16,6 +16,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role: string;
+  etiqueta_rol?: string;
+  activo?: boolean;
 }
 
 export interface LoginResponse {

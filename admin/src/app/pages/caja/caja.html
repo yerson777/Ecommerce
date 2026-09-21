@@ -1,0 +1,222 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Caja</h1>
+      <p class="page-subtitle">Flujo de dinero: ingresos y egresos</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-ghost" (click)="abrirIngreso()">Ingreso manual</button>
+      <button type="button" class="btn btn-primary" (click)="abrirGasto()">Registrar gasto</button>
+      <app-notification-center />
+    </div>
+  </div>
+
+  @if (saldo(); as s) {
+    <div class="stats-grid">
+      <app-stat-card label="Saldo disponible" [value]="moneda(s.saldo)" icon="Σ" tone="primary" [hint]="'Ingresos ' + moneda(s.ingresos) + ' · Egresos ' + moneda(s.egresos)" />
+      <app-stat-card label="Ingresos" [value]="moneda(s.ingresos)" icon="↗" tone="success" hint="Cobros y entradas de dinero" />
+      <app-stat-card label="Egresos" [value]="moneda(s.egresos)" icon="↘" tone="danger" hint="Gastos y salidas de dinero" />
+    </div>
+  }
+
+  <section class="card flujo-card">
+    <header class="row-between">
+      <div>
+        <h2 class="card-title">Flujo de caja</h2>
+        @if (flujo(); as f) {
+          <p class="report-note">Del {{ formatearFecha(f.inicio) }} al {{ formatearFecha(f.fin) }}</p>
+        }
+      </div>
+      <select class="select" [value]="periodoFlujo()" (change)="periodoFlujo.set($any($event.target).value); cambiarPeriodoFlujo()">
+        <option value="ultimos_7_dias">Últimos 7 días</option>
+        <option value="ultimos_15_dias">Últimos 15 días</option>
+        <option value="ultimos_30_dias">Últimos 30 días</option>
+        <option value="ultimos_90_dias">Últimos 90 días</option>
+        <option value="este_mes">Este mes</option>
+      </select>
+    </header>
+
+    @if (cargandoFlujo() && !flujo()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (flujo(); as f) {
+      @if (f.dias.length === 0) {
+        <app-empty-state icon="📈" title="Sin movimientos" message="No hay movimientos en este período." />
+      } @else {
+        <div class="flujo-saldo">
+          <span class="muted small">Saldo acumulado al final del período</span>
+          <div class="flujo-saldo-valor">{{ moneda(saldoFinPeriodo()) }}</div>
+        </div>
+        <div class="flujo-graficos">
+          <div class="flujo-grafico">
+            <p class="muted small">Ingresos por día</p>
+            <app-chart-bars [datos]="chartIngresos()" formatoValor="monto" [altura]="170" colorBase="#1f8a58" />
+          </div>
+          <div class="flujo-grafico">
+            <p class="muted small">Egresos por día</p>
+            <app-chart-bars [datos]="chartEgresos()" formatoValor="monto" [altura]="170" colorBase="#c0392b" />
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Concepto, pago o descripción…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Tipo</label>
+        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+          <option value="">Todos</option>
+          <option value="ingreso">Ingreso</option>
+          <option value="egreso">Egreso</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Desde</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_desde" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Hasta</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_hasta" (change)="onBuscar()" />
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="💰"
+          title="Sin movimientos"
+          message="No hay movimientos de caja que coincidan con los filtros."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Origen</th>
+                <th>Monto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movimiento of page.data; track movimiento.id) {
+                <tr>
+                  <td class="mono">{{ formatearFecha(movimiento.fecha) }}</td>
+                  <td>
+                    <app-badge [tone]="tonoTipo(movimiento.tipo)">
+                      {{ etiquetaTipo(movimiento.tipo) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    <div>{{ movimiento.descripcion ?? '—' }}</div>
+                    @if (movimiento.pago) {
+                      <div class="muted small">
+                        {{ movimiento.pago.numero_pago }} · {{ movimiento.pago.numero_pedido ?? '' }}
+                        @if (movimiento.pago.cliente) {
+                          · {{ movimiento.pago.cliente }}
+                        }
+                      </div>
+                    }
+                  </td>
+                  <td>
+                    <span class="muted">{{ etiquetaFuente(movimiento.fuente) }}</span>
+                    @if (movimiento.gasto?.categoria) {
+                      <div class="muted small">{{ movimiento.gasto!.categoria }}</div>
+                    }
+                  </td>
+                  <td class="mono">
+                    <span [class.pos-total]="movimiento.tipo === 'ingreso'" [class.neg-total]="movimiento.tipo === 'egreso'">
+                      {{ movimiento.tipo === 'ingreso' ? '+' : '−' }} {{ moneda(movimiento.monto) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (puedeEliminar(movimiento)) {
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm" (click)="pedirEliminar(movimiento)">
+                          Eliminar
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (registrandoGasto) {
+  <app-registro-gasto-modal
+    [categorias]="categorias()"
+    [metodos]="metodos()"
+    (registrado)="onGastoRegistrado($event)"
+    (cerrado)="cerrarGasto()"
+  />
+}
+
+@if (registrandoIngreso) {
+  <app-ingreso-manual-modal
+    (registrado)="onIngresoRegistrado($event)"
+    (cerrado)="cerrarIngreso()"
+  />
+}
+
+@if (objetivoEliminar; as objetivo) {
+  <app-confirm-dialog
+    title="Eliminar de caja"
+    [message]="
+      objetivo.origen === 'gasto'
+        ? 'Se eliminará el gasto \'' + (objetivo.descripcion ?? '') + '\' (' + moneda(objetivo.monto) + ') y se retirará su egreso de la caja.'
+        : 'Se eliminará el movimiento \'' + (objetivo.descripcion ?? '') + '\' (' + moneda(objetivo.monto) + ') de la caja.'
+    "
+    confirmLabel="Eliminar"
+    tone="danger"
+    (confirm)="eliminar()"
+    (cancel)="cancelarEliminar()"
+  />
+}

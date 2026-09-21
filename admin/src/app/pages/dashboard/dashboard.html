@@ -34,9 +34,9 @@
       <app-stat-card label="Clientes" [value]="d.clientes.total" icon="◈" tone="primary" [hint]="d.clientes.con_pedidos + ' con pedidos'" />
       <app-stat-card label="Nuevos (30 días)" [value]="d.clientes.nuevos" icon="✦" tone="info" hint="Clientes nuevos" />
       <app-stat-card label="Recurrentes" [value]="d.clientes.recurrentes" icon="⟳" tone="success" [hint]="'Promedio ' + d.clientes.pedidos_por_cliente + ' pedidos por cliente'" />
-      <app-stat-card label="Caja" [value]="moneda(d.caja.saldo)" icon="$$" tone="success" [hint]="'Ingresos ' + moneda(d.caja.ingresos) + ' · Egresos ' + moneda(d.caja.egresos)" />
+      <app-stat-card label="Caja" [value]="moneda(d.caja.saldo)" icon="Bs" tone="success" [hint]="'Ingresos ' + moneda(d.caja.ingresos) + ' · Egresos ' + moneda(d.caja.egresos)" />
       <app-stat-card label="Total vendido" [value]="moneda(d.pagos.total_vendido)" icon="§" tone="primary" hint="Ventas acumuladas" />
-      <app-stat-card label="Total cobrado" [value]="moneda(d.pagos.total_cobrado)" icon="$$" tone="success" hint="Pagos confirmados" />
+      <app-stat-card label="Total cobrado" [value]="moneda(d.pagos.total_cobrado)" icon="Bs" tone="success" hint="Pagos confirmados" />
       <app-stat-card label="Total pendiente" [value]="moneda(d.pagos.total_pendiente)" icon="◷" tone="warning" hint="Por cobrar" />
       <app-stat-card label="Pedidos pagados" [value]="d.pagos.pedidos.pagados" icon="✓" tone="neutral" [hint]="d.pagos.pedidos.pendientes_de_pago + ' pendientes · ' + d.pagos.pedidos.parcialmente_pagados + ' parciales'" />
     </div>

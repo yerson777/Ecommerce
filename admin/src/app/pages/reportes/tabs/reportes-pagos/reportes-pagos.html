@@ -12,7 +12,7 @@
   <div class="stack">
     <section class="card">
       <div class="stats-grid">
-        <app-stat-card label="Total cobrado" [value]="moneda(d.resumen.total_cobrado)" icon="$$" tone="success" hint="Pagos confirmados" />
+        <app-stat-card label="Total cobrado" [value]="moneda(d.resumen.total_cobrado)" icon="Bs" tone="success" hint="Pagos confirmados" />
         <app-stat-card label="Total pendiente" [value]="moneda(d.resumen.total_pendiente)" icon="◷" tone="warning" hint="Por cobrar" />
         <app-stat-card label="Cantidad de pagos" [value]="d.resumen.cantidad_pagos" icon="💳" tone="primary" />
         <app-stat-card label="Pedidos pagados" [value]="d.resumen.pedidos_pagados" icon="✓" tone="neutral" hint="Totalmente pagados" />

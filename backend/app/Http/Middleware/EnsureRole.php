@@ -13,7 +13,7 @@ class EnsureRole
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        if (! $user || ! $user->activo || ! in_array($user->role, $roles, true)) {
             return Api::error('No autorizado.', 403);
         }
 

@@ -19,6 +19,15 @@ class MovimientoResource extends JsonResource
             'descripcion' => $this->descripcion,
             'fecha' => $this->fecha?->toDateString(),
             'created_at' => $this->created_at?->toISOString(),
+            'pago' => $this->whenLoaded('pago', $this->pago ? [
+                'numero_pago' => $this->pago->numero_pago,
+                'numero_pedido' => $this->pago->pedido?->numero_pedido,
+                'cliente' => $this->pago->pedido?->cliente?->nombre,
+            ] : null),
+            'gasto' => $this->whenLoaded('gasto', $this->gasto ? [
+                'concepto' => $this->gasto->concepto,
+                'categoria' => $this->gasto->categoriaGasto?->nombre,
+            ] : null),
         ];
     }
 }

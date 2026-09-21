@@ -233,7 +233,7 @@ export class ProductoFormModalComponent implements OnInit {
 
   moneda(valor: string | number): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 
   formatearFecha(fecha: string | null | undefined): string {

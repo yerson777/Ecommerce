@@ -17,6 +17,13 @@ class Pedido extends Model
     public const ESTADO_CANCELADO = 'cancelado';
     public const ESTADO_COMPLETADO = 'completado';
 
+    /**
+     * Estado especial alcanzado únicamente mediante una devolución
+     * registrada (ver PedidoService::devolver). No se ofrece como
+     * transición genérica para que el flujo de reembolso sea controlado.
+     */
+    public const ESTADO_DEVUELTO = 'devuelto';
+
     public const ESTADOS = [
         self::ESTADO_PENDIENTE,
         self::ESTADO_CONFIRMADO,
@@ -43,8 +50,10 @@ class Pedido extends Model
         'cliente_id',
         'metodo_pago_id',
         'metodo_entrega_id',
+        'cupon_id',
         'estado',
         'subtotal',
+        'descuento',
         'costo_envio',
         'total',
         'fecha_pedido',
@@ -56,6 +65,7 @@ class Pedido extends Model
     {
         return [
             'subtotal' => 'decimal:2',
+            'descuento' => 'decimal:2',
             'costo_envio' => 'decimal:2',
             'total' => 'decimal:2',
             'fecha_pedido' => 'date',
@@ -97,6 +107,16 @@ class Pedido extends Model
         return $this->hasMany(Pago::class);
     }
 
+    public function devolucion(): HasOne
+    {
+        return $this->hasOne(Devolucion::class);
+    }
+
+    public function cupon(): BelongsTo
+    {
+        return $this->belongsTo(Cupon::class);
+    }
+
     public function puedeTransicionarA(string $estado): bool
     {
         return in_array($estado, self::TRANSICIONES[$this->estado] ?? [], true);
@@ -118,6 +138,10 @@ class Pedido extends Model
             return 'cancelado';
         }
 
+        if ($this->estado === self::ESTADO_DEVUELTO) {
+            return Pago::ESTADO_REEMBOLSADO;
+        }
+
         $total = (float) $this->total;
         $pagado = isset($this->pagos_completados_total)
             ? (float) $this->pagos_completados_total
@@ -136,13 +160,13 @@ class Pedido extends Model
             ? (float) $this->pagos_completados_total
             : (float) $this->pagos->where('estado', Pago::ESTADO_COMPLETADO)->sum('monto');
 
-        return number_format($pagado, 2);
+        return number_format($pagado, 2, '.', '');
     }
 
     public function saldoPendiente(): string
     {
         $pagado = (float) $this->totalPagado();
 
-        return number_format(max(0.0, (float) $this->total - $pagado), 2);
+        return number_format(max(0.0, (float) $this->total - $pagado), 2, '.', '');
     }
 }

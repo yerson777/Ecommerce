@@ -1,0 +1,251 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Cupones</h1>
+      <p class="page-subtitle">Códigos de descuento que en el checkout la tienda aplica a las compras</p>
+    </div>
+
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nuevo cupón</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Código del cupón…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Tipo</label>
+        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+          <option [ngValue]="''">Todos</option>
+          @for (tipo of tipos; track tipo) {
+            <option [ngValue]="tipo">{{ etiquetasTipo[tipo] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+          <option [ngValue]="''">Todos</option>
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+          <option value="vencido">Vencido</option>
+          <option value="agotado">Agotado</option>
+        </select>
+        </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="34" />
+      </div>
+    } @else if (!resultados()) {
+      <app-empty-state
+        icon="🏷️"
+        title="Sin cupones"
+        message="No hay cupones registrados todavía."
+      >
+        <button type="button" class="btn btn-ghost" (click)="abrirCrear()">Crear el primero</button>
+      </app-empty-state>
+    } @else if (resultados()!.data.length === 0) {
+      <app-empty-state
+        icon="🔍"
+        title="Sin resultados"
+        message="Ningún cupón coincide con los filtros."
+      />
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Estado</th>
+              <th>Usos</th>
+              <th>Disponibles</th>
+              <th>Vence</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cupon of resultados()!.data; track cupon.id) {
+              <tr>
+                <td class="mono">{{ cupon.codigo }}</td>
+                <td>
+                  <app-badge [tone]="tonosTipo[cupon.tipo]">{{ etiquetasTipo[cupon.tipo] }}</app-badge>
+                </td>
+                <td>
+                  @if (cupon.tipo === 'porcentaje') {
+                    {{ cupon.valor }}%
+                  } @else {
+                    $ {{ cupon.valor }}
+                  }
+                </td>
+                <td>
+                  <app-badge [tone]="tonosEstado[cupon.estado]">{{ etiquetasEstado[cupon.estado] }}</app-badge>
+                </td>
+                <td class="muted">{{ cupon.usos }}</td>
+                <td class="muted">
+                  @if (cupon.limite_usos) {
+                    {{ cupon.limite_usos - cupon.usos }} restantes
+                  } @else {
+                    Ilimitado
+                  }
+                </td>
+                <td class="muted">
+                  @if (cupon.vence_en) {
+                    {{ cupon.vence_en | date: 'dd MMM yyyy' }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="align-right">
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(cupon)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm danger"
+                      (click)="pedirEliminar(cupon)"
+                      [disabled]="cupon.id === eliminarObjetivo?.id"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <app-paginator
+          [page]="pagina()"
+          [lastPage]="resultados()!.last_page"
+          [total]="resultados()!.total"
+          [perPage]="perPage"
+          (pageChange)="onPagina($event)"
+        />
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar cupón' : 'Nuevo cupón'"
+    (closed)="cerrarModal()"
+  >
+    <div class="modal-body">
+      @if (errorFormulario()) {
+        <div class="alert alert-error">{{ errorFormulario() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field field-full">
+          <label>Código</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Ej: BIENVENIDA10"
+            [(ngModel)]="form.codigo"
+          />
+        </div>
+
+        <div class="field">
+          <label>Tipo</label>
+          <select class="select" [(ngModel)]="form.tipo">
+            @for (tipo of tipos; track tipo) {
+              <option [ngValue]="tipo">{{ etiquetasTipo[tipo] }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Valor</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="form.valor"
+          />
+        </div>
+
+        <div class="field">
+          <label>Mínimo de compra ($)</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="form.minimo_compra"
+          />
+        </div>
+
+        <div class="field">
+          <label>Límite de usos</label>
+          <input
+            class="input"
+            type="number"
+            min="1"
+            [(ngModel)]="form.limite_usos"
+          />
+        </div>
+
+        <div class="field">
+          <label>Vence el</label>
+          <input
+            class="input"
+            type="date"
+            [(ngModel)]="form.vence_en"
+          />
+        </div>
+      </div>
+
+      <div class="check">
+        <input type="checkbox" id="cupon-activo" [(ngModel)]="form.activo" />
+        <label for="cupon-activo">Cupón activo</label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        @if (guardando()) {
+          <app-spinner [size]="16" />
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+  </app-modal>
+}
+
+@if (eliminarObjetivo) {
+  <app-confirm-dialog
+    title="Eliminar cupón"
+    message="¿Seguro que querés eliminar el cupón? Esta acción no se puede deshacer."
+    confirmLabel="Eliminar"
+    tone="danger"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModal()"
+  />
+}

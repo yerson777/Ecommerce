@@ -22,6 +22,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if (! $user->activo) {
+            throw ValidationException::withMessages([
+                'email' => ['Tu usuario está desactivado. Contactá al administrador.'],
+            ]);
+        }
+
         $token = $user->createToken('admin-token')->plainTextToken;
 
         return Api::success([

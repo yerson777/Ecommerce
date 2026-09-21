@@ -26,4 +26,8 @@ export class PedidosService extends ApiService {
   cambiarEstado(id: number, estado: EstadoPedido): Observable<ApiResponse<Pedido>> {
     return this.put<ApiResponse<Pedido>>(`/v1/admin/pedidos/${id}/estado`, { estado });
   }
+
+  devolver(id: number, datos: { motivo: string; monto_reembolso?: number | null }): Observable<ApiResponse<Pedido>> {
+    return this.post<ApiResponse<Pedido>>(`/v1/admin/pedidos/${id}/devolver`, datos);
+  }
 }

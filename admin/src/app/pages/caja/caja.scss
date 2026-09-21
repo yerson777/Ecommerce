@@ -1,0 +1,43 @@
+.pos-total {
+  color: var(--success);
+}
+
+.neg-total {
+  color: var(--danger);
+}
+
+.flujo-saldo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.flujo-saldo .small {
+  min-width: 0;
+}
+
+.flujo-saldo-valor {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.flujo-graficos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.flujo-grafico {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .flujo-graficos {
+    grid-template-columns: 1fr;
+  }
+}

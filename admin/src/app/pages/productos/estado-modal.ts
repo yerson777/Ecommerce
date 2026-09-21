@@ -49,6 +49,11 @@ export class EstadoModalComponent implements OnInit {
     return this.tipo() === 'vender';
   }
 
+  moneda(valor: string | number): string {
+    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+  }
+
   private cargarClientes(): void {
     this.cargandoClientes.set(true);
 

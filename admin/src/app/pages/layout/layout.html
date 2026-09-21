@@ -9,48 +9,107 @@
     </div>
 
     <nav class="nav">
-      <a
-        class="nav-link"
-        routerLink="/dashboard"
-        routerLinkActive="nav-link--active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        (click)="cerrarMenu()"
-      >
-        <span class="nav-icon">◧</span>
-        <span class="nav-label">Dashboard</span>
-      </a>
-      <a class="nav-link" routerLink="/productos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">✧</span>
-        <span class="nav-label">Productos</span>
-      </a>
-      <a class="nav-link" routerLink="/inventario" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">▤</span>
-        <span class="nav-label">Inventario</span>
-      </a>
-      <a class="nav-link" routerLink="/ventas" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">§</span>
-        <span class="nav-label">Ventas</span>
-      </a>
-      <a class="nav-link" routerLink="/pedidos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">📦</span>
-        <span class="nav-label">Pedidos</span>
-      </a>
-      <a class="nav-link" routerLink="/clientes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">◈</span>
-        <span class="nav-label">Clientes</span>
-      </a>
-      <a class="nav-link" routerLink="/pagos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">💳</span>
-        <span class="nav-label">Pagos</span>
-      </a>
-      <a class="nav-link" routerLink="/reportes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">Reportes</span>
-      </a>
-      <a class="nav-link" routerLink="/banners" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
-        <span class="nav-icon">🖼</span>
-        <span class="nav-label">Banners</span>
-      </a>
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['general']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('general')">
+          <span class="nav-icon">◧</span>
+          <span class="nav-label">General</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="nav-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">
+            <span class="nav-icon">◧</span>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a class="nav-link" routerLink="/reportes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Reportes</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['ventas']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('ventas')">
+          <span class="nav-icon">§</span>
+          <span class="nav-label">Ventas</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/ventas" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">§</span>
+            <span class="nav-label">Ventas</span>
+          </a>
+          <a class="nav-link" routerLink="/pedidos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">📦</span>
+            <span class="nav-label">Pedidos</span>
+          </a>
+          <a class="nav-link" routerLink="/clientes" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">◈</span>
+            <span class="nav-label">Clientes</span>
+          </a>
+          <a class="nav-link" routerLink="/cupones" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🎟</span>
+            <span class="nav-label">Cupones</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['catalogo']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('catalogo')">
+          <span class="nav-icon">✧</span>
+          <span class="nav-label">Catálogo</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/productos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">✧</span>
+            <span class="nav-label">Productos</span>
+          </a>
+          <a class="nav-link" routerLink="/inventario" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">▤</span>
+            <span class="nav-label">Inventario</span>
+          </a>
+          <a class="nav-link" routerLink="/banners" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🖼</span>
+            <span class="nav-label">Banners</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['caja']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('caja')">
+          <span class="nav-icon">💳</span>
+          <span class="nav-label">Caja y Pagos</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/pagos" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Pagos</span>
+          </a>
+          <a class="nav-link" routerLink="/caja" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">💰</span>
+            <span class="nav-label">Caja</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['sistema']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('sistema')">
+          <span class="nav-icon">⚙</span>
+          <span class="nav-label">Sistema</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/configuracion" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">⚙</span>
+            <span class="nav-label">Configuración</span>
+          </a>
+          <a class="nav-link" routerLink="/usuarios" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">◎</span>
+            <span class="nav-label">Roles y Usuarios</span>
+          </a>
+        </div>
+      </div>
     </nav>
 
     <div class="user-card">

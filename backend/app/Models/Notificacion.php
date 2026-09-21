@@ -14,6 +14,7 @@ class Notificacion extends Model
     public const TIPO_PEDIDO_CONFIRMADO = 'pedido_confirmado';
     public const TIPO_PEDIDO_CANCELADO = 'pedido_cancelado';
     public const TIPO_PEDIDO_COMPLETADO = 'pedido_completado';
+    public const TIPO_PEDIDO_DEVUELTO = 'pedido_devuelto';
     public const TIPO_PAGO_REGISTRADO = 'pago_registrado';
     public const TIPO_PAGO_PARCIAL = 'pago_parcial';
     public const TIPO_PAGO_CONFIRMADO = 'pago_confirmado';
@@ -26,6 +27,7 @@ class Notificacion extends Model
         self::TIPO_PEDIDO_CONFIRMADO,
         self::TIPO_PEDIDO_CANCELADO,
         self::TIPO_PEDIDO_COMPLETADO,
+        self::TIPO_PEDIDO_DEVUELTO,
         self::TIPO_PAGO_REGISTRADO,
         self::TIPO_PAGO_PARCIAL,
         self::TIPO_PAGO_CONFIRMADO,

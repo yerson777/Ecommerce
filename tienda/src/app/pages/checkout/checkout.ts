@@ -34,6 +34,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly comprobantePreview = signal<string | null>(null);
   readonly comprobanteError = signal<string | null>(null);
 
+  readonly cuponCodigo = signal('');
+  readonly cuponAplicado = signal(false);
+  readonly validandoCupon = signal(false);
+  readonly cuponMensaje = signal<string | null>(null);
+  readonly cuponError = signal(false);
+  readonly cuponDescuento = signal<number>(0);
+
   readonly form = new FormGroup({
     nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
     telefono: new FormControl('', [Validators.required, Validators.pattern(TELEFONO_RE)]),
@@ -84,7 +91,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   total(): number {
-    return this.subtotal() + this.costoEnvio();
+    return Math.max(
+      0,
+      this.subtotal() + this.costoEnvio() - (this.cuponAplicado() ? this.cuponDescuento() : 0),
+    );
   }
 
   pagoEsQR(): boolean {
@@ -130,6 +140,45 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return this.errores()[campo] ?? null;
   }
 
+  limpiarCupon(event: Event): string {
+    return (event.target as HTMLInputElement).value.trim().toUpperCase();
+  }
+
+  aplicarCupon(): void {
+    const codigo = this.cuponCodigo().trim().toUpperCase();
+    if (!codigo || this.cuponAplicado()) {
+      return;
+    }
+
+    this.validandoCupon.set(true);
+    this.cuponMensaje.set(null);
+    this.cuponError.set(false);
+
+    this.catalogo.validarCupon(codigo, this.subtotal()).subscribe({
+      next: (res) => {
+        this.validandoCupon.set(false);
+        const datos = res.data;
+        if (datos?.valido) {
+          this.cuponAplicado.set(true);
+          this.cuponDescuento.set(Number(datos.descuento) || 0);
+          this.cuponMensaje.set(datos.mensaje ?? 'Cupón aplicado correctamente.');
+        } else {
+          this.cuponAplicado.set(false);
+          this.cuponDescuento.set(0);
+          this.cuponError.set(true);
+          this.cuponMensaje.set(datos?.mensaje ?? 'El cupón no es válido para este pedido.');
+        }
+      },
+      error: () => {
+        this.validandoCupon.set(false);
+        this.cuponAplicado.set(false);
+        this.cuponDescuento.set(0);
+        this.cuponError.set(true);
+        this.cuponMensaje.set('No pudimos validar el cupón. Intentá de nuevo.');
+      },
+    });
+  }
+
   enviar(): void {
     this.errorGeneral.set(null);
     this.errores.set({});
@@ -166,6 +215,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       notas: valores.notas?.trim() || null,
       metodo_pago_id: valores.metodoPagoId ?? null,
       metodo_entrega_id: valores.metodoEntregaId ?? null,
+      codigo_cupon: this.cuponAplicado()
+        ? (this.cuponCodigo().trim().toUpperCase() || null)
+        : null,
     };
 
     this.enviando.set(true);

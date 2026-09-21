@@ -24,7 +24,7 @@ export class ChartBarsComponent {
 
   formato(valor: number): string {
     if (this.formatoValor() === 'monto') {
-      return `$${valor.toFixed(2)}`;
+      return `Bs ${valor.toFixed(2)}`;
     }
     return String(valor);
   }

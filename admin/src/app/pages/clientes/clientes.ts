@@ -130,7 +130,7 @@ export class ClientesComponent implements OnInit {
 
   moneda(valor: string | number | null | undefined): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 
   formatearFecha(fecha: string | null | undefined): string {

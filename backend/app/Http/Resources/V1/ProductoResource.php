@@ -17,7 +17,7 @@ class ProductoResource extends JsonResource
             'descripcion' => $this->descripcion,
             'costo' => $this->costo,
             'precio' => $this->precio,
-            'margen' => number_format((float) $this->precio - (float) $this->costo, 2),
+            'margen' => number_format((float) $this->precio - (float) $this->costo, 2, '.', ''),
             'estado' => $this->estado,
             'publicado' => $this->publicado,
             'fecha_ingreso' => $this->fecha_ingreso?->toDateString(),

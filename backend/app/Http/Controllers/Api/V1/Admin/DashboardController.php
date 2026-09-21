@@ -55,14 +55,14 @@ class DashboardController extends Controller
             ],
             'ventas' => [
                 'total' => Venta::count(),
-                'monto' => number_format((float) Venta::sum('total'), 2),
+                'monto' => number_format((float) Venta::sum('total'), 2, '.', ''),
                 'recientes' => VentaResource::collection($ventasRecientes),
             ],
             'pedidos' => Pedido::count(),
             'pagos' => [
-                'total_vendido' => number_format($totalVendido, 2),
-                'total_cobrado' => number_format($totalCobrado, 2),
-                'total_pendiente' => number_format(max(0.0, $totalVendido - $totalCobrado), 2),
+                'total_vendido' => number_format($totalVendido, 2, '.', ''),
+                'total_cobrado' => number_format($totalCobrado, 2, '.', ''),
+                'total_pendiente' => number_format(max(0.0, $totalVendido - $totalCobrado), 2, '.', ''),
                 'pedidos' => [
                     'pendientes_de_pago' => $pedidosSinCancelar(Pedido::query())
                         ->whereRaw("{$sumaPagadoPedido} = 0")
@@ -90,9 +90,9 @@ class DashboardController extends Controller
                     : 0,
             ],
             'caja' => [
-                'ingresos' => number_format($ingresos, 2),
-                'egresos' => number_format($egresos, 2),
-                'saldo' => number_format($ingresos - $egresos, 2),
+                'ingresos' => number_format($ingresos, 2, '.', ''),
+                'egresos' => number_format($egresos, 2, '.', ''),
+                'saldo' => number_format($ingresos - $egresos, 2, '.', ''),
             ],
             'inventario' => [
                 'por_estado' => Producto::select('estado', DB::raw('COUNT(*) as total'))

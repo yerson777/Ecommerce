@@ -1,0 +1,104 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Configuración</h1>
+      <p class="page-subtitle">Métodos de pago y envío de la tienda</p>
+    </div>
+    <div class="header-actions">
+      <app-notification-center />
+    </div>
+  </div>
+
+  @if (cargando() && metodosPago().length === 0) {
+    <div class="center config-spinner">
+      <app-spinner [size]="36" />
+    </div>
+  }
+
+  <div class="config-stack">
+    <section class="card">
+      <header class="row-between">
+        <div>
+          <h2 class="card-title">Métodos de pago</h2>
+          <p class="report-note">Al desactivar un método, desaparece de la tienda al hacer un pedido.</p>
+        </div>
+      </header>
+
+      @if (metodosPago().length === 0) {
+        <div class="muted">Sin métodos de pago registrados.</div>
+      } @else {
+        <div class="config-list">
+          @for (metodo of metodosPago(); track metodo.id) {
+            <div class="config-row">
+              <div>
+                <div class="config-name">{{ metodo.nombre }}</div>
+                <div class="muted small">{{ metodo.activo ? 'Visible en la tienda' : 'Oculto en la tienda' }}</div>
+              </div>
+              <div class="config-actions">
+                <app-badge [tone]="metodo.activo ? 'success' : 'danger'">
+                  {{ metodo.activo ? 'Activo' : 'Inactivo' }}
+                </app-badge>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    [checked]="metodo.activo"
+                    [disabled]="accionandoId() !== null"
+                    (change)="alternarPago(metodo)"
+                  />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <header class="row-between">
+        <div>
+          <h2 class="card-title">Métodos de entrega</h2>
+          <p class="report-note">Costo de envío y visibilidad en la tienda.</p>
+        </div>
+      </header>
+
+      @if (metodosEntrega().length === 0) {
+        <div class="muted">Sin métodos de entrega registrados.</div>
+      } @else {
+        <div class="config-list">
+          @for (metodo of metodosEntrega(); track metodo.id) {
+            <div class="config-row">
+              <div>
+                <div class="config-name">{{ metodo.nombre }}</div>
+                <div class="muted small">{{ metodo.activo ? 'Visible en la tienda' : 'Oculto en la tienda' }}</div>
+              </div>
+              <div class="config-actions">
+                <div class="costo-edit">
+                  <label class="muted small">Costo</label>
+                  <input class="input costo-input" type="number" min="0" step="0.01" [(ngModel)]="metodo.costo" />
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    [disabled]="guardandoCosto() === metodo.id"
+                    (click)="guardarCosto(metodo)"
+                  >
+                    {{ guardandoCosto() === metodo.id ? 'Guardando…' : 'Guardar' }}
+                  </button>
+                </div>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    [checked]="metodo.activo"
+                    [disabled]="accionandoId() !== null"
+                    (change)="alternarEntrega(metodo)"
+                  />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

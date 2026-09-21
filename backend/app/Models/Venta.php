@@ -60,7 +60,7 @@ class Venta extends Model
 
     public function getTotalPagadoAttribute(): string
     {
-        return number_format($this->getPagoTotalAtributo(), 2);
+        return number_format($this->getPagoTotalAtributo(), 2, '.', '');
     }
 
     private function getPagoTotalAtributo(): float

@@ -108,7 +108,7 @@
 
     <article class="card panel">
       <header class="panel-head">
-        <span class="panel-icon tone-success">$$</span>
+        <span class="panel-icon tone-success">Bs</span>
         <div class="panel-titles">
           <h2 class="panel-title">Pagos</h2>
           <p class="panel-sub">{{ d.pagos.pagados }} pedidos pagados</p>
@@ -127,6 +127,39 @@
         <li>
           <span class="m-label">Pendientes de pago</span>
           <span class="m-value tone-warning">{{ d.pagos.pendientes }}</span>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <header class="panel-head">
+        <span class="panel-icon tone-warning">◎</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Rentabilidad</h2>
+          <p class="panel-sub">Ventas − costos − gastos</p>
+        </div>
+        <span class="panel-total">{{ moneda(d.rentabilidad.ganancia_neta) }}</span>
+      </header>
+      <ul class="metrics">
+        <li>
+          <span class="m-label">Ticket promedio</span>
+          <span class="m-value tone-primary">{{ moneda(d.rentabilidad.ticket_promedio) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Ingresos</span>
+          <span class="m-value tone-success">{{ moneda(d.rentabilidad.ingresos) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Costo de mercadería</span>
+          <span class="m-value tone-danger">{{ moneda(d.rentabilidad.costo_mercaderia) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Gastos operativos</span>
+          <span class="m-value tone-danger">{{ moneda(d.rentabilidad.gastos_operativos) }}</span>
+        </li>
+        <li>
+          <span class="m-label">Ventas en el período</span>
+          <span class="m-value">{{ d.rentabilidad.cantidad_ventas }}</span>
         </li>
       </ul>
     </article>

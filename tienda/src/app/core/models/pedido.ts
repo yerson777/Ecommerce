@@ -55,4 +55,5 @@ export interface CheckoutPayload {
   notas: string | null;
   metodo_pago_id: number | null;
   metodo_entrega_id: number | null;
+  codigo_cupon?: string | null;
 }

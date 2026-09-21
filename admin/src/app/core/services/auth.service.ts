@@ -1,9 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { ApiResponse, AuthUser, LoginResponse } from '../models/api-response';
 import { ApiService } from './api.service';
 import { TokenService } from './token.service';
+
+const CACHE_KEY = 'everly_admin_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService extends ApiService {
@@ -34,20 +36,35 @@ export class AuthService extends ApiService {
 
   iniciarSesion(res: LoginResponse): void {
     this.saveToken(res.token);
-    this.usuario.set(res.user);
+    this.setUsuario(res.user);
   }
 
-  cargarUsuario(): void {
-    this.me().subscribe({
-      next: (res) => {
-        if (res.success && res.data?.user) {
-          this.usuario.set(res.data.user);
-        }
-      },
-      error: () => {
+  cargarUsuario(): Promise<AuthUser | null> {
+    const actual = this.usuario();
+    if (actual) {
+      return Promise.resolve(actual);
+    }
+
+    const cache = this.leerCache();
+    if (cache) {
+      this.usuario.set(cache);
+      return Promise.resolve(cache);
+    }
+
+    if (!this.tokenService.getToken()) {
+      return Promise.resolve(null);
+    }
+
+    return firstValueFrom(this.me())
+      .then((res) => {
+        const usuario = res.success && res.data?.user ? res.data.user : null;
+        this.setUsuario(usuario);
+        return usuario;
+      })
+      .catch(() => {
         this.usuario.set(null);
-      },
-    });
+        return null;
+      });
   }
 
   cerrarSesion(): void {
@@ -57,8 +74,31 @@ export class AuthService extends ApiService {
     });
   }
 
+  private setUsuario(usuario: AuthUser | null): void {
+    this.usuario.set(usuario);
+    if (usuario) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(usuario));
+    } else {
+      localStorage.removeItem(CACHE_KEY);
+    }
+  }
+
+  private leerCache(): AuthUser | null {
+    const crudo = localStorage.getItem(CACHE_KEY);
+    if (!crudo) {
+      return null;
+    }
+    try {
+      return JSON.parse(crudo) as AuthUser;
+    } catch {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+  }
+
   private finalizarSesion(): void {
     this.tokenService.clearToken();
     this.usuario.set(null);
+    localStorage.removeItem(CACHE_KEY);
   }
 }

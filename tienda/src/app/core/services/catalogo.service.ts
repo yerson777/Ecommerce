@@ -6,6 +6,7 @@ import { Paginated } from '../models/paginated';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../models/producto';
 import { MetodoEntrega, MetodoPago, PedidoPublico, CheckoutPayload } from '../models/pedido';
 import { BannerPublico } from '../models/banner';
+import { ValidarCuponResultado } from '../models/cupon';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogoService extends ApiService {
@@ -63,6 +64,15 @@ export class CatalogoService extends ApiService {
 
   metodosPago(): Observable<ApiResponse<MetodoPago[]>> {
     return this.get<ApiResponse<MetodoPago[]>>('/v1/store/metodos-pago');
+  }
+
+  validarCupon(codigo: string, subtotal: number): Observable<ApiResponse<ValidarCuponResultado>> {
+    const query = new URLSearchParams();
+    query.set('codigo', codigo.trim().toUpperCase());
+    query.set('subtotal', String(subtotal));
+    return this.get<ApiResponse<ValidarCuponResultado>>(
+      `/v1/store/cupones/validar?${query.toString()}`,
+    );
   }
 
   crearPedido(payload: CheckoutPayload, comprobante?: File | null): Observable<ApiResponse<PedidoPublico>> {

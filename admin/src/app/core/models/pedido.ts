@@ -1,8 +1,14 @@
 import type { Cliente } from './cliente';
 
-export type EstadoPedido = 'pendiente' | 'confirmado' | 'cancelado' | 'completado';
+export type EstadoPedido = 'pendiente' | 'confirmado' | 'cancelado' | 'completado' | 'devuelto';
 
-export type EstadoPagoPedido = 'pendiente' | 'parcial' | 'pagado' | 'cancelado';
+export type EstadoPagoPedido = 'pendiente' | 'parcial' | 'pagado' | 'cancelado' | 'reembolsado';
+
+export interface Devolucion {
+  motivo: string;
+  monto_reembolsado: string;
+  devuelto_en: string | null;
+}
 
 export interface PedidoItem {
   id: number;
@@ -34,6 +40,7 @@ export interface Pedido {
   estado_pago?: EstadoPagoPedido | null;
   total_pagado?: string | null;
   saldo_pendiente?: string | null;
+  devolucion?: Devolucion | null;
   created_at?: string | null;
 }
 
@@ -51,6 +58,7 @@ export const ETIQUETA_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
   confirmado: 'Confirmado',
   cancelado: 'Cancelado',
   completado: 'Completado',
+  devuelto: 'Devuelto',
 };
 
 export const TONO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
@@ -58,6 +66,7 @@ export const TONO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
   confirmado: 'info',
   cancelado: 'danger',
   completado: 'success',
+  devuelto: 'neutral',
 };
 
 export const ETIQUETA_ESTADO_PAGO_PEDIDO: Record<EstadoPagoPedido, string> = {
@@ -65,6 +74,7 @@ export const ETIQUETA_ESTADO_PAGO_PEDIDO: Record<EstadoPagoPedido, string> = {
   parcial: 'Parcial',
   pagado: 'Pagado',
   cancelado: 'Cancelado',
+  reembolsado: 'Reembolsado',
 };
 
 export const TONO_ESTADO_PAGO_PEDIDO: Record<EstadoPagoPedido, string> = {
@@ -72,4 +82,5 @@ export const TONO_ESTADO_PAGO_PEDIDO: Record<EstadoPagoPedido, string> = {
   parcial: 'info',
   pagado: 'success',
   cancelado: 'danger',
+  reembolsado: 'neutral',
 };

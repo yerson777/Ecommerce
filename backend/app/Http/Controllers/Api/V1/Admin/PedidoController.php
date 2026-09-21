@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\Admin\Pedido\PedidoDevolucionStoreRequest;
 use App\Http\Requests\V1\Admin\Pedido\PedidoEstadoUpdateRequest;
 use App\Http\Resources\V1\PedidoResource;
 use App\Models\Pago;
@@ -48,6 +49,8 @@ class PedidoController extends Controller
             'metodoPago',
             'metodoEntrega',
             'venta',
+            'devolucion',
+            'cupon',
         ])
             ->withSum(['pagos as pagos_completados_total' => fn ($q) => $q->where('estado', Pago::ESTADO_COMPLETADO)], 'monto')
             ->findOrFail($id);
@@ -60,5 +63,18 @@ class PedidoController extends Controller
         $pedido = $this->pedidos->cambiarEstado($id, $request->string('estado')->toString());
 
         return Api::resource(new PedidoResource($pedido), 'Estado del pedido actualizado.');
+    }
+
+    public function devolver(PedidoDevolucionStoreRequest $request, int $id)
+    {
+        $datos = $request->validated();
+
+        $pedido = $this->pedidos->devolver(
+            $id,
+            trim($datos['motivo']),
+            isset($datos['monto_reembolso']) ? (float) $datos['monto_reembolso'] : null,
+        );
+
+        return Api::resource(new PedidoResource($pedido), 'Devolución registrada correctamente.');
     }
 }

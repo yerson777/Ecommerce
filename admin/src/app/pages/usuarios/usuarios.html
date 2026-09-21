@@ -1,0 +1,202 @@
+﻿<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Usuarios</h1>
+      <p class="page-subtitle">Usuarios del sistema, roles y acceso por módulo</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nuevo usuario</button>
+      <app-notification-center />
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nombre o correo…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Rol</label>
+        <select class="input" [(ngModel)]="filtros().rol" (change)="onBuscar()">
+          <option value="">Todos</option>
+          @for (rol of roles; track rol) {
+            <option [value]="rol">{{ etiquetasRol[rol] }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="◈"
+          title="Sin resultados"
+          message="No se encontraron usuarios con los filtros aplicados."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Registrado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usuario of page.data; track usuario.id) {
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <span class="user-avatar-tabla">{{ usuario.name.charAt(0).toUpperCase() }}</span>
+                      <span>{{ usuario.name }}</span>
+                      @if (esYo(usuario)) {
+                        <span class="chip">tú</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="muted">{{ usuario.email }}</td>
+                  <td>
+                    <app-badge tone="neutral">{{ usuario.etiqueta_rol }}</app-badge>
+                  </td>
+                  <td>
+                    <app-badge [tone]="usuario.activo ? 'success' : 'danger'">
+                      {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                    </app-badge>
+                  </td>
+                  <td class="muted">{{ formatearFecha(usuario.created_at) }}</td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-outline btn-sm" (click)="abrirEditar(usuario)">
+                        Editar
+                      </button>
+                      @if (usuario.activo) {
+                        @if (!esYo(usuario)) {
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            (click)="pedirDesactivar(usuario)"
+                          >
+                            Desactivar
+                          </button>
+                        }
+                      } @else {
+                        <button type="button" class="btn btn-outline btn-sm" (click)="reactivar(usuario)">
+                          Reactivar
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar usuario' : 'Nuevo usuario'"
+    [width]="'520px'"
+    (closed)="cerrarModal()"
+  >
+    <div class="stack">
+      @if (errorFormulario()) {
+        <div class="alert alert-error">{{ errorFormulario() }}</div>
+      }
+
+      <div class="field">
+        <label>Nombre completo</label>
+        <input class="input" type="text" [(ngModel)]="form.name" placeholder="Nombre y apellido" />
+      </div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input class="input" type="email" [(ngModel)]="form.email" placeholder="correo@ejemplo.com" />
+      </div>
+
+      <div class="field">
+        <label>Rol</label>
+        <select class="input" [(ngModel)]="form.rol" [disabled]="!!(editando() && esYo(editando()!))">
+          @for (rol of roles; track rol) {
+            <option [value]="rol">{{ etiquetasRol[rol] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>
+          Contraseña
+          @if (editando()) {
+            <span class="muted"> (dejá en blanco para no cambiarla)</span>
+          }
+        </label>
+        <input class="input" type="password" [(ngModel)]="form.password" placeholder="Mínimo 8 caracteres" />
+      </div>
+
+      @if (!editando()) {
+        <div class="field check-row">
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="form.activo" />
+            <span>Activo</span>
+          </label>
+        </div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" [disabled]="guardando()" (click)="guardar()">
+          {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear usuario' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (desactivarObjetivo) {
+  <app-confirm-dialog
+    title="Desactivar usuario"
+    [message]="'¿Seguro que querés desactivar a ' + desactivarObjetivo.name + '? No podrá iniciar sesión hasta que sea reactivado.'"
+    confirmLabel="Desactivar"
+    (confirm)="confirmarDesactivar()"
+    (cancel)="desactivarObjetivo = null"
+  />
+}

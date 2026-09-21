@@ -11,8 +11,12 @@ import { VentasComponent } from './pages/ventas/ventas';
 import { PedidosComponent } from './pages/pedidos/pedidos';
 import { ClientesComponent } from './pages/clientes/clientes';
 import { PagosComponent } from './pages/pagos/pagos';
+import { CajaComponent } from './pages/caja/caja';
 import { ReportesComponent } from './pages/reportes/reportes';
 import { BannersComponent } from './pages/banners/banners';
+import { ConfiguracionComponent } from './pages/configuracion/configuracion';
+import { CuponesComponent } from './pages/cupones/cupones';
+import { UsuariosComponent } from './pages/usuarios/usuarios';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
@@ -29,8 +33,12 @@ export const routes: Routes = [
       { path: 'pedidos', component: PedidosComponent },
       { path: 'clientes', component: ClientesComponent },
       { path: 'pagos', component: PagosComponent },
+      { path: 'caja', component: CajaComponent },
       { path: 'reportes', component: ReportesComponent },
       { path: 'banners', component: BannersComponent },
+      { path: 'cupones', component: CuponesComponent },
+      { path: 'configuracion', component: ConfiguracionComponent },
+      { path: 'usuarios', component: UsuariosComponent },
     ],
   },
   { path: '**', component: NotFoundComponent },

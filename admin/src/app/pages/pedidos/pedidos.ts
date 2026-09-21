@@ -20,7 +20,7 @@ interface TransicionObjetivo {
 }
 
 function esEstadoTransicionable(estado: string): estado is EstadoPedido {
-  return ['pendiente', 'confirmado', 'cancelado', 'completado'].includes(estado);
+  return ['pendiente', 'confirmado', 'cancelado', 'completado', 'devuelto'].includes(estado);
 }
 
 @Component({
@@ -60,6 +60,10 @@ export class PedidosComponent implements OnInit {
   readonly detalleCargando = signal(false);
   readonly transicion = signal<TransicionObjetivo | null>(null);
   readonly transicionando = signal(false);
+
+  readonly devolucionAbierta = signal(false);
+  readonly devolviendo = signal(false);
+  readonly motivo = signal('');
 
   readonly perPage = 15;
 
@@ -226,9 +230,58 @@ export class PedidosComponent implements OnInit {
     return 'neutral';
   }
 
+  abrirDevolucion(): void {
+    this.motivo.set('');
+    this.devolucionAbierta.set(true);
+  }
+
+  cerrarDevolucion(): void {
+    if (this.devolviendo()) {
+      return;
+    }
+    this.devolucionAbierta.set(false);
+  }
+
+  montoSugeridoDevolucion(): number {
+    const detalle = this.detalle();
+    if (!detalle) {
+      return 0;
+    }
+    return Math.min(parseFloat(detalle.total_pagado ?? '0'), parseFloat(detalle.total ?? '0'));
+  }
+
+  confirmarDevolucion(): void {
+    const detalle = this.detalle();
+    if (!detalle || this.devolviendo()) {
+      return;
+    }
+    const motivo = this.motivo().trim();
+    if (!motivo) {
+      this.toast.error('Indicá el motivo de la devolución.');
+      return;
+    }
+
+    this.devolviendo.set(true);
+    this.pedidosService
+      .devolver(detalle.id, { motivo, monto_reembolso: this.montoSugeridoDevolucion() })
+      .subscribe({
+        next: () => {
+          this.devolviendo.set(false);
+          this.devolucionAbierta.set(false);
+          this.toast.success('Devolución registrada correctamente.');
+          this.cargar();
+          this.verDetalle(detalle);
+        },
+        error: (err) => {
+          this.devolviendo.set(false);
+          this.toast.error(err.message ?? 'No se pudo registrar la devolución.');
+        },
+      });
+  }
+
   moneda(valor: string | number | null | undefined): string {
     const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 
   formatearFecha(fecha: string | null | undefined): string {

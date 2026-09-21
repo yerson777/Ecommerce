@@ -25,6 +25,7 @@ class GenerarNotificacionPedidoEstado
             Pedido::ESTADO_CONFIRMADO => Notificacion::TIPO_PEDIDO_CONFIRMADO,
             Pedido::ESTADO_CANCELADO => Notificacion::TIPO_PEDIDO_CANCELADO,
             Pedido::ESTADO_COMPLETADO => Notificacion::TIPO_PEDIDO_COMPLETADO,
+            Pedido::ESTADO_DEVUELTO => Notificacion::TIPO_PEDIDO_DEVUELTO,
             default => null,
         };
 
@@ -36,6 +37,7 @@ class GenerarNotificacionPedidoEstado
             Notificacion::TIPO_PEDIDO_CONFIRMADO => sprintf('El pedido %s fue confirmado.', $pedido->numero_pedido),
             Notificacion::TIPO_PEDIDO_CANCELADO => sprintf('El pedido %s fue cancelado y las prendas volvieron a estar disponibles.', $pedido->numero_pedido),
             Notificacion::TIPO_PEDIDO_COMPLETADO => sprintf('El pedido %s fue completado y su venta fue registrada.', $pedido->numero_pedido),
+            Notificacion::TIPO_PEDIDO_DEVUELTO => sprintf('El pedido %s fue devuelto. Se registró el reembolso correspondiente.', $pedido->numero_pedido),
             default => sprintf('El pedido %s cambió su estado a %s.', $pedido->numero_pedido, $pedido->estado),
         };
 

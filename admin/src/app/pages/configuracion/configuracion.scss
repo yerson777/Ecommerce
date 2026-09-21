@@ -1,0 +1,107 @@
+.config-spinner {
+  padding: 3rem 0;
+}
+
+.config-stack {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.config-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.config-row:first-child {
+  border-top: 0;
+}
+
+.config-name {
+  font-weight: 600;
+}
+
+.config-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.costo-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.costo-input {
+  width: 7rem;
+  text-align: right;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.2s ease;
+}
+
+.slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked + .slider {
+  background: var(--success);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+.switch input:disabled + .slider {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .config-row {
+    flex-wrap: wrap;
+  }
+
+  .costo-edit {
+    flex-wrap: wrap;
+  }
+}

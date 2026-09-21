@@ -60,7 +60,7 @@ export class ChartDonutComponent {
   });
 
   formato(valor: number): string {
-    return this.esMonto() ? `$${valor.toFixed(2)}` : String(valor);
+    return this.esMonto() ? `Bs ${valor.toFixed(2)}` : String(valor);
   }
 
   porcentaje(valor: number): number {

@@ -19,7 +19,7 @@
 @if (esVender()) {
   <p class="intro">
     Vender <strong>{{ producto().nombre }}</strong> (<span class="mono">{{ producto().codigo }}</span>) por
-    <strong>${{ producto().precio }}</strong>. Se creará la venta formal y la prenda quedará como <em>vendida</em>.
+    <strong>{{ moneda(producto().precio) }}</strong>. Se creará la venta formal y la prenda quedará como <em>vendida</em>.
   </p>
 
   <div class="field">
@@ -37,7 +37,7 @@
   </div>
 
   <div class="field">
-    <label>Costo de envío ($)</label>
+    <label>Costo de envío (Bs)</label>
     <input class="input" type="number" min="0" step="0.01" [(ngModel)]="costoEnvio" name="costo_envio" />
   </div>
 

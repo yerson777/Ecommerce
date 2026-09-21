@@ -120,10 +120,43 @@
           <span class="muted">{{ item.codigo }}</span>
           <span>{{ formatearPrecio(item.precio) }}</span>
         </div>
+        <div class="cupon">
+          <label class="muted" for="campoCupon">¿Tenés un cupón?</label>
+          <div class="cupon-fila">
+            <input
+              id="campoCupon"
+              class="input"
+              type="text"
+              placeholder="Ej: EVERLY10"
+              [value]="cuponCodigo()"
+              (input)="cuponCodigo.set(limpiarCupon($event))"
+              [disabled]="cuponAplicado()"
+            />
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="!cuponCodigo().trim() || cuponAplicado() || validandoCupon()"
+              (click)="aplicarCupon()"
+            >
+              {{ validandoCupon() ? 'Validando…' : cuponAplicado() ? '✔' : 'Aplicar' }}
+            </button>
+          </div>
+          @if (cuponMensaje(); as msj) {
+            <p class="cupon-msj" [class.cupon-msj--ok]="cuponAplicado()" [class.cupon-msj--err]="cuponError()">
+              {{ msj }}
+            </p>
+          }
+        </div>
         <div class="resumen-fila" style="margin-top: 0.9rem">
           <span class="muted">Subtotal ({{ items().length }})</span>
           <span>{{ formatearPrecio(subtotal()) }}</span>
         </div>
+        @if (cuponDescuento(); as dcto) {
+          <div class="resumen-fila resumen-fila--descuento">
+            <span class="muted">Cupón ({{ cuponCodigo() }})</span>
+            <span>-{{ formatearPrecio(dcto) }}</span>
+          </div>
+        }
         <div class="resumen-fila">
           <span class="muted">Envío</span>
           <span>{{ formatearPrecio(costoEnvio()) }}</span>

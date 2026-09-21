@@ -8,9 +8,12 @@ use Illuminate\Support\Facades\Route;
 | API Routes - Everly
 |--------------------------------------------------------------------------
 |
-|  /api/v1/store/*  -> PÃºblicas (tienda Angular). Sin costo, margen ni datos
+|  /api/v1/store/*  -> Públicas (tienda Angular). Sin costo, margen ni datos
 |                      administrativos.
-|  /api/v1/admin/*  -> Protegidas con auth:sanctum + rol admin.
+|  /api/v1/admin/*  -> Protegidas con auth:sanctum.
+|                      * role:super_admin,admin,vendedor   -> módulos operativos
+|                      * role:super_admin,admin            -> módulos financieros
+|                      * role:super_admin                  -> gestión de usuarios
 |
 */
 
@@ -22,7 +25,7 @@ Route::get('/ping', fn () => response()->json([
 
 Route::group(['prefix' => 'v1'], function () {
 
-    /* ====================== STORE (pÃºblico) ====================== */
+    /* ====================== STORE (público) ====================== */
     Route::prefix('store')->name('store.')->group(function () {
         Route::get('/products', [App\Http\Controllers\Api\V1\Store\ProductoController::class, 'index'])->name('productos.index');
         Route::get('/products/{id}', [App\Http\Controllers\Api\V1\Store\ProductoController::class, 'show'])->name('productos.show');
@@ -30,6 +33,9 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('/categories', [App\Http\Controllers\Api\V1\Store\CategoriaController::class, 'index'])->name('categorias.index');
         Route::get('/sizes', [App\Http\Controllers\Api\V1\Store\TallaController::class, 'index'])->name('tallas.index');
         Route::get('/banners', [App\Http\Controllers\Api\V1\Store\BannerController::class, 'index'])->name('banners.index');
+
+        // Cupones disponibles para promociones activas (validación real en checkout)
+        Route::get('/cupones/validar', [App\Http\Controllers\Api\V1\Store\CuponController::class, 'validar'])->name('cupones.validar');
 
         // Carrito / checkout de la tienda
         Route::get('/metodos-entrega', [App\Http\Controllers\Api\V1\Store\CheckoutController::class, 'metodosEntrega'])->name('metodos-entrega.index');
@@ -48,9 +54,27 @@ Route::group(['prefix' => 'v1'], function () {
         Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/auth/logout', [App\Http\Controllers\Api\V1\Admin\AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/auth/me', [App\Http\Controllers\Api\V1\Admin\AuthController::class, 'me'])->name('auth.me');
+
+            // ==== Notificaciones ====
+            Route::get('/notificaciones', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'index'])->name('notificaciones.index');
+            Route::get('/notificaciones/contador', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'contador'])->name('notificaciones.contador');
+            Route::post('/notificaciones/{id}/leida', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'marcarLeida'])->name('notificaciones.marcar-leida');
+            Route::post('/notificaciones/leidas', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'marcarTodasLeidas'])->name('notificaciones.marcar-todas-leidas');
+
+            // ==== Comunicaciones ====
+            Route::get('/comunicaciones', [App\Http\Controllers\Api\V1\Admin\ComunicacionController::class, 'index'])->name('comunicaciones.index');
+            Route::post('/comunicaciones', [App\Http\Controllers\Api\V1\Admin\ComunicacionController::class, 'store'])->name('comunicaciones.store');
+
+            // ==== Plantillas de mensaje ====
+            Route::get('/plantillas-mensajes', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'index'])->name('plantillas-mensajes.index');
+            Route::post('/plantillas-mensajes', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'store'])->name('plantillas-mensajes.store');
+            Route::get('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'mostrar'])->name('plantillas-mensajes.mostrar');
+            Route::put('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'actualizar'])->name('plantillas-mensajes.actualizar');
+            Route::delete('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'eliminar'])->name('plantillas-mensajes.eliminar');
         });
 
-        Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
+        // ==== Módulos operativos (super_admin, admin y vendedor) ====
+        Route::middleware(['auth:sanctum', 'role:super_admin,admin,vendedor'])->group(function () {
             Route::get('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'index'])->name('productos.index');
             Route::post('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'store'])->name('productos.store');
             Route::get('/productos/{id}', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'show'])->name('productos.show');
@@ -64,7 +88,7 @@ Route::group(['prefix' => 'v1'], function () {
 
             Route::get('/productos/{id}/historial', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'historial'])->name('productos.historial');
 
-            // ImÃ¡genes de producto
+            // Imágenes de producto
             Route::get('/productos/{id}/imagenes', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'index'])->name('productos.imagenes');
             Route::post('/productos/{id}/imagenes', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'store'])->name('productos.imagenes.store');
             Route::put('/productos/{id}/imagenes/orden', [App\Http\Controllers\Api\V1\Admin\ProductoImagenController::class, 'reorder'])->name('productos.imagenes.orden');
@@ -94,9 +118,27 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/pedidos', [App\Http\Controllers\Api\V1\Admin\PedidoController::class, 'index'])->name('pedidos.index');
             Route::get('/pedidos/{id}', [App\Http\Controllers\Api\V1\Admin\PedidoController::class, 'show'])->name('pedidos.show');
             Route::put('/pedidos/{id}/estado', [App\Http\Controllers\Api\V1\Admin\PedidoController::class, 'cambiarEstado'])->name('pedidos.estado');
+            Route::post('/pedidos/{id}/devolver', [App\Http\Controllers\Api\V1\Admin\PedidoController::class, 'devolver'])->name('pedidos.devolver');
 
             Route::get('/ventas', [App\Http\Controllers\Api\V1\Admin\VentaController::class, 'index'])->name('ventas.index');
             Route::get('/ventas/{id}', [App\Http\Controllers\Api\V1\Admin\VentaController::class, 'show'])->name('ventas.show');
+
+            // Banners del carrusel de la tienda
+            Route::get('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'index'])->name('banners.index');
+            Route::post('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'store'])->name('banners.store');
+            Route::put('/banners/orden', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'reorder'])->name('banners.orden');
+            Route::post('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'update'])->name('banners.update');
+            Route::delete('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'destroy'])->name('banners.destroy');
+        });
+
+        // ==== Módulos financieros (super_admin y admin) ====
+        Route::middleware(['auth:sanctum', 'role:super_admin,admin'])->group(function () {
+            // ==== Cupones (promociones) ====
+            Route::get('/cupones', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'index'])->name('cupones.index');
+            Route::post('/cupones', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'store'])->name('cupones.store');
+            Route::get('/cupones/{id}', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'show'])->name('cupones.show');
+            Route::put('/cupones/{id}', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'update'])->name('cupones.update');
+            Route::delete('/cupones/{id}', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'destroy'])->name('cupones.destroy');
 
             Route::get('/pagos', [App\Http\Controllers\Api\V1\Admin\PagoController::class, 'index'])->name('pagos.index');
             Route::post('/pagos', [App\Http\Controllers\Api\V1\Admin\PagoController::class, 'store'])->name('pagos.store');
@@ -107,18 +149,24 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/pagos/{id}/comprobante', [App\Http\Controllers\Api\V1\Admin\PagoController::class, 'descargarComprobante'])->name('pagos.descargar-comprobante');
             Route::get('/metodos-pago', [App\Http\Controllers\Api\V1\Admin\PagoController::class, 'metodosPago'])->name('metodos-pago.index');
 
-            // Banners del carrusel de la tienda
-            Route::get('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'index'])->name('banners.index');
-            Route::post('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'store'])->name('banners.store');
-            Route::put('/banners/orden', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'reorder'])->name('banners.orden');
-            Route::post('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'update'])->name('banners.update');
-            Route::delete('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'destroy'])->name('banners.destroy');
-
+            // Gastos operativos
+            Route::get('/gastos/categorias', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'categorias'])->name('gastos.categorias');
             Route::get('/gastos', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'index'])->name('gastos.index');
+            Route::post('/gastos', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'store'])->name('gastos.store');
             Route::get('/gastos/{id}', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'show'])->name('gastos.show');
+            Route::delete('/gastos/{id}', [App\Http\Controllers\Api\V1\Admin\GastoController::class, 'destroy'])->name('gastos.destroy');
 
             Route::get('/caja/movimientos', [App\Http\Controllers\Api\V1\Admin\CajaController::class, 'movimientos'])->name('caja.movimientos');
+            Route::post('/caja/movimientos', [App\Http\Controllers\Api\V1\Admin\CajaController::class, 'store'])->name('caja.movimientos.store');
+            Route::get('/caja/flujo', [App\Http\Controllers\Api\V1\Admin\CajaController::class, 'flujo'])->name('caja.flujo');
             Route::get('/caja/saldo', [App\Http\Controllers\Api\V1\Admin\CajaController::class, 'saldo'])->name('caja.saldo');
+            Route::delete('/caja/movimientos/{id}', [App\Http\Controllers\Api\V1\Admin\CajaController::class, 'destroy'])->name('caja.movimientos.destroy');
+
+            // ==== Configuración ====
+            Route::get('/config/metodos-pago', [App\Http\Controllers\Api\V1\Admin\ConfiguracionController::class, 'metodosPago'])->name('config.metodos-pago');
+            Route::put('/config/metodos-pago/{id}', [App\Http\Controllers\Api\V1\Admin\ConfiguracionController::class, 'actualizarMetodoPago'])->name('config.metodos-pago.update');
+            Route::get('/config/metodos-entrega', [App\Http\Controllers\Api\V1\Admin\ConfiguracionController::class, 'metodosEntrega'])->name('config.metodos-entrega');
+            Route::put('/config/metodos-entrega/{id}', [App\Http\Controllers\Api\V1\Admin\ConfiguracionController::class, 'actualizarMetodoEntrega'])->name('config.metodos-entrega.update');
 
             // ==== Reportes y Estadísticas ====
             Route::get('/reportes/resumen', [App\Http\Controllers\Api\V1\Admin\ReporteController::class, 'resumen'])->name('reportes.resumen');
@@ -136,29 +184,20 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/reportes/exportar/{tipo}', [App\Http\Controllers\Api\V1\Admin\ReporteController::class, 'exportar'])->name('reportes.exportar');
 
             Route::get('/dashboard', [App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'index'])->name('dashboard');
+        });
 
-            // ==== Notificaciones ====
-            Route::get('/notificaciones', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'index'])->name('notificaciones.index');
-            Route::get('/notificaciones/contador', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'contador'])->name('notificaciones.contador');
-            Route::post('/notificaciones/{id}/leida', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'marcarLeida'])->name('notificaciones.marcar-leida');
-            Route::post('/notificaciones/leidas', [App\Http\Controllers\Api\V1\Admin\NotificacionController::class, 'marcarTodasLeidas'])->name('notificaciones.marcar-todas-leidas');
-
-            // ==== Comunicaciones ====
-            Route::get('/comunicaciones', [App\Http\Controllers\Api\V1\Admin\ComunicacionController::class, 'index'])->name('comunicaciones.index');
-            Route::post('/comunicaciones', [App\Http\Controllers\Api\V1\Admin\ComunicacionController::class, 'store'])->name('comunicaciones.store');
-
-            // ==== Plantillas de mensaje ====
-            Route::get('/plantillas-mensajes', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'index'])->name('plantillas-mensajes.index');
-            Route::post('/plantillas-mensajes', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'store'])->name('plantillas-mensajes.store');
-            Route::get('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'mostrar'])->name('plantillas-mensajes.mostrar');
-            Route::put('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'actualizar'])->name('plantillas-mensajes.actualizar');
-            Route::delete('/plantillas-mensajes/{id}', [App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController::class, 'eliminar'])->name('plantillas-mensajes.eliminar');
-
+        // ==== Gestión de usuarios (solo super_admin) ====
+        Route::middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
+            Route::get('/usuarios', [App\Http\Controllers\Api\V1\Admin\UsuarioController::class, 'index'])->name('usuarios.index');
+            Route::post('/usuarios', [App\Http\Controllers\Api\V1\Admin\UsuarioController::class, 'store'])->name('usuarios.store');
+            Route::get('/usuarios/{id}', [App\Http\Controllers\Api\V1\Admin\UsuarioController::class, 'show'])->name('usuarios.show');
+            Route::put('/usuarios/{id}', [App\Http\Controllers\Api\V1\Admin\UsuarioController::class, 'update'])->name('usuarios.update');
+            Route::delete('/usuarios/{id}', [App\Http\Controllers\Api\V1\Admin\UsuarioController::class, 'destroy'])->name('usuarios.destroy');
         });
     });
 });
 
-// Ruta de verificaciÃ³n histÃ³rica (auth:sanctum)
+// Ruta de verificación histórica (auth:sanctum)
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');

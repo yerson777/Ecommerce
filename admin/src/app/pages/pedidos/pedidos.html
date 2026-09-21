@@ -28,6 +28,7 @@
           <option value="confirmado">Confirmado</option>
           <option value="cancelado">Cancelado</option>
           <option value="completado">Completado</option>
+          <option value="devuelto">Devuelto</option>
         </select>
       </div>
 
@@ -233,6 +234,24 @@
           </div>
         </div>
 
+        @if (detalle.devolucion) {
+          <div class="devolucion">
+            <h3 class="subtitle">Devolución registrada</h3>
+            <div class="row-between">
+              <span class="muted">Motivo</span>
+              <span>{{ detalle.devolucion!.motivo }}</span>
+            </div>
+            <div class="row-between">
+              <span class="muted">Monto reembolsado</span>
+              <span>{{ moneda(detalle.devolucion!.monto_reembolsado) }}</span>
+            </div>
+            <div class="row-between">
+              <span class="muted">Fecha</span>
+              <span>{{ formatearFecha(detalle.devolucion!.devuelto_en) }}</span>
+            </div>
+          </div>
+        }
+
         @if (detalle.estado === 'pendiente' || detalle.estado === 'confirmado') {
           <div class="transiciones">
             <h3 class="subtitle">Cambiar estado</h3>
@@ -254,12 +273,27 @@
                   </button>
                 }
               }
+              @if (!detalle.devolucion) {
+                <button type="button" class="btn btn-danger" (click)="abrirDevolucion()">
+                  Registrar devolución
+                </button>
+              }
             </div>
           </div>
         }
 
-        @if (detalle.estado === 'cancelado' || detalle.estado === 'completado') {
-          <p class="muted fin">Pedido {{ detalle.estado }}. No admite más cambios de estado.</p>
+        @if (detalle.estado === 'completado' && !detalle.devolucion) {
+          <div class="transiciones">
+            <div class="transiciones-botones">
+              <button type="button" class="btn btn-danger" (click)="abrirDevolucion()">
+                Registrar devolución
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (detalle.estado === 'cancelado' || detalle.estado === 'devuelto') {
+          <p class="muted fin">Pedido {{ etiquetaEstado(detalle.estado) }}. No admite más cambios de estado.</p>
         }
       </div>
     } @else {
@@ -279,4 +313,39 @@
     (confirm)="confirmarTransicion()"
     (cancel)="cancelarTransicion()"
   />
+}
+
+@if (devolucionAbierta()) {
+  <app-modal title="Registrar devolución" (closed)="cerrarDevolucion()">
+    <div class="stack">
+      <p>
+        Se devolverá el pedido {{ detalle()?.numero_pedido }} y las prendas volverán a estar disponibles.
+      </p>
+
+      <div class="field">
+        <label>Monto a reembolsar</label>
+        <div class="muted">{{ moneda(montoSugeridoDevolucion()) }}</div>
+      </div>
+
+      <div class="field">
+        <label for="motivo-devolucion">Motivo</label>
+        <textarea
+          id="motivo-devolucion"
+          class="input"
+          rows="3"
+          placeholder="Ej.: El cliente recibió la talla equivocada"
+          [(ngModel)]="motivo"
+        ></textarea>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" [disabled]="devolviendo()" (click)="cerrarDevolucion()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" [disabled]="devolviendo()" (click)="confirmarDevolucion()">
+          {{ devolviendo() ? 'Registrando…' : 'Confirmar devolución' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
 }

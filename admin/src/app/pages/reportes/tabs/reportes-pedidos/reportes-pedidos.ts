@@ -158,6 +158,6 @@ export class ReportesPedidosComponent {
 
   moneda(valor: string): string {
     const numero = parseFloat(valor);
-    return `$${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
+    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 }

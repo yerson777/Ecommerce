@@ -15,11 +15,13 @@ class Pago extends Model
     public const ESTADO_PENDIENTE = 'pendiente';
     public const ESTADO_COMPLETADO = 'completado';
     public const ESTADO_ANULADO = 'anulado';
+    public const ESTADO_REEMBOLSADO = 'reembolsado';
 
     public const ESTADOS = [
         self::ESTADO_PENDIENTE,
         self::ESTADO_COMPLETADO,
         self::ESTADO_ANULADO,
+        self::ESTADO_REEMBOLSADO,
     ];
 
     protected $table = 'pagos';

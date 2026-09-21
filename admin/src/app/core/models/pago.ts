@@ -1,6 +1,6 @@
 import type { EstadoPagoPedido } from './pedido';
 
-export type EstadoPago = 'pendiente' | 'completado' | 'anulado';
+export type EstadoPago = 'pendiente' | 'completado' | 'anulado' | 'reembolsado';
 
 export interface ComprobanteInfo {
   nombre: string;
@@ -93,10 +93,12 @@ export const ETIQUETA_ESTADO_PAGO: Record<EstadoPago, string> = {
   pendiente: 'Pendiente',
   completado: 'Completado',
   anulado: 'Anulado',
+  reembolsado: 'Reembolsado',
 };
 
 export const TONO_ESTADO_PAGO: Record<EstadoPago, string> = {
   pendiente: 'warning',
   completado: 'success',
   anulado: 'danger',
+  reembolsado: 'neutral',
 };
