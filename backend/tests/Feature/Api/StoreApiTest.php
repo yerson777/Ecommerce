@@ -109,15 +109,18 @@ class StoreApiTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
-    public function test_detalle_publico_marca_es_nuevo_solo_el_dia_de_ingreso(): void
+    public function test_detalle_publico_marca_es_nuevo_dentro_de_3_dias(): void
     {
         $hoy = $this->crearProducto(['fecha_ingreso' => now()]);
         $ayer = $this->crearProducto(['nombre' => 'Vestido de ayer', 'fecha_ingreso' => now()->subDay()]);
+        $hace3Dias = $this->crearProducto(['nombre' => 'Vestido de hace 3 días', 'fecha_ingreso' => now()->subDays(3)]);
 
         $recientes = $this->getJson("/api/v1/store/products/{$hoy->id}")->json('data');
-        $viejos = $this->getJson("/api/v1/store/products/{$ayer->id}")->json('data');
+        $ayerJson = $this->getJson("/api/v1/store/products/{$ayer->id}")->json('data');
+        $viejos = $this->getJson("/api/v1/store/products/{$hace3Dias->id}")->json('data');
 
         $this->assertTrue($recientes['es_nuevo']);
+        $this->assertTrue($ayerJson['es_nuevo']);
         $this->assertFalse($viejos['es_nuevo']);
     }
 

@@ -32,6 +32,13 @@ class ProductoPublicoResource extends JsonResource
     {
         $fechaIngreso = $this->fecha_ingreso ?? $this->created_at;
 
-        return $fechaIngreso !== null && $fechaIngreso->isToday();
+        if ($fechaIngreso === null) {
+            return false;
+        }
+
+        return $fechaIngreso->startOfDay()->between(
+            now()->startOfDay()->subDays(2),
+            now()->endOfDay()
+        );
     }
 }

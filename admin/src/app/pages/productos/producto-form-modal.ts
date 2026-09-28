@@ -92,7 +92,10 @@ export class ProductoFormModalComponent implements OnInit {
       this.forma.fecha_ingreso = actual.fecha_ingreso ?? '';
     } else {
       this.forma.codigo = `EV-${Math.floor(1000 + Math.random() * 9000)}`;
-      this.forma.fecha_ingreso = new Date().toISOString().slice(0, 10);
+      const hoy = new Date();
+      const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoy.getDate()).padStart(2, '0');
+      this.forma.fecha_ingreso = `${hoy.getFullYear()}-${mes}-${dia}`;
     }
   }
 

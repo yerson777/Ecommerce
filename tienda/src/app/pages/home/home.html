@@ -1,203 +1,373 @@
-<div class="page">
-  <div class="container">
-    <div class="hero">
-      <h1>Prendas únicas, elegidas para vos</h1>
-      <p>
-        Cada pieza es una sola unidad. Elegila, reservala al momento de comprar y
-        coordinamos la entrega.
-      </p>
-    </div>
+<div class="landing">
+  <!-- ================= HERO ================= -->
+  <section class="hero" data-hero-zona aria-labelledby="hero-titulo">
+    <span class="forma forma--a" aria-hidden="true"></span>
+    <span class="forma forma--b" aria-hidden="true"></span>
+    <span class="forma forma--c" aria-hidden="true"></span>
 
-    <div class="carrusel" *ngIf="banners().length > 0">
-      <div
-        class="carrusel-pista"
-        [style.transform]="'translateX(-' + bannerActivo() * 100 + '%)'"
-      >
-        <div
-          class="carrusel-slide"
-          *ngFor="let banner of banners(); let i = index"
-          [class.carrusel-slide--enlace]="!!banner.enlace"
-          (click)="abrirBanner(banner)"
-        >
-          <img class="carrusel-img" [src]="banner.url" [alt]="banner.titulo ?? 'Banner'" />
-          <div class="carrusel-overlay" *ngIf="banner.titulo || banner.subtitulo">
-            <span class="carrusel-titulo" *ngIf="banner.titulo">{{ banner.titulo }}</span>
-            <span class="carrusel-subtitulo" *ngIf="banner.subtitulo">{{ banner.subtitulo }}</span>
-          </div>
-        </div>
-      </div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="insignia" data-hero>Prendas de una sola unidad</span>
 
-      <ng-container *ngIf="banners().length > 1">
-        <button
-          class="carrusel-flecha carrusel-flecha--izq"
-          aria-label="Banner anterior"
-          (click)="bannerAnterior()"
-        >
-          ‹
-        </button>
-        <button
-          class="carrusel-flecha carrusel-flecha--der"
-          aria-label="Banner siguiente"
-          (click)="bannerSiguiente()"
-        >
-          ›
-        </button>
+        <h1 id="hero-titulo" data-hero>Elegí algo que<br />no se repita</h1>
 
-        <div class="carrusel-dots">
-          <button
-            class="carrusel-dot"
-            *ngFor="let banner of banners(); let i = index"
-            [class.carrusel-dot--activo]="bannerActivo() === i"
-            [attr.aria-label]="'Ir al banner ' + (i + 1)"
-            (click)="irBanner(i)"
-          ></button>
-        </div>
-      </ng-container>
-    </div>
+        <p class="hero-bajada" data-hero>
+          Cada pieza existe una sola vez. La reservás al momento de comprar, coordinamos la
+          entrega y seguís tu pedido en cualquier parte.
+        </p>
 
-    <div class="filtros">
-      <div class="buscador">
-        <input
-          class="input"
-          type="search"
-          placeholder="Buscar por nombre o color…"
-          [value]="busqueda()"
-          (input)="busqueda.set($any($event.target).value)"
-          (keydown.enter)="buscar()"
-        />
-        <button class="btn btn-ghost" (click)="buscar()">Buscar</button>
-      </div>
-
-      <div class="filtro-grupo" *ngIf="categorias().length > 0">
-        <span class="filtro-etiqueta">Categoría</span>
-        <div class="chips">
-          <button
-            class="chip"
-            [class.chip--activo]="categoriaActiva() === null"
-            (click)="cambiarCategoria(null)"
-          >
-            Todas
-          </button>
-          <button
-            class="chip"
-            *ngFor="let categoria of categorias()"
-            [class.chip--activo]="categoriaActiva() === categoria.id"
-            (click)="cambiarCategoria(categoria.id)"
-          >
-            {{ categoria.nombre }}
+        <div class="hero-acciones" data-hero>
+          <a routerLink="/catalogo" class="btn btn-primary btn-lg">Ver catálogo</a>
+          <button type="button" class="btn btn-outline btn-lg" (click)="irAComoComprar()">
+            Cómo comprar
           </button>
         </div>
+
+        <ul class="hero-promesas" data-hero>
+          @for (promesa of promesas; track promesa.titulo) {
+            <li class="promesa">
+              <span class="promesa-icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+              <span class="promesa-texto">
+                <strong>{{ promesa.titulo }}</strong>
+                <span>{{ promesa.texto }}</span>
+              </span>
+            </li>
+          }
+        </ul>
       </div>
 
-      <div class="filtro-grupo" *ngIf="tallas().length > 0">
-        <span class="filtro-etiqueta">Talla</span>
-        <div class="chips">
-          <button
-            class="chip"
-            [class.chip--activo]="tallaActiva() === null"
-            (click)="cambiarTalla(null)"
-          >
-            Todas
-          </button>
-          <button
-            class="chip"
-            *ngFor="let talla of tallas()"
-            [class.chip--activo]="tallaActiva() === talla.id"
-            (click)="cambiarTalla(talla.id)"
-          >
-            {{ talla.nombre }}
-          </button>
-        </div>
-      </div>
-
-      <button
-        class="btn btn-ghost btn-sm"
-        *ngIf="busqueda() || categoriaActiva() !== null || tallaActiva() !== null"
-        (click)="limpiarFiltros()"
-      >
-        Limpiar filtros
-      </button>
-    </div>
-
-    <ng-container *ngIf="!cargando() && !error()">
-      <div class="grid" *ngIf="productos().length > 0">
-        <div
-          class="card producto-card"
-          *ngFor="let producto of productos()"
-          (click)="verDetalle(producto.id)"
-        >
-          <img
-            *ngIf="imagenPrincipal(producto)"
-            class="producto-foto"
-            [src]="imagenPrincipal(producto)"
-            [alt]="producto.nombre"
-            loading="lazy"
-          />
-          <div
-            *ngIf="!imagenPrincipal(producto)"
-            class="producto-foto producto-foto--empty"
-          >
-            Sin foto
-          </div>
-          <span class="badge badge-success producto-nuevo" *ngIf="producto.es_nuevo">Nuevo ingreso</span>
-          <div class="producto-body">
-            <div class="producto-nombre">{{ producto.nombre }}</div>
-            <div class="producto-meta">
-              {{ producto.codigo }}
-              <span *ngIf="producto.talla?.nombre"> · Talle {{ producto.talla?.nombre }}</span>
-              <span *ngIf="producto.color"> · {{ producto.color }}</span>
-            </div>
-            <div class="producto-precio">{{ formatearPrecio(producto.precio) }}</div>
-            <button
-              class="btn btn-primary"
-              [class.btn-outline]="enCarrito(producto.id)"
-              [disabled]="enCarrito(producto.id)"
-              (click)="$event.stopPropagation(); agregarAlCarrito(producto)"
+      <div class="hero-visual" data-hero>
+        @if (banners().length > 0) {
+          <div class="carrusel">
+            <div
+              class="carrusel-pista"
+              [style.transform]="'translateX(-' + bannerActivo() * 100 + '%)'"
             >
-              {{ enCarrito(producto.id) ? 'En el carrito ✓' : 'Agregar al carrito' }}
-            </button>
+              @for (banner of banners(); track banner.id) {
+                <button
+                  type="button"
+                  class="carrusel-slide"
+                  [disabled]="!banner.enlace"
+                  (click)="abrirBanner(banner)"
+                >
+                  <img
+                    class="carrusel-img"
+                    [src]="banner.url"
+                    [alt]="banner.titulo ?? 'Banner'"
+                    fetchpriority="high"
+                  />
+                  @if (banner.titulo || banner.subtitulo) {
+                    <span class="carrusel-texto">
+                      @if (banner.titulo) {
+                        <span class="carrusel-titulo">{{ banner.titulo }}</span>
+                      }
+                      @if (banner.subtitulo) {
+                        <span class="carrusel-subtitulo">{{ banner.subtitulo }}</span>
+                      }
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+
+            @if (banners().length > 1) {
+              <span class="carrusel-flechas">
+                <button
+                  type="button"
+                  class="carrusel-flecha carrusel-flecha--izq"
+                  aria-label="Banner anterior"
+                  (click)="bannerAnterior()"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="carrusel-flecha carrusel-flecha--der"
+                  aria-label="Banner siguiente"
+                  (click)="bannerSiguiente()"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              </span>
+
+              <div class="carrusel-dots">
+                @for (banner of banners(); track banner.id; let i = $index) {
+                  <button
+                    type="button"
+                    class="carrusel-dot"
+                    [class.carrusel-dot--activo]="bannerActivo() === i"
+                    [attr.aria-label]="'Ir al banner ' + (i + 1)"
+                    [attr.aria-current]="bannerActivo() === i"
+                    (click)="irBanner(i)"
+                  ></button>
+                }
+              </div>
+            }
           </div>
+        } @else {
+          <div class="hero-marco">
+            <div class="hero-img" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z" />
+                <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+              </svg>
+            </div>
+          </div>
+        }
+
+        <div class="hero-sello">
+          <span class="hero-sello-cifra">1</span>
+          <span class="hero-sello-texto">unidad<br />por prenda</span>
         </div>
       </div>
-
-      <div class="vacio" *ngIf="productos().length === 0">
-        <span class="vacio-icono" aria-hidden="true">👗</span>
-        <h3>No encontramos prendas con esos filtros</h3>
-        <p>Probá con otros términos o sacá los filtros para ver todo el catálogo.</p>
-        <button class="btn btn-outline" (click)="limpiarFiltros()">Ver todo el catálogo</button>
-      </div>
-
-      <div class="paginacion" *ngIf="ultimaPagina() > 1">
-        <span class="muted">
-          Página {{ pagina() }} de {{ ultimaPagina() }} · {{ total() }} prendas
-        </span>
-        <div class="chips">
-          <button
-            class="btn btn-ghost btn-sm"
-            [disabled]="pagina() <= 1"
-            (click)="cambiarPagina(pagina() - 1)"
-          >
-            ← Anterior
-          </button>
-          <button
-            class="btn btn-ghost btn-sm"
-            [disabled]="pagina() >= ultimaPagina()"
-            (click)="cambiarPagina(pagina() + 1)"
-          >
-            Siguiente →
-          </button>
-        </div>
-      </div>
-    </ng-container>
-
-    <div class="center" *ngIf="cargando()">
-      <span class="spinner" aria-label="Cargando"></span>
     </div>
+  </section>
 
-    <div class="vacio" *ngIf="!cargando() && error()">
-      <span class="vacio-icono" aria-hidden="true">⚠️</span>
-      <h3>{{ error() }}</h3>
-      <button class="btn btn-outline" (click)="cargar()">Reintentar</button>
+  <!-- ================= FEATURES ================= -->
+  <section class="bloque bloque--claro" aria-labelledby="features-titulo">
+    <div class="wrap">
+      <div class="cabecera" reveal="up">
+        <span class="eyebrow">Por qué Everly</span>
+        <h2 id="features-titulo">Comprar acá es simple de verdad</h2>
+        <p>
+          Sin listas de espera, sin stock que volver a cargar y sin respuestas que
+          desaparecen. Solo prendas, reservás y te la entregamos.
+        </p>
+      </div>
+
+      <ul class="features">
+        @for (feature of features; track feature.titulo; let i = $index) {
+          <li class="feature" reveal="up" [revealDelay]="i * 0.06">
+            <span class="feature-icono" aria-hidden="true">
+              @switch (feature.icono) {
+                @case ('unidad') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z" />
+                    <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+                  </svg>
+                }
+                @case ('reserva') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2 4.1 12.3a1 1 0 0 0 .8 1.7H11l-1 8 8.9-10.3a1 1 0 0 0-.8-1.7H12z" />
+                  </svg>
+                }
+                @case ('pago') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 12.5c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20 4 17.5 4 12.5V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                }
+                @case ('entrega') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 17V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1" />
+                    <path d="M15 17H9" />
+                    <path d="M19 17h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6l-3.5-4.4a1 1 0 0 0-.8-.4H14" />
+                    <circle cx="17" cy="17" r="2" />
+                    <circle cx="7" cy="17" r="2" />
+                  </svg>
+                }
+                @case ('seguimiento') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                }
+                @default {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+                  </svg>
+                }
+              }
+            </span>
+            <h3>{{ feature.titulo }}</h3>
+            <p>{{ feature.texto }}</p>
+          </li>
+        }
+      </ul>
+
+      <div class="bloque-cta" reveal="up">
+        <a routerLink="/catalogo" class="btn btn-primary btn-lg">Ver todas las prendas</a>
+        <a routerLink="/ayuda" class="btn btn-outline btn-lg">Leer preguntas frecuentes</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DESTACADOS ================= -->
+  <section class="bloque" aria-labelledby="destacados-titulo">
+    <div class="wrap">
+      <div class="cabecera cabecera--fila" reveal="up">
+        <div class="cabecera-texto">
+          <span class="eyebrow">Llegando ahora</span>
+          <h2 id="destacados-titulo">Las últimas prendas del catálogo</h2>
+        </div>
+        <a routerLink="/catalogo" class="btn btn-outline">Ver todo el catálogo</a>
+      </div>
+
+      @if (estadoDestacados() === 'listo' && destacados().length > 0) {
+        <ul class="prendas">
+          @for (prenda of destacados(); track prenda.id; let i = $index) {
+            <li class="prenda" reveal="up" [revealDelay]="i * 0.07">
+              <button
+                type="button"
+                class="prenda-media"
+                (click)="verDetalle(prenda.id)"
+                [attr.aria-label]="'Ver ' + prenda.nombre"
+              >
+                @if (imagenPrincipal(prenda); as foto) {
+                  <img class="prenda-foto" [src]="foto" [alt]="prenda.nombre" loading="lazy" />
+                } @else {
+                  <span class="prenda-sin-foto">Sin foto</span>
+                }
+                <span
+                  class="prenda-estado"
+                  [class.prenda-estado--libre]="esDisponible(prenda)"
+                >
+                  {{ estadoTexto(prenda.estado) }}
+                </span>
+              </button>
+
+              <div class="prenda-body">
+                <h3 class="prenda-nombre">{{ prenda.nombre }}</h3>
+                <p class="prenda-meta">
+                  {{ prenda.codigo }}
+                  @if (prenda.color) {
+                    <span> · {{ prenda.color }}</span>
+                  }
+                  @if (prenda.talla?.nombre) {
+                    <span> · Talle {{ prenda.talla?.nombre }}</span>
+                  }
+                </p>
+                <p class="prenda-precio">{{ formatearPrecio(prenda.precio) }}</p>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-block"
+                  [disabled]="!esDisponible(prenda) || enCarrito(prenda.id)"
+                  (click)="agregarAlCarrito(prenda)"
+                >
+                  @if (enCarrito(prenda.id)) {
+                    En el carrito
+                  } @else if (esDisponible(prenda)) {
+                    Agregar al carrito
+                  } @else {
+                    {{ estadoTexto(prenda.estado) }}
+                  }
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else if (estadoDestacados() === 'cargando') {
+        <p class="aviso">Cargando las prendas más recientes…</p>
+      } @else {
+        <div class="aviso aviso--error">
+          <p>No pudimos cargar las prendas en este momento.</p>
+          <button type="button" class="btn btn-outline" (click)="reintentarDestacados()">
+            Reintentar
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ================= CÓMO COMPRAR ================= -->
+  <section class="bloque bloque--oscuro" id="como-comprar" aria-labelledby="pasos-titulo">
+    <div class="wrap">
+      <div class="cabecera cabecera--clara" reveal="up">
+        <span class="eyebrow">Cómo comprar</span>
+        <h2 id="pasos-titulo">Tres pasos y listo</h2>
+      </div>
+
+      <ol class="pasos">
+        @for (paso of pasos; track paso.numero; let i = $index) {
+          <li class="paso" reveal="up" [revealDelay]="i * 0.1">
+            <span class="paso-num" aria-hidden="true">{{ paso.numero }}</span>
+            <h3>{{ paso.titulo }}</h3>
+            <p>{{ paso.texto }}</p>
+          </li>
+        }
+      </ol>
+
+      <div class="bloque-cta" reveal="up">
+        <a routerLink="/catalogo" class="btn btn-blanco btn-lg">Empezar a comprar</a>
+        <a
+          class="btn btn-blanco-outline btn-lg"
+          href="https://wa.me/59162640247?text=%C2%A1Hola%20Everly!%20Tengo%20una%20consulta."
+          target="_blank"
+          rel="noopener"
+        >
+          Consultar por WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TESTIMONIOS ================= -->
+  <section class="bloque bloque--claro" aria-labelledby="testimonios-titulo">
+    <div class="wrap">
+      <div class="cabecera" reveal="up">
+        <span class="eyebrow">Lo que dicen</span>
+        <h2 id="testimonios-titulo">Prendas que ya tienen dueña</h2>
+      </div>
+
+      <ul class="testimonios">
+        @for (testimonio of testimonios; track testimonio.nombre; let i = $index) {
+          <li class="testimonio" reveal="up" [revealDelay]="i * 0.09">
+            <span class="testimonio-comilla" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 7H6a3 3 0 0 0-3 3v7h7v-7H6a1 1 0 0 1 1-1h3zm11 0h-4a3 3 0 0 0-3 3v7h7v-7h-4a1 1 0 0 1 1-1h3z" />
+              </svg>
+            </span>
+            <p class="testimonio-texto">{{ testimonio.texto }}</p>
+            <span class="testimonio-autor">
+              <span class="testimonio-avatar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M5 20a7 7 0 0 1 14 0" />
+                </svg>
+              </span>
+              <span>
+                <span class="testimonio-nombre">{{ testimonio.nombre }}</span>
+                <span class="testimonio-ciudad">{{ testimonio.ciudad }}</span>
+              </span>
+            </span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= CTA FINAL ================= -->
+  <section class="bloque bloque--suelto" aria-labelledby="cta-final-titulo">
+    <div class="wrap">
+      <div class="cta-final" reveal="scale">
+        <div class="cta-final-texto">
+          <h2 id="cta-final-titulo">¿Ya viste la prenda?</h2>
+          <p>
+            Cuando te guste, la reservamos al instante. Después coordinamos la entrega
+            y te la llevamos.
+          </p>
+        </div>
+        <div class="bloque-cta">
+          <a routerLink="/catalogo" class="btn btn-blanco btn-lg">Ver catálogo</a>
+          <a routerLink="/ayuda" class="btn btn-blanco-outline btn-lg">Cómo comprar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CTA FLOTANTE ================= -->
+  <div class="cta-flotante" data-cta-flotante>
+    <div class="wrap cta-flotante-inner">
+      <p class="cta-flotante-texto">Cada prenda es una sola unidad</p>
+      <a routerLink="/catalogo" class="btn btn-primary btn-sm">Ver catálogo</a>
     </div>
   </div>
 </div>

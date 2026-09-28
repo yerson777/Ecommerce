@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home';
+import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { ProductoComponent } from './pages/producto/producto';
 import { CarritoComponent } from './pages/carrito/carrito';
 import { CheckoutComponent } from './pages/checkout/checkout';
@@ -13,6 +14,7 @@ import { NotFoundComponent } from './pages/not-found/not-found';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
+  { path: 'catalogo', component: CatalogoComponent },
   { path: 'producto/:id', component: ProductoComponent },
   { path: 'carrito', component: CarritoComponent },
   { path: 'checkout', component: CheckoutComponent },

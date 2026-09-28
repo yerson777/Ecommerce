@@ -2,12 +2,14 @@
   border-top: 1px solid var(--border);
   background: var(--surface);
   margin-top: 3rem;
-  padding: 2.5rem 0 1.25rem;
+  /* El padding extra evita que los elementos fijos (boton de WhatsApp,
+     CTA flotante del home) tapen la ultima fila al llegar al final. */
+  padding: 2.5rem 0 4.5rem;
   font-size: 0.92rem;
 }
 
-/* ---------- Boletín ---------- */
-.newsletter {
+/* ---------- Canal de WhatsApp ---------- */
+.canal {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -19,38 +21,27 @@
   margin-bottom: 2.25rem;
 }
 
-.newsletter-texto h3 {
+.canal-texto h3 {
   margin: 0 0 0.15rem;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.25rem;
   color: var(--primary);
 }
 
-.newsletter-texto p {
+.canal-texto p {
   margin: 0;
+  max-width: 52ch;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
 
-.newsletter-form {
-  display: flex;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 280px;
-  max-width: 460px;
+.canal-boton {
+  flex-shrink: 0;
 }
 
-.newsletter-form .input {
-  flex: 1;
-}
-
-.newsletter-ok {
-  margin: 0;
-  flex: 1;
-  min-width: 280px;
-  max-width: 460px;
-  color: var(--success);
-  font-weight: 600;
+.canal-boton svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ---------- Columnas ---------- */
@@ -193,8 +184,13 @@
     grid-template-columns: 1fr;
   }
 
-  .newsletter-form {
+  .canal {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .canal-boton {
+    width: 100%;
   }
 
   .pie {

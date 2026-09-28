@@ -18,6 +18,12 @@ class ProductoController extends Controller
             ->with(['categoria', 'talla', 'imagenes'])
             ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', $request->integer('categoria')))
             ->when($request->filled('talla'), fn ($q) => $q->where('talla_id', $request->integer('talla')))
+            ->when($request->filled('busqueda'), function ($q) use ($request) {
+                $busqueda = $request->input('busqueda');
+                $q->where(fn ($query) => $query
+                    ->where('nombre', 'like', "%{$busqueda}%")
+                    ->orWhere('color', 'like', "%{$busqueda}%"));
+            })
             ->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 12));
 

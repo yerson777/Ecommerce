@@ -22,6 +22,14 @@
         [routerLinkActiveOptions]="{ exact: true }"
         (click)="cerrarMenu()"
       >
+        Inicio
+      </a>
+      <a
+        routerLink="/catalogo"
+        routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="cerrarMenu()"
+      >
         Catálogo
       </a>
       <a routerLink="/nosotros" routerLinkActive="activo" (click)="cerrarMenu()">
