@@ -74,6 +74,36 @@ class ReporteController extends Controller
         );
     }
 
+    public function tiempoPromedioVenta(ReporteRequest $request)
+    {
+        $data = $request->validated();
+
+        return Api::success(
+            $this->reporteService->tiempoPromedioVenta($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null),
+            'Tiempo promedio de venta.'
+        );
+    }
+
+    public function comparacionPeriodo(ReporteRequest $request)
+    {
+        $data = $request->validated();
+
+        return Api::success(
+            $this->reporteService->comparacionPeriodo($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null),
+            'Comparación con el período anterior.'
+        );
+    }
+
+    public function ventasPorMarca(ReporteRequest $request)
+    {
+        $data = $request->validated();
+
+        return Api::success(
+            $this->reporteService->ventasPorMarca($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null),
+            'Ventas por marca.'
+        );
+    }
+
     public function clientes(ReporteRequest $request)
     {
         $data = $request->validated();
@@ -161,7 +191,7 @@ class ReporteController extends Controller
             $validated
         );
 
-        $nombreArchivo = "everly_{$tipo}_" . now()->format('Y-m-d_His') . '.csv';
+        $nombreArchivo = "everly_{$tipo}_".now()->format('Y-m-d_His').'.csv';
 
         $csv = $this->generarCsv($resultado['headers'], $resultado['rows']);
 

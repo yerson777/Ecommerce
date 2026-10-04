@@ -52,6 +52,27 @@
       </div>
 
       <div class="field">
+        <label>Marca</label>
+        <input
+          class="input"
+          type="text"
+          list="lista-marcas"
+          [(ngModel)]="forma.marca"
+          name="marca"
+          maxlength="100"
+          placeholder="Escribí una nueva si no existe"
+        />
+        <datalist id="lista-marcas">
+          @for (marca of marcas(); track marca.id) {
+            <option [value]="marca.nombre"></option>
+          }
+        </datalist>
+        @if (errorDe('marca_nombre')) {
+          <span class="field-error">{{ errorDe('marca_nombre') }}</span>
+        }
+      </div>
+
+      <div class="field">
         <label>Color</label>
         <input class="input" type="text" [(ngModel)]="forma.color" name="color" maxlength="100" />
       </div>
@@ -143,6 +164,10 @@
           <div class="ver-item">
             <dt>Talla</dt>
             <dd>{{ p.talla?.nombre ?? '—' }}</dd>
+          </div>
+          <div class="ver-item">
+            <dt>Marca</dt>
+            <dd>{{ p.marca?.nombre ?? '—' }}</dd>
           </div>
           <div class="ver-item">
             <dt>Color</dt>

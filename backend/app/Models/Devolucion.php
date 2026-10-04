@@ -10,10 +10,20 @@ class Devolucion extends Model
 {
     use HasFactory;
 
+    public const ESTADO_PENDIENTE = 'pendiente';
+
+    public const ESTADO_APROBADA = 'aprobada';
+
+    public const ESTADOS = [
+        self::ESTADO_PENDIENTE,
+        self::ESTADO_APROBADA,
+    ];
+
     protected $table = 'devoluciones';
 
     protected $fillable = [
         'pedido_id',
+        'estado',
         'monto_reembolsado',
         'motivo',
         'devuelto_en',
@@ -30,5 +40,10 @@ class Devolucion extends Model
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class);
+    }
+
+    public function venta(): BelongsTo
+    {
+        return $this->belongsTo(Venta::class, 'pedido_id', 'pedido_id');
     }
 }

@@ -17,9 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class InventarioController extends Controller
 {
-    public function __construct(private readonly InventarioService $inventario)
-    {
-    }
+    public function __construct(private readonly InventarioService $inventario) {}
 
     public function resumen(Request $request)
     {
@@ -74,7 +72,8 @@ class InventarioController extends Controller
         $reserva = $this->inventario->reservar(
             $request->integer('producto_id'),
             $request->input('vence_en'),
-            $request->input('pedido_id')
+            $request->input('pedido_id'),
+            $request->input('cliente_id')
         );
 
         return Api::resource(

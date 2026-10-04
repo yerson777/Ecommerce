@@ -11,9 +11,10 @@ import { Router, RouterLink } from '@angular/router';
 import { animate, scroll, stagger } from 'motion';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
-import { BannerPublico } from '../../core/models/banner';
-import { EstadoProducto, ProductoPublico } from '../../core/models/producto';
+import { BannerCarouselService } from '../../core/services/banner-carousel.service';
+import { ProductoPublico } from '../../core/models/producto';
 import { formatearPrecio } from '../../core/utils/precio';
+import { esDisponible, estadoTexto, imagenPrincipal } from '../../core/utils/producto';
 import { RevealDirective, motionReducido } from './reveal';
 
 type Icono = 'unidad' | 'reserva' | 'pago' | 'entrega' | 'seguimiento' | 'whatsapp';
@@ -58,17 +59,20 @@ const FEATURES: readonly ItemEstatico[] = [
   {
     icono: 'unidad',
     titulo: 'Una sola unidad',
-    texto: 'Cada prenda existe en una única pieza. Cuando la comprás sale del catálogo para siempre.',
+    texto:
+      'Cada prenda existe en una única pieza. Cuando la comprás sale del catálogo para siempre.',
   },
   {
     icono: 'reserva',
     titulo: 'Reserva inmediata',
-    texto: 'Confirmás el pago y la prenda queda apartada al instante, sin listas de espera ni fechas de reposición.',
+    texto:
+      'Confirmás el pago y la prenda queda apartada al instante, sin listas de espera ni fechas de reposición.',
   },
   {
     icono: 'pago',
     titulo: 'Pago seguro',
-    texto: 'Transferencia, QR o efectivo con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
+    texto:
+      'Transferencia, QR o efectivo con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
   },
   {
     icono: 'entrega',
@@ -78,12 +82,14 @@ const FEATURES: readonly ItemEstatico[] = [
   {
     icono: 'seguimiento',
     titulo: 'Seguimiento en vivo',
-    texto: 'Con tu número de pedido ves en qué estado está, paso a paso, desde que confirmamos hasta que lo recibís.',
+    texto:
+      'Con tu número de pedido ves en qué estado está, paso a paso, desde que confirmamos hasta que lo recibís.',
   },
   {
     icono: 'whatsapp',
     titulo: 'Atención por WhatsApp',
-    texto: 'Escribinos directo y te respondemos personas, no robots. Te mandamos fotos reales antes de cobrar.',
+    texto:
+      'Escribinos directo y te respondemos personas, no robots. Te mandamos fotos reales antes de cobrar.',
   },
 ];
 
@@ -109,22 +115,26 @@ const TESTIMONIOS: readonly Testimonio[] = [
   {
     nombre: 'Lucía M.',
     ciudad: 'Santa Cruz',
-    texto: 'Encontré un vestido que buscaba hace semanas y era el único. Me respondieron por WhatsApp el mismo día y llegó impecable.',
+    texto:
+      'Encontré un vestido que buscaba hace semanas y era el único. Me respondieron por WhatsApp el mismo día y llegó impecable.',
   },
   {
     nombre: 'Camila R.',
     ciudad: 'La Paz',
-    texto: 'Me da mucho miedo comprar ropa online, pero me mandaron fotos reales antes de pagar. Es la prenda que más uso.',
+    texto:
+      'Me da mucho miedo comprar ropa online, pero me mandaron fotos reales antes de pagar. Es la prenda que más uso.',
   },
   {
     nombre: 'Andrea P.',
     ciudad: 'Cochabamba',
-    texto: 'El seguimiento del pedido me sirvió un montón. Sabía exactamente cuándo pasar a buscarlo y no tuve que volver.',
+    texto:
+      'El seguimiento del pedido me sirvió un montón. Sabía exactamente cuándo pasar a buscarlo y no tuve que volver.',
   },
 ];
 
 @Component({
   imports: [RouterLink, RevealDirective],
+  providers: [BannerCarouselService],
   selector: 'app-home',
   styleUrl: './home.scss',
   templateUrl: './home.html',
@@ -135,12 +145,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly pasos = PASOS;
   readonly testimonios = TESTIMONIOS;
 
-  readonly banners = signal<BannerPublico[]>([]);
-  readonly bannerActivo = signal(0);
+  readonly carrusel = inject(BannerCarouselService);
+
   readonly destacados = signal<ProductoPublico[]>([]);
   readonly estadoDestacados = signal<'cargando' | 'listo' | 'error'>('cargando');
 
-  private autoplay?: ReturnType<typeof setInterval>;
   private stopScroll?: VoidFunction;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -151,7 +160,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.cargarBanners();
+    this.carrusel.cargar({ autoplayPermitido: !motionReducido() });
     this.cargarDestacados();
   }
 
@@ -161,23 +170,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.detenerAutoplay();
+    this.carrusel.destruir();
     this.stopScroll?.();
   }
 
   /* ---------- Datos ---------- */
-
-  private cargarBanners(): void {
-    this.catalogo.banners().subscribe({
-      next: (res) => {
-        this.banners.set(res.data ?? []);
-        this.bannerActivo.set(0);
-        if (!motionReducido()) {
-          this.iniciarAutoplay();
-        }
-      },
-    });
-  }
 
   private cargarDestacados(): void {
     this.catalogo.listar({ page: 1, per_page: 4 }).subscribe({
@@ -242,55 +239,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  /* ---------- Banner ---------- */
-
-  irBanner(indice: number): void {
-    const total = this.banners().length;
-    if (total === 0) {
-      return;
-    }
-    this.bannerActivo.set(((indice % total) + total) % total);
-    this.reiniciarAutoplay();
-  }
-
-  bannerAnterior(): void {
-    this.irBanner(this.bannerActivo() - 1);
-  }
-
-  bannerSiguiente(): void {
-    this.irBanner(this.bannerActivo() + 1);
-  }
-
-  abrirBanner(banner: BannerPublico): void {
-    if (!banner.enlace) {
-      return;
-    }
-    if (banner.enlace.startsWith('/')) {
-      this.router.navigateByUrl(banner.enlace);
-      return;
-    }
-    window.open(banner.enlace, '_blank', 'noopener');
-  }
-
-  private iniciarAutoplay(): void {
-    if (this.banners().length < 2) {
-      return;
-    }
-    this.autoplay = setInterval(() => this.bannerSiguiente(), 5000);
-  }
-
-  private reiniciarAutoplay(): void {
-    this.detenerAutoplay();
-    this.iniciarAutoplay();
-  }
-
-  private detenerAutoplay(): void {
-    if (this.autoplay) {
-      clearInterval(this.autoplay);
-      this.autoplay = undefined;
-    }
-  }
-
   /* ---------- Navegación ---------- */
 
   irAComoComprar(): void {
@@ -305,29 +253,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* ---------- Productos ---------- */
 
-  imagenPrincipal(producto: ProductoPublico): string | null {
-    const principal = producto.imagenes.find((imagen) => imagen.es_principal);
-    return principal?.url ?? producto.imagenes[0]?.url ?? null;
-  }
-
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
-
-  esDisponible(producto: ProductoPublico): boolean {
-    return producto.estado === 'disponible';
-  }
-
-  estadoTexto(estado: EstadoProducto): string {
-    switch (estado) {
-      case 'reservada':
-        return 'Reservada';
-      case 'vendida':
-        return 'Vendida';
-      default:
-        return 'Disponible';
-    }
-  }
+  readonly formatearPrecio = formatearPrecio;
+  readonly imagenPrincipal = imagenPrincipal;
+  readonly esDisponible = esDisponible;
+  readonly estadoTexto = estadoTexto;
 
   enCarrito(id: number): boolean {
     return this.carrito.contiene(id);

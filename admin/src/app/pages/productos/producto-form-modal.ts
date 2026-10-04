@@ -4,6 +4,7 @@ import { ApiError } from '../../core/models/api-response';
 import {
   CategoriaRef,
   ETIQUETA_ESTADO,
+  MarcaRef,
   Producto,
   ProductoPayload,
   TallaRef,
@@ -25,6 +26,7 @@ export interface FormaProducto {
   nombre: string;
   categoria_id: number | null;
   talla_id: number | null;
+  marca: string;
   color: string;
   descripcion: string;
   costo: number | null;
@@ -44,6 +46,7 @@ export class ProductoFormModalComponent implements OnInit {
   readonly producto = input<Producto | null>(null);
   readonly categorias = input<CategoriaRef[]>([]);
   readonly tallas = input<TallaRef[]>([]);
+  readonly marcas = input<MarcaRef[]>([]);
   readonly soloLectura = input(false);
 
   readonly guardado = output<Producto>();
@@ -58,6 +61,7 @@ export class ProductoFormModalComponent implements OnInit {
     nombre: '',
     categoria_id: null,
     talla_id: null,
+    marca: '',
     color: '',
     descripcion: '',
     costo: null,
@@ -84,6 +88,7 @@ export class ProductoFormModalComponent implements OnInit {
       this.forma.nombre = actual.nombre;
       this.forma.categoria_id = actual.categoria?.id ?? null;
       this.forma.talla_id = actual.talla?.id ?? null;
+      this.forma.marca = actual.marca?.nombre ?? '';
       this.forma.color = actual.color ?? '';
       this.forma.descripcion = actual.descripcion ?? '';
       this.forma.costo = parseFloat(actual.costo);
@@ -125,6 +130,7 @@ export class ProductoFormModalComponent implements OnInit {
       nombre: f.nombre.trim(),
       categoria_id: categoriaId,
       talla_id: tallaId,
+      marca_nombre: f.marca.trim() || null,
       color: f.color.trim() || null,
       descripcion: f.descripcion.trim() || null,
       costo: f.costo,

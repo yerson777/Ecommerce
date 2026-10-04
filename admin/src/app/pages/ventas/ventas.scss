@@ -2,6 +2,12 @@
   display: block;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .center {
   display: flex;
   justify-content: center;
@@ -11,6 +17,10 @@
 .mono {
   font-family: 'Cascadia Code', Consolas, monospace;
   font-size: 13px;
+}
+
+.muted {
+  color: var(--text-muted);
 }
 
 .footer {
@@ -73,6 +83,23 @@
 .pagos-block {
   border-top: 1px solid var(--border);
   padding-top: 0.9rem;
+}
+
+.notas {
+  border-top: 1px solid var(--border);
+  padding: 0.9rem 0 0.2rem;
+  font-size: 14px;
+}
+
+.transiciones {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.transiciones-botones {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {

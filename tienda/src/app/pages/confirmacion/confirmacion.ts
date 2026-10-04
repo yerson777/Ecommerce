@@ -27,8 +27,7 @@ export class ConfirmacionComponent implements OnInit {
 
   ngOnInit(): void {
     const delEstado = this.router.getCurrentNavigation()?.extras.state?.['order'] as
-      | PedidoPublico
-      | undefined;
+      PedidoPublico | undefined;
 
     this.order = delEstado ?? this.leerAlmacenado();
 
@@ -57,9 +56,7 @@ export class ConfirmacionComponent implements OnInit {
     return null;
   }
 
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
+  readonly formatearPrecio = formatearPrecio;
 
   estadoEtiqueta(estado: EstadoPedido): string {
     return ESTADO_ETIQUETA[estado] ?? estado;
@@ -116,6 +113,10 @@ export class ConfirmacionComponent implements OnInit {
       'Espero que disfrutes tus prendas \u{2728}\u{1F970}',
     ].join('\n');
 
-    window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_TIENDA}&text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener');
+    window.open(
+      `https://api.whatsapp.com/send?phone=${WHATSAPP_TIENDA}&text=${encodeURIComponent(mensaje)}`,
+      '_blank',
+      'noopener',
+    );
   }
 }

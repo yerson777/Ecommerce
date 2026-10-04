@@ -21,12 +21,40 @@ export interface PedidoItem {
   precio_unitario: string;
 }
 
+export interface PedidoPago {
+  id: number;
+  numero_pago: string;
+  monto: string;
+  referencia: string | null;
+  estado: string;
+  pagado_en: string | null;
+  nota: string | null;
+  excedente: boolean;
+  metodo_pago?: string | null;
+  comprobante?: {
+    nombre: string;
+    url: string;
+    mime: string;
+    tamano: number;
+    subido_en: string | null;
+  } | null;
+}
+
+export interface PedidoHistorialEntrada {
+  estado_anterior: string | null;
+  estado_nuevo: string;
+  motivo: string | null;
+  created_at: string;
+}
+
 export interface Pedido {
   id: number;
   numero_pedido: string;
   estado: EstadoPedido;
   estados_siguientes: EstadoPedido[];
   subtotal: string;
+  descuento?: string | null;
+  cupon?: string | null;
   costo_envio: string;
   total: string;
   fecha_pedido: string;
@@ -36,6 +64,8 @@ export interface Pedido {
   metodo_pago?: string | null;
   metodo_entrega?: string | null;
   items?: PedidoItem[] | null;
+  pagos?: PedidoPago[] | null;
+  historial?: PedidoHistorialEntrada[] | null;
   numero_venta?: string | null;
   estado_pago?: EstadoPagoPedido | null;
   total_pagado?: string | null;

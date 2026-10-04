@@ -2,15 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Cliente;
+use App\Models\Gasto;
 use App\Models\MetodoPago;
 use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\Venta;
-use App\Models\Cliente;
-use App\Models\Gasto;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ReporteService
@@ -82,6 +82,33 @@ class ReporteService
         return compact('total', 'pendientes', 'confirmados', 'cancelados', 'completados');
     }
 
+    /**
+     * Expresión SQL con el saldo pendiente de un pedido (total menos lo cobrado).
+     */
+    private function exprSaldoPedido(): string
+    {
+        return '(pedidos.total - COALESCE((SELECT SUM(p.monto) FROM pagos p
+            WHERE p.pedido_id = pedidos.id AND p.estado = \''.Pago::ESTADO_COMPLETADO.'\'), 0))';
+    }
+
+    /**
+     * Suma de los saldos pendientes de los pedidos no cancelados.
+     *
+     * "vendido" (ventas.total) y "cobrado" (pagos.monto) viven en tablas
+     * distintas y NO se restan entre sí: una venta sólo existe cuando el pedido
+     * se cierra, así que esa resta daba 0 en cuanto lo cobrado superaba lo
+     * vendido y ocultaba la deuda real. El saldo se deriva pedido por pedido.
+     */
+    private function saldoPendienteTotal(): float
+    {
+        $saldo = $this->exprSaldoPedido();
+
+        return (float) DB::table('pedidos')
+            ->where('estado', '!=', Pedido::ESTADO_CANCELADO)
+            ->selectRaw('COALESCE(SUM(CASE WHEN '.$saldo.' > 0.01 THEN '.$saldo.' ELSE 0 END), 0) as total')
+            ->value('total');
+    }
+
     private function estadisticasVentas(?Carbon $inicio, ?Carbon $fin): array
     {
         $query = Venta::query();
@@ -97,7 +124,7 @@ class ReporteService
             ->when($inicio && $fin, fn ($q) => $q->whereBetween('pagado_en', [$inicio, $fin]))
             ->sum('monto');
 
-        $totalPendiente = max(0.0, $totalMonto - $totalCobrado);
+        $totalPendiente = $this->saldoPendienteTotal();
 
         return [
             'total' => $totalVentas,
@@ -182,26 +209,23 @@ class ReporteService
 
         $totalCobrado = (clone $query)->sum('monto');
 
-        $totalVendido = Venta::query();
-        if ($inicio && $fin) {
-            $totalVendido->whereBetween('fecha_venta', [$inicio, $fin]);
-        }
-        $totalVendido = (float) $totalVendido->sum('total');
-
         $pedidosQuery = Pedido::query()->where('estado', '!=', 'cancelado');
         if ($inicio && $fin) {
             $pedidosQuery->whereBetween('fecha_pedido', [$inicio, $fin]);
         }
 
-        $sumaPagado = '(SELECT COALESCE(SUM(p.monto), 0) FROM pagos p WHERE p.pedido_id = pedidos.id AND p.estado = \'completado\')';
+        $saldo = $this->exprSaldoPedido();
 
-        $pagados = (clone $pedidosQuery)->whereRaw("{$sumaPagado} >= pedidos.total - 0.01")->count();
-        $parciales = (clone $pedidosQuery)->whereRaw("{$sumaPagado} > 0 AND {$sumaPagado} < pedidos.total - 0.01")->count();
-        $pendientesPago = (clone $pedidosQuery)->whereRaw("{$sumaPagado} = 0")->count();
+        // Las tres categorías son mutuamente excluyentes y cubren todos los
+        // pedidos no cancelados. "Pendiente" se define por el saldo y no por
+        // "no pagó nada", para que un pago parcial no desaparezca del conteo.
+        $pagados = (clone $pedidosQuery)->whereRaw("{$saldo} <= 0.01")->count();
+        $parciales = (clone $pedidosQuery)->whereRaw("{$saldo} > 0.01 AND {$saldo} < pedidos.total - 0.01")->count();
+        $pendientesPago = (clone $pedidosQuery)->whereRaw("{$saldo} > 0.01")->count();
 
         return [
             'total_cobrado' => number_format((float) $totalCobrado, 2, '.', ''),
-            'total_pendiente' => number_format(max(0.0, $totalVendido - (float) $totalCobrado), 2, '.', ''),
+            'total_pendiente' => number_format($this->saldoPendienteTotal(), 2, '.', ''),
             'pagados' => $pagados,
             'parciales' => $parciales,
             'pendientes' => $pendientesPago,
@@ -264,6 +288,10 @@ class ReporteService
             )
             ->groupBy('productos.id', 'productos.codigo', 'productos.nombre', 'productos.precio', 'categorias.nombre', 'tallas.nombre')
             ->orderByDesc('cantidad_ventas')
+            // Cada prenda es única (stock 1), así que la cantidad siempre vale 1
+            // y el orden queda empatado. Se desempata por fecha de venta para
+            // que la lista sea estable y, en la práctica, sea "lo último vendido".
+            ->orderByDesc('ultima_venta')
             ->limit($limite);
 
         if ($inicio && $fin) {
@@ -338,6 +366,154 @@ class ReporteService
 
         return $query->get()->map(fn ($row) => [
             'talla' => $row->talla ?? 'Sin talla',
+            'cantidad_productos' => (int) $row->cantidad_productos,
+            'monto_total' => number_format((float) $row->monto_total, 2, '.', ''),
+        ])->toArray();
+    }
+
+    /**
+     * Tiempo promedio de venta: días desde el ingreso de la prenda hasta su venta.
+     *
+     * IMPORTANTE: se calcula con productos.fecha_ingreso. La métrica NO se llama
+     * "desde publicar" porque el sistema guarda `publicado` como booleano y solo
+     * registra la fecha de publicación en producto_historial desde hace poco, con
+     * cobertura parcial. fecha_ingreso es la única fecha de alta completa.
+     */
+    public function tiempoPromedioVenta(?string $periodo, ?string $fechaDesde, ?string $fechaHasta): array
+    {
+        [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
+
+        $totalVendidas = DB::table('venta_items')
+            ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]))
+            ->count();
+
+        $filas = DB::table('venta_items')
+            ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
+            ->whereNotNull('productos.fecha_ingreso')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]))
+            ->selectRaw('DATEDIFF(ventas.fecha_venta, productos.fecha_ingreso) as dias')
+            ->get();
+
+        $dias = $filas->pluck('dias')
+            ->map(fn ($d) => (int) $d)
+            ->filter(fn (int $d) => $d >= 0)
+            ->sort()
+            ->values();
+
+        $contadas = $dias->count();
+        $promedio = $contadas > 0 ? round($dias->sum() / $contadas, 1) : null;
+
+        $mediana = null;
+        if ($contadas > 0) {
+            $medio = intdiv($contadas, 2);
+            $mediana = $contadas % 2 === 0
+                ? round(($dias[$medio - 1] + $dias[$medio]) / 2, 1)
+                : (float) $dias[$medio];
+        }
+
+        return [
+            'promedio_dias' => $promedio,
+            'mediana_dias' => $mediana,
+            'minimo_dias' => $contadas > 0 ? (int) $dias->first() : null,
+            'maximo_dias' => $contadas > 0 ? (int) $dias->last() : null,
+            'prendas_contadas' => $contadas,
+            'total_prendas_vendidas' => $totalVendidas,
+        ];
+    }
+
+    /**
+     * Comparación del período seleccionado contra el período anterior de igual duración.
+     */
+    public function comparacionPeriodo(?string $periodo, ?string $fechaDesde, ?string $fechaHasta): array
+    {
+        [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
+
+        if (! $inicio || ! $fin) {
+            return [
+                'rango_actual' => null,
+                'rango_anterior' => null,
+                'actual' => $this->totalesVentas(null, null),
+                'anterior' => null,
+                'variacion_monto' => null,
+                'variacion_prendas' => null,
+            ];
+        }
+
+        $dias = (int) $inicio->diffInDays($fin) + 1;
+        $inicioAnterior = $inicio->copy()->subDays($dias)->startOfDay();
+        $finAnterior = $inicio->copy()->subDay()->endOfDay();
+
+        $actual = $this->totalesVentas($inicio, $fin);
+        $anterior = $this->totalesVentas($inicioAnterior, $finAnterior);
+
+        return [
+            'rango_actual' => ['desde' => $inicio->format('Y-m-d'), 'hasta' => $fin->format('Y-m-d')],
+            'rango_anterior' => ['desde' => $inicioAnterior->format('Y-m-d'), 'hasta' => $finAnterior->format('Y-m-d')],
+            'actual' => $actual,
+            'anterior' => $anterior,
+            'variacion_monto' => $this->variacionPorcentaje((float) $anterior['monto'], (float) $actual['monto']),
+            'variacion_prendas' => $this->variacionPorcentaje($anterior['prendas'], $actual['prendas']),
+        ];
+    }
+
+    /**
+     * Totales de ventas (monto, tickets y prendas) en un rango opcional.
+     */
+    private function totalesVentas(?Carbon $inicio, ?Carbon $fin): array
+    {
+        $ventas = DB::table('ventas')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('fecha_venta', [$inicio, $fin]));
+
+        $prendas = DB::table('venta_items')
+            ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]));
+
+        return [
+            'monto' => number_format((float) (clone $ventas)->sum('total'), 2, '.', ''),
+            'tickets' => (clone $ventas)->count(),
+            'prendas' => (clone $prendas)->count(),
+        ];
+    }
+
+    /**
+     * Variación porcentual entre dos valores. Null si no hay base de comparación.
+     */
+    private function variacionPorcentaje(float|int $anterior, float|int $actual): ?float
+    {
+        if ((float) $anterior === 0.0) {
+            return null;
+        }
+
+        return round((($actual - $anterior) / $anterior) * 100, 1);
+    }
+
+    /**
+     * Ventas agrupadas por marca.
+     */
+    public function ventasPorMarca(?string $periodo, ?string $fechaDesde, ?string $fechaHasta): array
+    {
+        [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
+
+        $query = DB::table('venta_items')
+            ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
+            ->leftJoin('marcas', 'marcas.id', '=', 'productos.marca_id')
+            ->leftJoin('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->select(
+                'marcas.nombre as marca',
+                DB::raw('COUNT(venta_items.id) as cantidad_productos'),
+                DB::raw('SUM(venta_items.precio_unitario) as monto_total'),
+            )
+            ->groupBy('marcas.nombre')
+            ->orderByDesc('monto_total');
+
+        if ($inicio && $fin) {
+            $query->whereBetween('ventas.fecha_venta', [$inicio, $fin]);
+        }
+
+        return $query->get()->map(fn ($row) => [
+            'marca' => $row->marca ?? 'Sin marca',
             'cantidad_productos' => (int) $row->cantidad_productos,
             'monto_total' => number_format((float) $row->monto_total, 2, '.', ''),
         ])->toArray();
@@ -679,7 +855,7 @@ class ReporteService
             $query->whereBetween('pedidos.fecha_pedido', [$inicio, $fin]);
         }
 
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['estado'])) {
             $query->where('pedidos.estado', $filtros['estado']);
         }
 
@@ -718,7 +894,7 @@ class ReporteService
             $query->whereBetween('pagado_en', [$inicio, $fin]);
         }
 
-        if (!empty($filtros['metodo_pago_id'])) {
+        if (! empty($filtros['metodo_pago_id'])) {
             $query->where('metodo_pago_id', $filtros['metodo_pago_id']);
         }
 
@@ -744,21 +920,24 @@ class ReporteService
 
     private function exportarInventario(array $filtros): array
     {
-        $query = Producto::query()->with(['categoria', 'talla']);
+        $query = Producto::query()->with(['categoria', 'talla', 'marca']);
 
-        if (!empty($filtros['categoria_id'])) {
+        if (! empty($filtros['categoria_id'])) {
             $query->where('categoria_id', $filtros['categoria_id']);
         }
-        if (!empty($filtros['talla_id'])) {
+        if (! empty($filtros['talla_id'])) {
             $query->where('talla_id', $filtros['talla_id']);
         }
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['marca_id'])) {
+            $query->where('marca_id', $filtros['marca_id']);
+        }
+        if (! empty($filtros['estado'])) {
             $query->where('estado', $filtros['estado']);
         }
 
         $productos = $query->orderBy('codigo')->get();
 
-        $headers = ['Código', 'Nombre', 'Categoría', 'Talla', 'Color', 'Costo', 'Precio', 'Estado', 'Publicado', 'Fecha Ingreso'];
+        $headers = ['Código', 'Nombre', 'Categoría', 'Talla', 'Marca', 'Color', 'Costo', 'Precio', 'Estado', 'Publicado', 'Fecha Ingreso'];
 
         $rows = $productos->map(function ($p) {
             return [
@@ -766,6 +945,7 @@ class ReporteService
                 $p->nombre,
                 $p->categoria?->nombre ?? '',
                 $p->talla?->nombre ?? '',
+                $p->marca?->nombre ?? '',
                 $p->color ?? '',
                 $p->costo,
                 $p->precio,
@@ -811,7 +991,7 @@ class ReporteService
 
     private function determinarAgrupacion(?Carbon $inicio, ?Carbon $fin): string
     {
-        if (!$inicio || !$fin) {
+        if (! $inicio || ! $fin) {
             return 'mes';
         }
 
@@ -823,6 +1003,7 @@ class ReporteService
         if ($dias <= 90) {
             return 'semana';
         }
+
         return 'mes';
     }
 
@@ -840,7 +1021,7 @@ class ReporteService
     {
         return match ($agrupacion) {
             'dia' => Carbon::parse($periodo)->format('Y-m-d'),
-            'semana' => 'Sem ' . substr((string) $periodo, -2) . '/' . substr((string) $periodo, 0, 4),
+            'semana' => 'Sem '.substr((string) $periodo, -2).'/'.substr((string) $periodo, 0, 4),
             'mes' => (string) $periodo,
             default => (string) $periodo,
         };

@@ -1,0 +1,235 @@
+<app-modal [title]="'Registrar venta presencial'" [width]="'680px'" (closed)="cerrado.emit()">
+  <div class="form">
+    @if (errorBanner()) {
+      <div class="error-banner">{{ errorBanner() }}</div>
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Cliente *</label>
+        <select class="select" [(ngModel)]="clienteId" name="clienteId">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (cliente of clientes(); track cliente.id) {
+            <option [ngValue]="cliente.id">{{ cliente.nombre }}{{ cliente.telefono ? ' · ' + cliente.telefono : '' }}</option>
+          }
+        </select>
+        @if (errorDe('cliente_id')) {
+          <span class="field-error">{{ errorDe('cliente_id') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Método de pago *</label>
+        <select class="select" [(ngModel)]="metodoId" name="metodoId">
+          <option [ngValue]="null">Selecciona…</option>
+          @for (metodo of metodos(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('metodo_pago_id')) {
+          <span class="field-error">{{ errorDe('metodo_pago_id') }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Método de entrega *</label>
+      <select class="select" [(ngModel)]="entregaId" name="entregaId">
+        <option [ngValue]="null">Selecciona…</option>
+        @for (entrega of metodosEntrega(); track entrega.id) {
+          <option [ngValue]="entrega.id">
+            {{ entrega.nombre }} · {{ moneda(entrega.costo) }}
+          </option>
+        }
+      </select>
+      @if (errorDe('metodo_entrega_id')) {
+        <span class="field-error">{{ errorDe('metodo_entrega_id') }}</span>
+      }
+    </div>
+
+    <div class="field">
+      <label>Buscar prenda disponible</label>
+      <div class="prenda-busqueda">
+        <input
+          class="input"
+          type="text"
+          [(ngModel)]="busqueda"
+          name="busqueda"
+          placeholder="Código o nombre…"
+          (keyup.enter)="buscarPrendas()"
+        />
+        <button type="button" class="btn btn-ghost" (click)="buscarPrendas()" [disabled]="buscando()">
+          {{ buscando() ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </div>
+      @if (errorDe('productos')) {
+        <span class="field-error">{{ errorDe('productos') }}</span>
+      }
+
+      @if (buscando()) {
+        <div class="center">
+          <app-spinner [size]="22" />
+        </div>
+      } @else if (busquedaHecha()) {
+        @if (disponibles().length === 0) {
+          <app-empty-state icon="✧" title="Sin prendas" message="No hay prendas disponibles para esa búsqueda." />
+        } @else {
+          <div class="prenda-resultados">
+            @for (prenda of disponibles(); track prenda.id) {
+              <button type="button" class="prenda-opcion" (click)="agregar(prenda)">
+                <span class="mono">{{ prenda.codigo }}</span>
+                <span class="prenda-nombre">{{ prenda.nombre }}</span>
+                <span class="mono">{{ moneda(prenda.precio) }}</span>
+                <span class="prenda-agregar">+</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    @if (seleccionadas().length > 0) {
+      <div class="field">
+        <label>Prendas de la venta</label>
+        <div class="prenda-seleccionadas">
+          @for (prenda of seleccionadas(); track prenda.id) {
+            <div class="prenda-fila">
+              <span class="mono">{{ prenda.codigo }}</span>
+              <span class="prenda-nombre">{{ prenda.nombre }}</span>
+              <span class="mono">{{ moneda(prenda.precio) }}</span>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="quitar(prenda)">Quitar</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Cupón</label>
+        <input
+          class="input"
+          type="text"
+          [(ngModel)]="cupon"
+          name="cupon"
+          maxlength="30"
+          placeholder="Código de cupón"
+          (ngModelChange)="onCuponCambio()"
+        />
+        @if (errorDe('cupon_codigo')) {
+          <span class="field-error">{{ errorDe('cupon_codigo') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Descuento manual (Bs)</label>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="descuento"
+          name="descuento"
+          (ngModelChange)="onDescuentoCambio()"
+        />
+        @if (errorDe('descuento')) {
+          <span class="field-error">{{ errorDe('descuento') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Monto pagado (Bs) *</label>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="montoPagado"
+          name="montoPagado"
+        />
+        <div class="inline-hint">
+          <button type="button" class="btn btn-outline btn-sm" (click)="cobrarTotal()">Cobrar todo</button>
+          <span class="hint">En blanco: sin pago.</span>
+        </div>
+        @if (errorDe('monto_pagado')) {
+          <span class="field-error">{{ errorDe('monto_pagado') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Referencia</label>
+        <input
+          class="input"
+          type="text"
+          [(ngModel)]="referencia"
+          name="referencia"
+          maxlength="120"
+          placeholder="Nº de transferencia, voucher…"
+        />
+      </div>
+    </div>
+
+    <div class="resumen">
+      <div class="row-between">
+        <span class="muted">Subtotal</span>
+        <span>{{ moneda(subtotal()) }}</span>
+      </div>
+      @if (descuentoEfectivo() > 0) {
+        <div class="row-between">
+          <span class="muted">Descuento</span>
+          <span>− {{ moneda(descuentoEfectivo()) }}</span>
+        </div>
+      }
+      @if (cupon.trim()) {
+        <div class="row-between">
+          <span class="muted">Cupón</span>
+          <span>{{ cupon }}</span>
+        </div>
+      }
+      <div class="row-between">
+        <span class="muted">Costo de entrega</span>
+        <span>{{ moneda(costoEnvio()) }}</span>
+      </div>
+      <div class="row-between total-row">
+        <span>Total estimado</span>
+        <span>{{ moneda(totalEstimado()) }}</span>
+      </div>
+      <p class="hint">El total final se calcula en el servidor con los precios actuales.</p>
+    </div>
+
+    <div class="field">
+      <label>Notas / observación</label>
+      <textarea class="textarea" [(ngModel)]="notas" name="notas" maxlength="1000"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Comprobante</label>
+      @if (comprobante) {
+        <div class="comprobante-seleccionado">
+          <span class="mono small">{{ comprobanteNombre }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="quitarComprobante()">Quitar</button>
+        </div>
+      } @else {
+        <label class="btn btn-outline upload-btn">
+          Seleccionar archivo
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            (change)="onComprobante($event)"
+          />
+        </label>
+        <p class="hint">Imagen JPG, PNG o WebP de hasta 5 MB.</p>
+      }
+      @if (errorDe('comprobante')) {
+        <span class="field-error">{{ errorDe('comprobante') }}</span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" [disabled]="guardando()" (click)="cerrado.emit()">Cancelar</button>
+      <button type="button" class="btn btn-primary" [disabled]="guardando()" (click)="guardar()">
+        {{ guardando() ? 'Registrando…' : 'Registrar venta' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

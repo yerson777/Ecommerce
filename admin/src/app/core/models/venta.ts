@@ -1,7 +1,14 @@
 import type { Cliente } from './cliente';
-import type { Producto } from './producto';
 
-export type EstadoVenta = 'pendiente' | 'parcial' | 'pagada';
+export type EstadoVenta = 'pendiente' | 'parcial' | 'pagada' | 'anulada';
+
+export interface ComprobanteVenta {
+  nombre: string;
+  url: string;
+  mime: string;
+  tamano: number;
+  subido_en: string | null;
+}
 
 export interface VentaItem {
   id: number;
@@ -18,18 +25,24 @@ export interface PedidoInfo {
   subtotal: string;
   costo_envio: string;
   total: string;
+  descuento?: string;
+  cupon?: string | null;
   fecha_pedido: string;
   notas: string | null;
 }
 
-export interface Pago {
+export interface PagoVenta {
   id: number;
   numero_pago: string;
   monto: string;
-  estado: string;
   referencia: string | null;
+  estado: string;
   pagado_en: string | null;
+  nota: string | null;
+  excedente: boolean;
   metodo_pago?: string | null;
+  metodo_pago_id?: number | null;
+  comprobante?: ComprobanteVenta | null;
 }
 
 export interface Venta {
@@ -39,15 +52,30 @@ export interface Venta {
   costo_envio: string;
   total: string;
   estado: EstadoVenta;
+  descuento?: string | null;
+  anulada_en?: string | null;
+  metodo_pago?: string | null;
   total_pagado: string;
   fecha_venta: string;
   notas: string | null;
   cliente?: Cliente | null;
   pedido?: PedidoInfo | null;
   pedido_id?: number | null;
-  pagos?: Pago[] | null;
+  pagos?: PagoVenta[] | null;
   items?: VentaItem[] | null;
   created_at?: string;
+}
+
+export interface VentaPresencialPayload {
+  cliente_id: number;
+  productos: number[];
+  metodo_entrega_id: number;
+  metodo_pago_id: number;
+  cupon_codigo?: string | null;
+  descuento?: number | null;
+  monto_pagado?: number | null;
+  referencia?: string | null;
+  notas?: string | null;
 }
 
 export interface VentaFiltros {
@@ -55,6 +83,8 @@ export interface VentaFiltros {
   estado?: EstadoVenta | null;
   categoria_id?: number | null;
   producto_id?: number | null;
+  cliente_id?: number | null;
+  metodo_pago_id?: number | null;
   fecha_desde?: string | null;
   fecha_hasta?: string | null;
   page?: number;
@@ -65,10 +95,18 @@ export const ETIQUETA_ESTADO_VENTA: Record<EstadoVenta, string> = {
   pendiente: 'Pendiente',
   parcial: 'Parcial',
   pagada: 'Pagada',
+  anulada: 'Anulada',
 };
 
 export const TONO_ESTADO_VENTA: Record<EstadoVenta, string> = {
   pendiente: 'warning',
   parcial: 'info',
   pagada: 'success',
+  anulada: 'neutral',
 };
+
+export interface ClienteOpcion {
+  id: number;
+  nombre: string;
+  telefono: string | null;
+}

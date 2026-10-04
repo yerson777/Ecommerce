@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService, CartItem } from '../../core/services/cart.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
-import { ApiError } from '../../core/models/api-response';
 import { formatearPrecio } from '../../core/utils/precio';
 
 @Component({
@@ -32,9 +31,7 @@ export class CarritoComponent implements OnDestroy {
     this.subtotal = cartService.subtotal;
   }
 
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
+  readonly formatearPrecio = formatearPrecio;
 
   quitar(productoId: number): void {
     this.cartService.quitar(productoId);
@@ -92,10 +89,7 @@ export class CarritoComponent implements OnDestroy {
       ? { codigo: this.cuponCodigo(), descuento: this.cuponDescuento() }
       : null;
     try {
-      sessionStorage.setItem(
-        'everly_cupon_carrito',
-        JSON.stringify(cuponGuardar),
-      );
+      sessionStorage.setItem('everly_cupon_carrito', JSON.stringify(cuponGuardar));
     } catch {
       // Sin persistencia no bloqueamos la navegación.
     }

@@ -2,9 +2,12 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Ventas</h1>
-      <p class="page-subtitle">Consulta y seguimiento de ventas registradas</p>
+      <p class="page-subtitle">Consulta, cobro y seguimiento de ventas registradas</p>
     </div>
-    <app-notification-center />
+    <div class="page-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirRegistro()">Registrar venta</button>
+      <app-notification-center />
+    </div>
   </div>
 
   <section class="card">
@@ -27,6 +30,27 @@
           <option value="pendiente">Pendiente</option>
           <option value="parcial">Parcial</option>
           <option value="pagada">Pagada</option>
+          <option value="anulada">Anulada</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Cliente</label>
+        <select class="select" [(ngModel)]="filtros().cliente" (change)="onBuscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (cliente of clientes(); track cliente.id) {
+            <option [ngValue]="cliente.id">{{ cliente.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Método de pago</label>
+        <select class="select" [(ngModel)]="filtros().metodo_pago_id" (change)="onBuscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (metodo of metodosPago(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
         </select>
       </div>
 
@@ -90,6 +114,7 @@
                 <th>Fecha</th>
                 <th>Cliente</th>
                 <th>Prendas</th>
+                <th>Método</th>
                 <th>Total</th>
                 <th>Pagado</th>
                 <th>Estado</th>
@@ -103,6 +128,7 @@
                   <td>{{ venta.fecha_venta }}</td>
                   <td>{{ venta.cliente?.nombre ?? '—' }}</td>
                   <td>{{ venta.items?.length ?? 0 }}</td>
+                  <td class="muted">{{ venta.metodo_pago ?? '—' }}</td>
                   <td>{{ moneda(venta.total) }}</td>
                   <td class="muted">{{ moneda(venta.total_pagado) }}</td>
                   <td>
@@ -138,7 +164,7 @@
 </div>
 
 @if (detalleAbierto()) {
-  <app-modal title="Detalle de la venta" (closed)="cerrarDetalle()">
+  <app-modal title="Detalle de la venta" [width]="'640px'" (closed)="cerrarDetalle()">
     @if (detalle(); as detalle) {
       <div class="stack">
         <div class="ficha-cabecera">
@@ -160,6 +186,31 @@
               {{ etiquetaEstado(detalle.estado) }}
             </app-badge>
           </div>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <span class="muted-label">Método de pago</span>
+            <div>{{ detalle.metodo_pago ?? '—' }}</div>
+          </div>
+          @if (detalle.pedido?.numero_pedido) {
+            <div>
+              <span class="muted-label">Número de pedido</span>
+              <div class="mono">{{ detalle.pedido!.numero_pedido }}</div>
+            </div>
+          }
+          @if (detalle.pedido?.notas) {
+            <div>
+              <span class="muted-label">Notas del pedido</span>
+              <div>{{ detalle.pedido!.notas }}</div>
+            </div>
+          }
+          @if (detalle.anulada_en) {
+            <div>
+              <span class="muted-label">Anulada</span>
+              <div>{{ formatearFechaHora(detalle.anulada_en) }}</div>
+            </div>
+          }
         </div>
 
         @if (detalle.items?.length) {
@@ -190,6 +241,18 @@
             <span class="muted">Subtotal</span>
             <span>{{ moneda(detalle.subtotal) }}</span>
           </div>
+          @if (detalle.descuento && descuentoPositivo(detalle.descuento)) {
+            <div class="row-between">
+              <span class="muted">Descuento</span>
+              <span>− {{ moneda(detalle.descuento) }}</span>
+            </div>
+          }
+          @if (detalle.pedido?.cupon) {
+            <div class="row-between">
+              <span class="muted">Cupón</span>
+              <span>{{ detalle.pedido!.cupon }}</span>
+            </div>
+          }
           <div class="row-between">
             <span class="muted">Costo de envío</span>
             <span>{{ moneda(detalle.costo_envio) }}</span>
@@ -208,8 +271,10 @@
                 <thead>
                   <tr>
                     <th>Número</th>
+                    <th>Fecha</th>
                     <th>Método</th>
                     <th>Monto</th>
+                    <th>Referencia</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
@@ -217,10 +282,21 @@
                   @for (pago of detalle.pagos; track pago.id) {
                     <tr>
                       <td class="mono">{{ pago.numero_pago }}</td>
+                      <td>{{ formatearFechaHora(pago.pagado_en) }}</td>
                       <td>{{ pago.metodo_pago ?? '—' }}</td>
                       <td>{{ moneda(pago.monto) }}</td>
+                      <td class="muted">
+                        @if (pago.referencia) {
+                          {{ pago.referencia }}
+                        } @else {
+                          —
+                        }
+                        @if (pago.comprobante?.url) {
+                          <a [href]="pago.comprobante!.url" target="_blank" rel="noopener"> · Ver archivo</a>
+                        }
+                      </td>
                       <td>
-                        <app-badge [tone]="pago.estado === 'completado' ? 'success' : pago.estado === 'anulado' ? 'danger' : 'warning'">
+                        <app-badge [tone]="pago.estado === 'completado' ? 'success' : pago.estado === 'anulado' ? 'danger' : pago.estado === 'reembolsado' ? 'neutral' : 'warning'">
                           {{ pago.estado }}
                         </app-badge>
                       </td>
@@ -231,6 +307,22 @@
             </div>
           </div>
         }
+
+        @if (detalle.notas) {
+          <div class="notas">
+            <span class="muted-label">Notas</span>
+            <div>{{ detalle.notas }}</div>
+          </div>
+        }
+
+        <div class="transiciones">
+          <div class="transiciones-botones">
+            <button type="button" class="btn btn-outline" (click)="imprimirComprobante()">Imprimir comprobante</button>
+            @if (!detalle.anulada_en) {
+              <button type="button" class="btn btn-danger" (click)="pedirAnulacion()">Anular venta</button>
+            }
+          </div>
+        </div>
       </div>
     } @else {
       <div class="center">
@@ -238,4 +330,66 @@
       </div>
     }
   </app-modal>
+}
+
+@if (anulando(); as venta) {
+  <app-confirm-dialog
+    title="Anular venta"
+    [message]="'Se anulará la venta ' + venta.numero_venta + ': las prendas volverán a estar disponibles y los pagos completados quedarán reembolsados con egreso de caja. Esta acción no se puede deshacer.'"
+    confirmLabel="Anular venta"
+    [tone]="'danger'"
+    (confirm)="confirmarAnulacion()"
+    (cancel)="cancelarAnulacion()"
+  />
+}
+
+@if (registrando()) {
+  <app-venta-presencial-modal
+    [clientes]="clientes()"
+    [metodos]="metodosPago()"
+    [metodosEntrega]="metodosEntrega()"
+    (registrada)="onRegistrada($event)"
+    (cerrado)="cerrarRegistro()"
+  />
+}
+
+@if (detalle(); as d) {
+  <div class="print-area comprobante">
+    <div class="comprobante-header">
+      <div class="comprobante-titulo">Everly · Comprobante de venta</div>
+      <div class="comprobante-sub">{{ d.numero_venta }}</div>
+    </div>
+    <div class="comprobante-meta">
+      <div><span>Fecha</span><strong>{{ formatearFecha(d.fecha_venta) }}</strong></div>
+      <div><span>Cliente</span><strong>{{ d.cliente?.nombre ?? '—' }}</strong></div>
+      <div><span>Método de pago</span><strong>{{ d.metodo_pago ?? '—' }}</strong></div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of d.items ?? []; track item.id) {
+          <tr>
+            <td class="mono">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
+            <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
+            <td>{{ moneda(item.precio_unitario) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="comprobante-totales">
+      <div class="row-between"><span>Subtotal</span><span>{{ moneda(d.subtotal) }}</span></div>
+      @if (d.descuento && descuentoPositivo(d.descuento)) {
+        <div class="row-between"><span>Descuento</span><span>− {{ moneda(d.descuento) }}</span></div>
+      }
+      <div class="row-between"><span>Costo de envío</span><span>{{ moneda(d.costo_envio) }}</span></div>
+      <div class="row-between total-row"><span>Total</span><span>{{ moneda(d.total) }}</span></div>
+      <div class="row-between"><span>Pagado</span><span>{{ moneda(d.total_pagado) }}</span></div>
+    </div>
+  </div>
 }

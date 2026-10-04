@@ -7,7 +7,6 @@ use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\ProductoHistorial;
 use App\Models\Reserva;
-use App\Models\Talla;
 use App\Models\Venta;
 use App\Models\VentaItem;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -32,9 +31,9 @@ class InventarioService
      *
      * @throws InventarioException si la prenda no está disponible.
      */
-    public function reservar(int $productoId, ?string $venceEn = null, ?int $pedidoId = null): Reserva
+    public function reservar(int $productoId, ?string $venceEn = null, ?int $pedidoId = null, ?int $clienteId = null): Reserva
     {
-        return DB::transaction(function () use ($productoId, $venceEn, $pedidoId) {
+        return DB::transaction(function () use ($productoId, $venceEn, $pedidoId, $clienteId) {
             /** @var Producto|null $producto */
             $producto = Producto::query()->whereKey($productoId)->lockForUpdate()->first();
 
@@ -49,6 +48,7 @@ class InventarioService
             $reserva = Reserva::create([
                 'producto_id' => $producto->id,
                 'pedido_id' => $pedidoId,
+                'cliente_id' => $clienteId,
                 'estado' => Reserva::ESTADO_ACTIVA,
                 'vence_en' => $venceEn,
             ]);
@@ -156,7 +156,7 @@ class InventarioService
                     'liberada_en' => now(),
                 ]);
 
-            $this->guardarEstado($producto, Producto::ESTADO_VENDIDA, 'Vendida. Venta N° ' . $venta->numero_venta);
+            $this->guardarEstado($producto, Producto::ESTADO_VENDIDA, 'Vendida. Venta N° '.$venta->numero_venta);
 
             // Una prenda vendida deja de publicarse automáticamente.
             $producto->forceFill(['publicado' => false])->save();
@@ -208,6 +208,6 @@ class InventarioService
 
     private function proximoNumeroVenta(): string
     {
-        return 'V-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
+        return 'V-'.now()->format('Ymd').'-'.strtoupper(Str::random(5));
     }
 }

@@ -1,0 +1,200 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Devoluciones</h1>
+      <p class="page-subtitle">Registro y aprobación de devoluciones de ventas</p>
+    </div>
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-primary" (click)="abrirRegistrar()">Registrar devolución</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Número de venta, pedido o cliente…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option value="">Todas</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="aprobada">Aprobadas</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="↩"
+          title="Sin devoluciones"
+          message="No hay devoluciones que coincidan con los filtros."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Venta</th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Monto</th>
+                <th>Motivo</th>
+                <th>Registrada</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (devolucion of page.data; track devolucion.id) {
+                <tr>
+                  <td class="mono">{{ numeroVenta(devolucion) }}</td>
+                  <td class="mono">{{ numeroPedido(devolucion) }}</td>
+                  <td>{{ nombreCliente(devolucion) }}</td>
+                  <td>{{ moneda(devolucion.monto_reembolsado) }}</td>
+                  <td>
+                    <span class="motivo" [title]="devolucion.motivo">{{ devolucion.motivo }}</span>
+                  </td>
+                  <td>{{ formatearFecha(devolucion.created_at) }}</td>
+                  <td>
+                    <app-badge [tone]="tonoEstado(devolucion)">
+                      {{ etiquetaEstado(devolucion) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    @if (esPendiente(devolucion)) {
+                      <div class="actions">
+                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarAprobar(devolucion)">
+                          Aprobar
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (registrar().abierto) {
+  <app-modal title="Registrar devolución" (closed)="cerrarRegistrar()">
+    <div class="stack">
+      <div class="instruction">
+        La devolución quedará en estado <app-badge tone="warning">Pendiente</app-badge>.
+        Al aprobarla, las prendas volverán a Disponible y la caja registrará el egreso.
+      </div>
+
+      <div class="field">
+        <label>Venta a devolver</label>
+        <div class="venta-busqueda">
+          <input
+            class="input"
+            type="text"
+            placeholder="Buscar por número o cliente…"
+            [(ngModel)]="registrar().busqueda"
+            (keyup.enter)="buscarVentas()"
+          />
+          <button type="button" class="btn btn-outline" (click)="buscarVentas()">Buscar</button>
+        </div>
+
+        @if (registrar().cargandoVentas) {
+          <app-spinner [size]="18" />
+        } @else {
+          <select class="select" [(ngModel)]="registrar().ventaId" (ngModelChange)="onSeleccionarVenta()">
+            <option [ngValue]="null" disabled>Selecciona una venta…</option>
+            @for (venta of registrar().ventas; track venta.id) {
+              <option [ngValue]="venta.id">
+                {{ venta.numero_venta }} · {{ venta.cliente?.nombre ?? 'Cliente' }} · {{ moneda(venta.total) }}
+              </option>
+            }
+          </select>
+          @if (registrar().ventas.length === 0) {
+            <span class="hint">No hay ventas con pedido completado disponibles para devolver.</span>
+          }
+        }
+      </div>
+
+      <div class="field">
+        <label>Motivo</label>
+        <textarea class="input textarea" rows="3" placeholder="Ej. defecto de confección, cambio de talla…" [(ngModel)]="registrar().motivo"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Monto a reembolsar (Bs)</label>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [ngModel]="registrar().monto ?? ''"
+          (ngModelChange)="cambiarMonto($event)"
+          placeholder="Se reembolsará como máximo lo cobrado"
+        />
+        <span class="hint">
+          Total de la venta: {{ moneda(totalVentaDeVentaSeleccionada()) }}. El sistema no devolverá más de lo cobrado.
+        </span>
+      </div>
+
+      @if (registrar().error) {
+        <div class="error-box">{{ registrar().error }}</div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cerrarRegistrar()" [attr.disabled]="registrar().guardando ? '' : null">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="registrarDevolucion()" [attr.disabled]="registrar().guardando ? '' : null">
+          {{ registrar().guardando ? 'Registrando…' : 'Registrar devolución' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (aprobarObjetivo(); as devolucion) {
+  <app-confirm-dialog
+    title="Aprobar devolución"
+    [message]="'Se aprobará la devolución de la venta ' + numeroVenta(devolucion) + ' por ' + moneda(devolucion.monto_reembolsado) + '. Las prendas volverán a Disponible y la caja registrará el egreso.'"
+    confirmLabel="Aprobar devolución"
+    (confirm)="confirmarAprobar()"
+    (cancel)="cancelarAprobar()"
+  />
+  @if (aprobando()) {
+    <app-spinner [size]="20" />
+  }
+}

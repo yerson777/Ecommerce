@@ -141,6 +141,11 @@
             <app-badge [tone]="tonoEstado(detalle.estado)">
               {{ etiquetaEstado(detalle.estado) }}
             </app-badge>
+            @if (detalle.estado_pago) {
+              <app-badge [tone]="tonoEstadoPago(detalle.estado_pago)">
+                {{ etiquetaEstadoPago(detalle.estado_pago) }}
+              </app-badge>
+            }
           </div>
         </div>
 
@@ -224,6 +229,18 @@
             <span class="muted">Subtotal</span>
             <span>{{ moneda(detalle.subtotal) }}</span>
           </div>
+          @if (detalle.descuento && descuentoPositivo(detalle.descuento)) {
+            <div class="row-between">
+              <span class="muted">Descuento</span>
+              <span>− {{ moneda(detalle.descuento) }}</span>
+            </div>
+          }
+          @if (detalle.cupon) {
+            <div class="row-between">
+              <span class="muted">Cupón</span>
+              <span>{{ detalle.cupon }}</span>
+            </div>
+          }
           <div class="row-between">
             <span class="muted">Costo de envío</span>
             <span>{{ moneda(detalle.costo_envio) }}</span>
@@ -232,7 +249,100 @@
             <span>Total</span>
             <span>{{ moneda(detalle.total) }}</span>
           </div>
+          @if (detalle.total_pagado) {
+            <div class="row-between">
+              <span class="muted">Pagado</span>
+              <span>{{ moneda(detalle.total_pagado) }}</span>
+            </div>
+          }
+          @if (detalle.saldo_pendiente) {
+            <div class="row-between">
+              <span class="muted">Saldo pendiente</span>
+              <span>{{ moneda(detalle.saldo_pendiente) }}</span>
+            </div>
+          }
         </div>
+
+        @if (detalle.pagos?.length) {
+          <div class="pagos-block">
+            <h3 class="subtitle">Pagos</h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Número</th>
+                    <th>Fecha</th>
+                    <th>Método</th>
+                    <th>Monto</th>
+                    <th>Referencia</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (pago of detalle.pagos; track pago.id) {
+                    <tr>
+                      <td class="mono">{{ pago.numero_pago }}</td>
+                      <td>{{ formatearFechaHora(pago.pagado_en) }}</td>
+                      <td>{{ pago.metodo_pago ?? '—' }}</td>
+                      <td>{{ moneda(pago.monto) }}</td>
+                      <td class="muted">
+                        @if (pago.referencia) {
+                          {{ pago.referencia }}
+                        } @else {
+                          —
+                        }
+                        @if (pago.comprobante?.url) {
+                          <a [href]="pago.comprobante!.url" target="_blank" rel="noopener"> · Ver archivo</a>
+                        }
+                      </td>
+                      <td>
+                        <app-badge [tone]="pago.estado === 'completado' ? 'success' : pago.estado === 'anulado' ? 'danger' : pago.estado === 'reembolsado' ? 'neutral' : 'warning'">
+                          {{ pago.estado }}
+                        </app-badge>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        @if (detalle.historial?.length) {
+          <div class="historial">
+            <h3 class="subtitle">Historial de cambios</h3>
+            <div class="historial-lista">
+              @for (entrada of detalle.historial; track entrada.created_at; let i = $index) {
+                <div class="historial-item">
+                  <span class="historial-fecha">{{ formatearFechaHora(entrada.created_at) }}</span>
+                  <div class="historial-cambios">
+                    @if (entrada.estado_anterior) {
+                      <app-badge [tone]="tonoEstado(entrada.estado_anterior)">
+                        {{ etiquetaEstado(entrada.estado_anterior) }}
+                      </app-badge>
+                      <span class="historial-flecha">→</span>
+                    }
+                    <app-badge [tone]="tonoEstado(entrada.estado_nuevo)">
+                      {{ etiquetaEstado(entrada.estado_nuevo) }}
+                    </app-badge>
+                  </div>
+                  @if (entrada.motivo) {
+                    <div class="muted historial-motivo">{{ entrada.motivo }}</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (detalle.estado !== 'cancelado' && detalle.estado !== 'devuelto') {
+          <div class="transiciones">
+            <div class="transiciones-botones">
+              <button type="button" class="btn btn-primary" (click)="abrirRegistroPago()">Registrar pago</button>
+              <button type="button" class="btn btn-outline" (click)="imprimirComprobante()">Imprimir comprobante</button>
+            </div>
+          </div>
+        }
 
         @if (detalle.devolucion) {
           <div class="devolucion">
@@ -348,4 +458,59 @@
       </div>
     </div>
   </app-modal>
+}
+
+@if (registroPagoAbierto()) {
+  <app-registro-pago-modal
+    [metodos]="metodos()"
+    [pedidoInicial]="detalle()"
+    (registrado)="onPagoRegistrado($event)"
+    (cerrado)="cerrarRegistroPago()"
+  />
+}
+
+@if (detalle(); as d) {
+  <div class="print-area comprobante">
+    <div class="comprobante-header">
+      <div class="comprobante-titulo">Everly · Comprobante de pedido</div>
+      <div class="comprobante-sub">{{ d.numero_pedido }} · {{ etiquetaEstado(d.estado) }}</div>
+    </div>
+    <div class="comprobante-meta">
+      <div><span>Fecha</span><strong>{{ formatearFecha(d.fecha_pedido) }}</strong></div>
+      <div><span>Cliente</span><strong>{{ d.cliente?.nombre ?? '—' }}</strong></div>
+      <div><span>Estado de pago</span><strong>{{ etiquetaEstadoPago(d.estado_pago ?? '') }}</strong></div>
+      <div><span>Entrega</span><strong>{{ d.metodo_entrega ?? '—' }}</strong></div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Talla</th>
+          <th>Color</th>
+          <th>Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of d.items ?? []; track item.id) {
+          <tr>
+            <td class="mono">{{ item.producto_codigo ?? '' }}</td>
+            <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
+            <td>{{ item.producto_talla ?? '—' }}</td>
+            <td>{{ item.producto_color ?? '—' }}</td>
+            <td>{{ moneda(item.precio_unitario) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="comprobante-totales">
+      <div class="row-between"><span>Subtotal</span><span>{{ moneda(d.subtotal) }}</span></div>
+      @if (d.descuento && descuentoPositivo(d.descuento)) {
+        <div class="row-between"><span>Descuento</span><span>− {{ moneda(d.descuento) }}</span></div>
+      }
+      <div class="row-between"><span>Costo de envío</span><span>{{ moneda(d.costo_envio) }}</span></div>
+      <div class="row-between total-row"><span>Total</span><span>{{ moneda(d.total) }}</span></div>
+      <div class="row-between"><span>Pagado</span><span>{{ moneda(d.total_pagado) }}</span></div>
+    </div>
+  </div>
 }

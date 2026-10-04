@@ -44,6 +44,16 @@
       </div>
 
       <div class="field">
+        <label>Marca</label>
+        <select class="select" [(ngModel)]="filtros().marca" (change)="onBuscar()">
+          <option [ngValue]="null">Todas</option>
+          @for (marca of marcas(); track marca.id) {
+            <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
         <label>Estado</label>
         <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
           <option value="">Todos</option>
@@ -107,6 +117,7 @@
                 <th>Nombre</th>
                 <th>Categoría</th>
                 <th>Talla</th>
+                <th>Marca</th>
                 <th>Precio</th>
                 <th>Estado</th>
                 <th>Publicado</th>
@@ -132,6 +143,7 @@
                   </td>
                   <td>{{ producto.categoria?.nombre ?? '—' }}</td>
                   <td>{{ producto.talla?.nombre ?? '—' }}</td>
+                  <td>{{ producto.marca?.nombre ?? '—' }}</td>
                   <td>{{ moneda(producto.precio) }}</td>
                   <td>
                     <app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge>
@@ -194,6 +206,7 @@
     [producto]="modalFormulario().producto"
     [categorias]="categorias()"
     [tallas]="tallas()"
+    [marcas]="marcas()"
     [soloLectura]="modalFormulario().readonly"
     (guardado)="cargar(); cerrarFormulario()"
     (cerrado)="cerrarFormulario()"

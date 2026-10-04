@@ -13,8 +13,11 @@ class Pedido extends Model
     use HasFactory;
 
     public const ESTADO_PENDIENTE = 'pendiente';
+
     public const ESTADO_CONFIRMADO = 'confirmado';
+
     public const ESTADO_CANCELADO = 'cancelado';
+
     public const ESTADO_COMPLETADO = 'completado';
 
     /**
@@ -115,6 +118,11 @@ class Pedido extends Model
     public function cupon(): BelongsTo
     {
         return $this->belongsTo(Cupon::class);
+    }
+
+    public function historial(): HasMany
+    {
+        return $this->hasMany(PedidoHistorial::class)->orderByDesc('created_at')->orderByDesc('id');
     }
 
     public function puedeTransicionarA(string $estado): bool

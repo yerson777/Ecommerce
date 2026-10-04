@@ -75,11 +75,11 @@
       </header>
       <ul class="metrics">
         <li>
-          <span class="m-label">Total cobrado</span>
+          <span class="m-label">Cobrado en el período</span>
           <span class="m-value tone-success">{{ moneda(d.ventas.cobrado) }}</span>
         </li>
         <li>
-          <span class="m-label">Por cobrar</span>
+          <span class="m-label">Por cobrar (abiertos)</span>
           <span class="m-value tone-warning">{{ moneda(d.ventas.pendiente) }}</span>
         </li>
       </ul>
@@ -117,7 +117,7 @@
       </header>
       <ul class="metrics">
         <li>
-          <span class="m-label">Total pendiente</span>
+          <span class="m-label">Por cobrar (abiertos)</span>
           <span class="m-value tone-warning">{{ moneda(d.pagos.total_pendiente) }}</span>
         </li>
         <li>
@@ -125,7 +125,7 @@
           <span class="m-value tone-info">{{ d.pagos.parciales }}</span>
         </li>
         <li>
-          <span class="m-label">Pendientes de pago</span>
+          <span class="m-label">Pedidos con saldo</span>
           <span class="m-value tone-warning">{{ d.pagos.pendientes }}</span>
         </li>
       </ul>

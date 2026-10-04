@@ -23,6 +23,7 @@ class ProductoResource extends JsonResource
             'fecha_ingreso' => $this->fecha_ingreso?->toDateString(),
             'categoria' => $this->whenLoaded('categoria', fn () => new CategoriaResource($this->categoria)),
             'talla' => $this->whenLoaded('talla', fn () => new TallaResource($this->talla)),
+            'marca' => $this->whenLoaded('marca', fn () => new MarcaResource($this->marca)),
             'imagenes' => ProductoImagenResource::collection($this->whenLoaded('imagenes')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

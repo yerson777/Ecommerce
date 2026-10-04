@@ -5,6 +5,7 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { ProductoPublico } from '../../core/models/producto';
 import { formatearPrecio } from '../../core/utils/precio';
+import { imagenPrincipal } from '../../core/utils/producto';
 
 @Component({
   imports: [CommonModule, RouterLink],
@@ -52,9 +53,7 @@ export class ProductoComponent implements OnInit {
     });
   }
 
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
+  readonly formatearPrecio = formatearPrecio;
 
   enCarrito(): boolean {
     return this.carrito.contiene(this.productoId);
@@ -74,11 +73,7 @@ export class ProductoComponent implements OnInit {
           return;
         }
         this.producto.set(producto);
-        this.fotoActiva.set(
-          producto.imagenes.find((imagen) => imagen.es_principal)?.url ??
-            producto.imagenes[0]?.url ??
-            null,
-        );
+        this.fotoActiva.set(imagenPrincipal(producto));
         this.cargando.set(false);
         this.cargarRelacionados();
       },
@@ -100,10 +95,7 @@ export class ProductoComponent implements OnInit {
     });
   }
 
-  imagenRelacionado(producto: ProductoPublico): string | null {
-    const principal = producto.imagenes.find((imagen) => imagen.es_principal);
-    return principal?.url ?? producto.imagenes[0]?.url ?? null;
-  }
+  readonly imagenRelacionado = imagenPrincipal;
 
   verRelacionado(id: number): void {
     this.router.navigate(['/producto', id]);

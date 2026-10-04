@@ -16,6 +16,7 @@ class ProductoUpdateRequest extends ApiFormRequest
             'nombre' => ['sometimes', 'string', 'max:255'],
             'categoria_id' => ['sometimes', Rule::exists('categorias', 'id')],
             'talla_id' => ['sometimes', Rule::exists('tallas', 'id')],
+            'marca_nombre' => ['sometimes', 'nullable', 'string', 'max:100'],
             'color' => ['sometimes', 'nullable', 'string', 'max:100'],
             'descripcion' => ['sometimes', 'nullable', 'string'],
             'costo' => ['sometimes', 'numeric', 'min:0'],
@@ -28,6 +29,6 @@ class ProductoUpdateRequest extends ApiFormRequest
 
     public function messages(): array
     {
-        return (new ProductoStoreRequest())->messages();
+        return (new ProductoStoreRequest)->messages();
     }
 }

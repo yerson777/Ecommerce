@@ -13,7 +13,10 @@ import {
   ProductoMasVendido,
   ReporteFiltros,
   ReporteResumen,
+  ComparacionPeriodo,
+  TiempoPromedioVenta,
   VentasPorCategoria,
+  VentasPorMarca,
   VentasPorPeriodoResultado,
   VentasPorTalla,
 } from '../models/reporte';
@@ -55,6 +58,18 @@ export class ReportesService {
 
   ventasPorTalla(filtros: ReporteFiltros = {}): Observable<ApiResponse<VentasPorTalla[]>> {
     return this.http.get<ApiResponse<VentasPorTalla[]>>(`${this.baseUrl}/v1/admin/reportes/ventas-por-talla`, { params: this.params(filtros) });
+  }
+
+  ventasPorMarca(filtros: ReporteFiltros = {}): Observable<ApiResponse<VentasPorMarca[]>> {
+    return this.http.get<ApiResponse<VentasPorMarca[]>>(`${this.baseUrl}/v1/admin/reportes/ventas-por-marca`, { params: this.params(filtros) });
+  }
+
+  tiempoPromedioVenta(filtros: ReporteFiltros = {}): Observable<ApiResponse<TiempoPromedioVenta>> {
+    return this.http.get<ApiResponse<TiempoPromedioVenta>>(`${this.baseUrl}/v1/admin/reportes/tiempo-promedio-venta`, { params: this.params(filtros) });
+  }
+
+  comparacion(filtros: ReporteFiltros = {}): Observable<ApiResponse<ComparacionPeriodo>> {
+    return this.http.get<ApiResponse<ComparacionPeriodo>>(`${this.baseUrl}/v1/admin/reportes/comparacion`, { params: this.params(filtros) });
   }
 
   clientes(filtros: ReporteFiltros = {}): Observable<ApiResponse<ClientesReporte>> {

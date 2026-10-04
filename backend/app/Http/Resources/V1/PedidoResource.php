@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\V1;
 
+use App\Models\PedidoHistorial;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +31,15 @@ class PedidoResource extends JsonResource
             'metodo_pago' => $this->whenLoaded('metodoPago', fn () => $this->metodoPago->nombre),
             'metodo_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega->nombre),
             'items' => PedidoItemResource::collection($this->whenLoaded('items')),
+            'pagos' => PagoResource::collection($this->whenLoaded('pagos')),
+            'historial' => $this->whenLoaded('historial', fn () => $this->historial->map(
+                fn (PedidoHistorial $h) => [
+                    'estado_anterior' => $h->estado_anterior,
+                    'estado_nuevo' => $h->estado_nuevo,
+                    'motivo' => $h->motivo,
+                    'created_at' => $h->created_at?->toISOString(),
+                ]
+            )->values()->all()),
             'numero_venta' => $this->whenLoaded('venta', fn () => $this->venta->numero_venta),
             'devolucion' => $this->whenLoaded('devolucion', fn () => $this->devolucion ? [
                 'motivo' => $this->devolucion->motivo,

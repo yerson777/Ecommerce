@@ -12,6 +12,8 @@ use App\Models\Pedido;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -34,9 +36,7 @@ class PagoService
 
     protected const MAX_TAMANO = 5120; // KB (5 MB)
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     protected function almacenamiento(): Filesystem
     {
@@ -111,7 +111,7 @@ class PagoService
 
             if ($monto > $saldo + 0.01 && ! $permitirExcedente) {
                 throw ValidationException::withMessages([
-                    'monto' => 'El monto supera el saldo pendiente (Bs ' . number_format($saldo, 2) . ').',
+                    'monto' => 'El monto supera el saldo pendiente (Bs '.number_format($saldo, 2).').',
                 ]);
             }
 
@@ -120,7 +120,7 @@ class PagoService
 
             if ($estado === Pago::ESTADO_COMPLETADO) {
                 $pagadoEn = isset($datos['fecha']) && $datos['fecha']
-                    ? \Illuminate\Support\Carbon::parse($datos['fecha'])
+                    ? Carbon::parse($datos['fecha'])
                     : now();
             }
 
@@ -145,6 +145,8 @@ class PagoService
 
             if ($estado === Pago::ESTADO_COMPLETADO) {
                 $this->registrarIngresoCaja($pago, $pedido);
+
+                $this->avanzarPedidoSiLiquidado($pedido);
             }
 
             event(new PagoRegistrado($pago));
@@ -230,6 +232,8 @@ class PagoService
 
             $this->registrarIngresoCaja($pago, $pedido);
 
+            $this->avanzarPedidoSiLiquidado($pedido);
+
             event(new PagoConfirmado($pago));
 
             return $this->pagoDetallado($pago);
@@ -275,12 +279,33 @@ class PagoService
             ->sum('monto');
     }
 
+    /**
+     * Si el pedido quedó totalmente pagado, lo pasa automáticamente de
+     * "pendiente" a "confirmado": la confirmación del cobro acepta el pedido.
+     */
+    protected function avanzarPedidoSiLiquidado(Pedido $pedido): void
+    {
+        if ($pedido->estado !== Pedido::ESTADO_PENDIENTE) {
+            return;
+        }
+
+        if (! $pedido->puedeTransicionarA(Pedido::ESTADO_CONFIRMADO)) {
+            return;
+        }
+
+        if ($this->pagadoDePedido($pedido) < (float) $pedido->total - 0.01) {
+            return;
+        }
+
+        App::make(PedidoService::class)->cambiarEstado($pedido->id, Pedido::ESTADO_CONFIRMADO);
+    }
+
     protected function guardarComprobante(Pago $pago, UploadedFile $comprobante): void
     {
         $rutaAnterior = $pago->comprobante_ruta;
 
         $ruta = $this->almacenamiento()->putFileAs(
-            'comprobantes/pagos/' . $pago->id,
+            'comprobantes/pagos/'.$pago->id,
             $comprobante,
             $this->nombreArchivo($comprobante),
             'public'
@@ -311,7 +336,7 @@ class PagoService
                 'tipo' => 'ingreso',
                 'monto' => $pago->monto,
                 'fuente' => 'pago',
-                'descripcion' => 'Pago ' . $pago->numero_pago . ' Â· Pedido ' . $pedido->numero_pedido,
+                'descripcion' => 'Pago '.$pago->numero_pago.' Â· Pedido '.$pedido->numero_pedido,
                 'fecha' => ($pago->pagado_en ?? now())->toDateString(),
             ]
         );
@@ -332,7 +357,7 @@ class PagoService
     {
         $extension = strtolower($archivo->guessExtension() ?: ($archivo->getClientOriginalExtension() ?: 'jpg'));
 
-        return Str::uuid()->toString() . '.' . $extension;
+        return Str::uuid()->toString().'.'.$extension;
     }
 
     protected function eliminarArchivoSiExiste(string $ruta): void
@@ -344,6 +369,6 @@ class PagoService
 
     protected function proximoNumeroPago(): string
     {
-        return 'PAG-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+        return 'PAG-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
     }
 }

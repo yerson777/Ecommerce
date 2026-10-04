@@ -89,6 +89,49 @@
   font-size: 14px;
 }
 
+.pagos-block {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.historial {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.historial-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-left: 2px solid var(--border);
+  padding-left: 0.8rem;
+}
+
+.historial-fecha {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.historial-cambios {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.historial-flecha {
+  color: var(--text-muted);
+}
+
+.historial-motivo {
+  font-size: 13px;
+}
+
 .totals {
   display: flex;
   flex-direction: column;

@@ -17,6 +17,15 @@ export interface TallaRef {
   productos_count?: number;
 }
 
+export interface MarcaRef {
+  id: number;
+  nombre: string;
+  slug?: string;
+  activo?: boolean;
+  orden?: number;
+  productos_count?: number;
+}
+
 export interface ProductoImagen {
   id: number;
   producto_id: number;
@@ -43,6 +52,7 @@ export interface Producto {
   fecha_ingreso: string | null;
   categoria?: CategoriaRef | null;
   talla?: TallaRef | null;
+  marca?: MarcaRef | null;
   imagenes?: ProductoImagen[];
   created_at?: string;
   updated_at?: string;
@@ -53,6 +63,7 @@ export interface ProductoPayload {
   nombre: string;
   categoria_id: number;
   talla_id: number;
+  marca_nombre?: string | null;
   color?: string | null;
   descripcion?: string | null;
   costo: number;
@@ -66,6 +77,7 @@ export interface ProductoFiltros {
   busqueda?: string;
   categoria?: number | null;
   talla?: number | null;
+  marca?: number | null;
   estado?: EstadoPrenda | null;
   publicado?: boolean | null;
   precio_min?: number | null;

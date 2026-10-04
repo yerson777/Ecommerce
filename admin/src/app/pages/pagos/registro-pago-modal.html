@@ -21,7 +21,9 @@
             {{ buscando() ? 'Buscando…' : 'Buscar' }}
           </button>
         } @else {
-          <button type="button" class="btn btn-ghost" (click)="seleccionado = null">Cambiar</button>
+          @if (!bloquearSeleccion()) {
+            <button type="button" class="btn btn-ghost" (click)="seleccionado = null">Cambiar</button>
+          }
         }
       </div>
       @if (errorDe('pedido_id')) {

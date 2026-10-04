@@ -86,6 +86,41 @@ export interface VentasPorTalla {
   monto_total: string;
 }
 
+export interface VentasPorMarca {
+  marca: string;
+  cantidad_productos: number;
+  monto_total: string;
+}
+
+export interface TiempoPromedioVenta {
+  promedio_dias: number | null;
+  mediana_dias: number | null;
+  minimo_dias: number | null;
+  maximo_dias: number | null;
+  prendas_contadas: number;
+  total_prendas_vendidas: number;
+}
+
+export interface ComparacionTotales {
+  monto: string;
+  tickets: number;
+  prendas: number;
+}
+
+export interface ComparacionRango {
+  desde: string;
+  hasta: string;
+}
+
+export interface ComparacionPeriodo {
+  rango_actual: ComparacionRango | null;
+  rango_anterior: ComparacionRango | null;
+  actual: ComparacionTotales;
+  anterior: ComparacionTotales | null;
+  variacion_monto: number | null;
+  variacion_prendas: number | null;
+}
+
 export interface ClienteEstadistica {
   cliente_id: number;
   nombre: string;

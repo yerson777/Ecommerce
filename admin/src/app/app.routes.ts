@@ -8,6 +8,8 @@ import { DashboardComponent } from './pages/dashboard/dashboard';
 import { ProductosComponent } from './pages/productos/productos';
 import { InventarioComponent } from './pages/inventario/inventario';
 import { VentasComponent } from './pages/ventas/ventas';
+import { ReservasComponent } from './pages/reservas/reservas';
+import { DevolucionesComponent } from './pages/devoluciones/devoluciones';
 import { PedidosComponent } from './pages/pedidos/pedidos';
 import { ClientesComponent } from './pages/clientes/clientes';
 import { PagosComponent } from './pages/pagos/pagos';
@@ -30,6 +32,8 @@ export const routes: Routes = [
       { path: 'productos', component: ProductosComponent },
       { path: 'inventario', component: InventarioComponent },
       { path: 'ventas', component: VentasComponent },
+      { path: 'reservas', component: ReservasComponent },
+      { path: 'devoluciones', component: DevolucionesComponent },
       { path: 'pedidos', component: PedidosComponent },
       { path: 'clientes', component: ClientesComponent },
       { path: 'pagos', component: PagosComponent },

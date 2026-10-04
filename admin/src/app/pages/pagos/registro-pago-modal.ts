@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { MetodoPagoRef, Pago, PagoPayload } from '../../core/models/pago';
@@ -16,11 +16,19 @@ import { ModalComponent } from '../../shared/components/modal/modal';
   styleUrl: './registro-pago-modal.scss',
   templateUrl: './registro-pago-modal.html',
 })
-export class RegistroPagoModalComponent {
+export class RegistroPagoModalComponent implements OnInit {
   readonly metodos = input<MetodoPagoRef[]>([]);
+  readonly pedidoInicial = input<Pedido | null>(null);
 
   readonly registrado = output<Pago>();
   readonly cerrado = output<void>();
+
+  ngOnInit(): void {
+    const inicial = this.pedidoInicial();
+    if (inicial) {
+      this.seleccionar(inicial);
+    }
+  }
 
   private readonly pagosService = inject(PagosService);
   private readonly pedidosService = inject(PedidosService);
@@ -31,6 +39,10 @@ export class RegistroPagoModalComponent {
   readonly buscando = signal(false);
   readonly busquedaHecha = signal(false);
   seleccionado: Pedido | null = null;
+
+  bloquearSeleccion(): boolean {
+    return !!this.pedidoInicial();
+  }
 
   monto: number | null = null;
   metodoId: number | null = null;

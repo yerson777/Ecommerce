@@ -7,27 +7,28 @@ use App\Http\Requests\V1\Admin\Producto\ProductoStoreRequest;
 use App\Http\Requests\V1\Admin\Producto\ProductoUpdateRequest;
 use App\Http\Resources\V1\ProductoHistorialResource;
 use App\Http\Resources\V1\ProductoResource;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\ProductoHistorial;
 use App\Services\ProductoImagenService;
 use App\Support\Api;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ProductoController extends Controller
 {
-    public function __construct(private readonly ProductoImagenService $imagenes)
-    {
-    }
+    public function __construct(private readonly ProductoImagenService $imagenes) {}
 
     public function index(Request $request)
     {
         $productos = Producto::query()
-            ->with(['categoria', 'talla', 'imagenes'])
+            ->with(['categoria', 'talla', 'marca', 'imagenes'])
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))
             ->when($request->filled('publicado'), fn ($q) => $q->where('publicado', $request->boolean('publicado')))
             ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', $request->integer('categoria')))
             ->when($request->filled('talla'), fn ($q) => $q->where('talla_id', $request->integer('talla')))
+            ->when($request->filled('marca'), fn ($q) => $q->where('marca_id', $request->integer('marca')))
             ->when($request->filled('precio_min'), fn ($q) => $q->where('precio', '>=', $request->input('precio_min')))
             ->when($request->filled('precio_max'), fn ($q) => $q->where('precio', '<=', $request->input('precio_max')))
             ->when($request->filled('busqueda'), fn ($q) => $q->where(function ($query) use ($request) {
@@ -43,7 +44,11 @@ class ProductoController extends Controller
 
     public function store(ProductoStoreRequest $request)
     {
-        $producto = Producto::create($request->validated());
+        $datos = $request->validated();
+        $datos['marca_id'] = $this->resolverMarcaId($datos['marca_nombre'] ?? null);
+        unset($datos['marca_nombre']);
+
+        $producto = Producto::create($datos);
 
         ProductoHistorial::create([
             'producto_id' => $producto->id,
@@ -55,7 +60,7 @@ class ProductoController extends Controller
         ]);
 
         return Api::resource(
-            new ProductoResource($producto->load(['categoria', 'talla'])),
+            new ProductoResource($producto->load(['categoria', 'talla', 'marca'])),
             'Producto creado correctamente.',
             201
         );
@@ -63,7 +68,7 @@ class ProductoController extends Controller
 
     public function show(int $id)
     {
-        $producto = Producto::with(['categoria', 'talla', 'imagenes'])->findOrFail($id);
+        $producto = Producto::with(['categoria', 'talla', 'marca', 'imagenes'])->findOrFail($id);
 
         return Api::resource(new ProductoResource($producto), 'Detalle del producto.');
     }
@@ -71,7 +76,7 @@ class ProductoController extends Controller
     public function update(ProductoUpdateRequest $request, int $id)
     {
         /** @var Producto $producto */
-        $producto = Producto::with(['categoria', 'talla', 'imagenes'])->findOrFail($id);
+        $producto = Producto::with(['categoria', 'talla', 'marca', 'imagenes'])->findOrFail($id);
 
         if ($producto->estado === Producto::ESTADO_VENDIDA) {
             throw ValidationException::withMessages([
@@ -81,6 +86,11 @@ class ProductoController extends Controller
 
         $datos = $request->validated();
         $publicadoNuevo = $datos['publicado'] ?? null;
+
+        if (array_key_exists('marca_nombre', $datos)) {
+            $datos['marca_id'] = $this->resolverMarcaId($datos['marca_nombre']);
+            unset($datos['marca_nombre']);
+        }
 
         // Registro de eventos específicos de publicación.
         if ($publicadoNuevo !== null && $producto->publicado !== (bool) $publicadoNuevo) {
@@ -97,7 +107,7 @@ class ProductoController extends Controller
         $producto->update($datos);
 
         return Api::resource(
-            new ProductoResource($producto->fresh(['categoria', 'talla', 'imagenes'])),
+            new ProductoResource($producto->fresh(['categoria', 'talla', 'marca', 'imagenes'])),
             'Producto actualizado correctamente.'
         );
     }
@@ -134,5 +144,24 @@ class ProductoController extends Controller
             ProductoHistorialResource::collection($producto->historial),
             'Historial de la prenda.'
         );
+    }
+
+    /**
+     * Resuelve el id de marca a partir del nombre escrito en el formulario.
+     * Si la marca no existe todavía la crea, para no obligar a un alta previa.
+     * Cadena vacía = sin marca.
+     */
+    private function resolverMarcaId(?string $nombre): ?int
+    {
+        $nombre = trim((string) $nombre);
+
+        if ($nombre === '') {
+            return null;
+        }
+
+        return Marca::firstOrCreate(
+            ['nombre' => $nombre],
+            ['slug' => Str::slug($nombre)]
+        )->id;
     }
 }

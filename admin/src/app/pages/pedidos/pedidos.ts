@@ -2,8 +2,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { interval } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { ETIQUETA_ESTADO_PEDIDO, TONO_ESTADO_PEDIDO, EstadoPedido, Pedido } from '../../core/models/pedido';
+import {
+  ETIQUETA_ESTADO_PEDIDO,
+  ETIQUETA_ESTADO_PAGO_PEDIDO,
+  TONO_ESTADO_PEDIDO,
+  TONO_ESTADO_PAGO_PEDIDO,
+  EstadoPedido,
+  EstadoPagoPedido,
+  Pedido,
+} from '../../core/models/pedido';
+import { MetodoPagoRef, Pago } from '../../core/models/pago';
 import { Paginated } from '../../core/models/paginated';
+import { PagosService } from '../../core/services/pagos.service';
 import { PedidosService } from '../../core/services/pedidos.service';
 import { ToastService } from '../../core/services/toast.service';
 import { BadgeComponent } from '../../shared/components/badge/badge';
@@ -13,6 +23,7 @@ import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
+import { RegistroPagoModalComponent } from '../pagos/registro-pago-modal';
 
 interface TransicionObjetivo {
   pedido: Pedido;
@@ -21,6 +32,10 @@ interface TransicionObjetivo {
 
 function esEstadoTransicionable(estado: string): estado is EstadoPedido {
   return ['pendiente', 'confirmado', 'cancelado', 'completado', 'devuelto'].includes(estado);
+}
+
+function esEstadoPago(estado: string): estado is EstadoPagoPedido {
+  return ['pendiente', 'parcial', 'pagado', 'cancelado', 'reembolsado'].includes(estado);
 }
 
 @Component({
@@ -33,6 +48,7 @@ function esEstadoTransicionable(estado: string): estado is EstadoPedido {
     NotificationCenterComponent,
     PaginatorComponent,
     SpinnerComponent,
+    RegistroPagoModalComponent,
   ],
   selector: 'app-pedidos',
   standalone: true,
@@ -41,6 +57,7 @@ function esEstadoTransicionable(estado: string): estado is EstadoPedido {
 })
 export class PedidosComponent implements OnInit {
   private readonly pedidosService = inject(PedidosService);
+  private readonly pagosService = inject(PagosService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -65,11 +82,48 @@ export class PedidosComponent implements OnInit {
   readonly devolviendo = signal(false);
   readonly motivo = signal('');
 
+  readonly metodos = signal<MetodoPagoRef[]>([]);
+  readonly registroPagoAbierto = signal(false);
+
   readonly perPage = 15;
 
   ngOnInit(): void {
+    this.cargarMetodos();
     this.cargar();
     this.aplicarRefrescoAutomatico();
+  }
+
+  private cargarMetodos(): void {
+    this.pagosService.metodosPago().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.metodos.set(res.data);
+        }
+      },
+      error: () => undefined,
+    });
+  }
+
+  abrirRegistroPago(): void {
+    this.registroPagoAbierto.set(true);
+  }
+
+  cerrarRegistroPago(): void {
+    this.registroPagoAbierto.set(false);
+  }
+
+  onPagoRegistrado(pago: Pago): void {
+    this.registroPagoAbierto.set(false);
+    this.toast.success(`Pago ${pago.numero_pago} registrado.`);
+    const detalle = this.detalle();
+    this.cargar();
+    if (detalle) {
+      this.verDetalle(detalle);
+    }
+  }
+
+  imprimirComprobante(): void {
+    window.print();
   }
 
   private aplicarRefrescoAutomatico(): void {
@@ -284,11 +338,30 @@ export class PedidosComponent implements OnInit {
     return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
   }
 
+  descuentoPositivo(descuento: string | number | null | undefined): boolean {
+    return parseFloat(String(descuento ?? '0')) > 0;
+  }
+
   formatearFecha(fecha: string | null | undefined): string {
     if (!fecha) {
       return '—';
     }
     const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
     return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
+  }
+
+  formatearFechaHora(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '—';
+    }
+    return new Date(fecha).toLocaleString('es-AR');
+  }
+
+  etiquetaEstadoPago(estado: string): string {
+    return esEstadoPago(estado) ? ETIQUETA_ESTADO_PAGO_PEDIDO[estado] : estado;
+  }
+
+  tonoEstadoPago(estado: string): string {
+    return esEstadoPago(estado) ? TONO_ESTADO_PAGO_PEDIDO[estado] : 'neutral';
   }
 }

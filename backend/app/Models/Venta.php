@@ -22,6 +22,7 @@ class Venta extends Model
         'total',
         'fecha_venta',
         'notas',
+        'anulada_en',
     ];
 
     protected $appends = [
@@ -36,15 +37,20 @@ class Venta extends Model
             'costo_envio' => 'decimal:2',
             'total' => 'decimal:2',
             'fecha_venta' => 'date',
+            'anulada_en' => 'datetime',
         ];
     }
 
     /**
      * Estado de la venta derivado de sus pagos (completados):
-     * pendiente, parcial o pagada.
+     * anulada, pendiente, parcial o pagada.
      */
     public function getEstadoAttribute(): string
     {
+        if ($this->anulada_en) {
+            return 'anulada';
+        }
+
         $total = (float) $this->total;
 
         if ($this->getPagoTotalAtributo() <= 0) {

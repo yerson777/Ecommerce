@@ -19,6 +19,14 @@ class VentaResource extends JsonResource
             'total_pagado' => $this->total_pagado,
             'fecha_venta' => $this->fecha_venta?->toDateString(),
             'notas' => $this->notas,
+            'anulada_en' => $this->anulada_en?->toISOString(),
+            'descuento' => $this->whenLoaded('pedido', fn () => number_format((float) ($this->pedido?->descuento ?? 0), 2, '.', '')),
+            'metodo_pago' => $this->whenLoaded('pagos', fn () => $this->pagos
+                ->filter(fn ($pago) => $pago->metodoPago)
+                ->pluck('metodoPago.nombre')
+                ->unique()
+                ->values()
+                ->first()),
             'cliente' => $this->whenLoaded('cliente', fn () => new ClienteResource($this->cliente)),
             'pedido' => $this->whenLoaded('pedido', fn () => new PedidoResource($this->pedido)),
             'pedido_id' => $this->pedido_id,

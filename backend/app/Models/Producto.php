@@ -13,7 +13,9 @@ class Producto extends Model
     use HasFactory;
 
     public const ESTADO_DISPONIBLE = 'disponible';
+
     public const ESTADO_RESERVADA = 'reservada';
+
     public const ESTADO_VENDIDA = 'vendida';
 
     public const ESTADOS = [
@@ -29,6 +31,7 @@ class Producto extends Model
         'nombre',
         'categoria_id',
         'talla_id',
+        'marca_id',
         'color',
         'descripcion',
         'costo',
@@ -56,6 +59,11 @@ class Producto extends Model
     public function talla(): BelongsTo
     {
         return $this->belongsTo(Talla::class);
+    }
+
+    public function marca(): BelongsTo
+    {
+        return $this->belongsTo(Marca::class);
     }
 
     public function imagenes(): HasMany

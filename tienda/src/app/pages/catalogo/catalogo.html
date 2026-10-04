@@ -3,21 +3,21 @@
     <div class="hero">
       <h1>Prendas únicas, elegidas para vos</h1>
       <p>
-        Cada pieza es una sola unidad. Elegila, reservala al momento de comprar y
-        coordinamos la entrega.
+        Cada pieza es una sola unidad. Elegila, reservala al momento de comprar y coordinamos la
+        entrega.
       </p>
     </div>
 
-    <div class="carrusel" *ngIf="banners().length > 0">
+    <div class="carrusel" *ngIf="carrusel.banners().length > 0">
       <div
         class="carrusel-pista"
-        [style.transform]="'translateX(-' + bannerActivo() * 100 + '%)'"
+        [style.transform]="'translateX(-' + carrusel.activo() * 100 + '%)'"
       >
         <div
           class="carrusel-slide"
-          *ngFor="let banner of banners(); let i = index"
+          *ngFor="let banner of carrusel.banners(); let i = index"
           [class.carrusel-slide--enlace]="!!banner.enlace"
-          (click)="abrirBanner(banner)"
+          (click)="carrusel.abrir(banner)"
         >
           <img class="carrusel-img" [src]="banner.url" [alt]="banner.titulo ?? 'Banner'" />
           <div class="carrusel-overlay" *ngIf="banner.titulo || banner.subtitulo">
@@ -27,18 +27,18 @@
         </div>
       </div>
 
-      <ng-container *ngIf="banners().length > 1">
+      <ng-container *ngIf="carrusel.banners().length > 1">
         <button
           class="carrusel-flecha carrusel-flecha--izq"
           aria-label="Banner anterior"
-          (click)="bannerAnterior()"
+          (click)="carrusel.anterior()"
         >
           ‹
         </button>
         <button
           class="carrusel-flecha carrusel-flecha--der"
           aria-label="Banner siguiente"
-          (click)="bannerSiguiente()"
+          (click)="carrusel.siguiente()"
         >
           ›
         </button>
@@ -46,10 +46,10 @@
         <div class="carrusel-dots">
           <button
             class="carrusel-dot"
-            *ngFor="let banner of banners(); let i = index"
-            [class.carrusel-dot--activo]="bannerActivo() === i"
+            *ngFor="let banner of carrusel.banners(); let i = index"
+            [class.carrusel-dot--activo]="carrusel.activo() === i"
             [attr.aria-label]="'Ir al banner ' + (i + 1)"
-            (click)="irBanner(i)"
+            (click)="carrusel.ir(i)"
           ></button>
         </div>
       </ng-container>
@@ -133,13 +133,12 @@
             [alt]="producto.nombre"
             loading="lazy"
           />
-          <div
-            *ngIf="!imagenPrincipal(producto)"
-            class="producto-foto producto-foto--empty"
-          >
+          <div *ngIf="!imagenPrincipal(producto)" class="producto-foto producto-foto--empty">
             Sin foto
           </div>
-          <span class="badge badge-success producto-nuevo" *ngIf="producto.es_nuevo">Nuevo ingreso</span>
+          <span class="badge badge-success producto-nuevo" *ngIf="producto.es_nuevo"
+            >Nuevo ingreso</span
+          >
           <div class="producto-body">
             <div class="producto-nombre">{{ producto.nombre }}</div>
             <div class="producto-meta">

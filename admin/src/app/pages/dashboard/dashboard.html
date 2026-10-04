@@ -23,25 +23,331 @@
   }
 
   @if (datos(); as d) {
-    <!-- Totales -->
+    <!-- ===== Indicadores ===== -->
     <div class="stats-grid">
-      <app-stat-card label="Productos" [value]="d.productos.total" icon="◉" tone="primary" hint="En catálogo" />
-      <app-stat-card label="Disponibles" [value]="d.productos.disponibles" icon="✓" tone="success" hint="Están listas para vender" />
-      <app-stat-card label="Reservadas" [value]="d.productos.reservadas" icon="◷" tone="warning" hint="Guardadas para clientes" />
-      <app-stat-card label="Vendidas" [value]="d.productos.vendidas" icon="★" tone="danger" hint="Ventas cerradas" />
-      <app-stat-card label="Ventas" [value]="d.ventas.total" icon="§" tone="info" [hint]="moneda(d.ventas.monto) + ' acumulados'" />
-      <app-stat-card label="Pedidos" [value]="d.pedidos" icon="▤" tone="neutral" />
-      <app-stat-card label="Clientes" [value]="d.clientes.total" icon="◈" tone="primary" [hint]="d.clientes.con_pedidos + ' con pedidos'" />
-      <app-stat-card label="Nuevos (30 días)" [value]="d.clientes.nuevos" icon="✦" tone="info" hint="Clientes nuevos" />
-      <app-stat-card label="Recurrentes" [value]="d.clientes.recurrentes" icon="⟳" tone="success" [hint]="'Promedio ' + d.clientes.pedidos_por_cliente + ' pedidos por cliente'" />
-      <app-stat-card label="Caja" [value]="moneda(d.caja.saldo)" icon="Bs" tone="success" [hint]="'Ingresos ' + moneda(d.caja.ingresos) + ' · Egresos ' + moneda(d.caja.egresos)" />
-      <app-stat-card label="Total vendido" [value]="moneda(d.pagos.total_vendido)" icon="§" tone="primary" hint="Ventas acumuladas" />
-      <app-stat-card label="Total cobrado" [value]="moneda(d.pagos.total_cobrado)" icon="Bs" tone="success" hint="Pagos confirmados" />
-      <app-stat-card label="Total pendiente" [value]="moneda(d.pagos.total_pendiente)" icon="◷" tone="warning" hint="Por cobrar" />
-      <app-stat-card label="Pedidos pagados" [value]="d.pagos.pedidos.pagados" icon="✓" tone="neutral" [hint]="d.pagos.pedidos.pendientes_de_pago + ' pendientes · ' + d.pagos.pedidos.parcialmente_pagados + ' parciales'" />
+      <app-stat-card
+        label="Por cobrar"
+        [value]="moneda(d.pagos.total_pendiente)"
+        icon="◷"
+        tone="warning"
+        [hint]="d.pagos.pedidos.pendientes_de_pago + ' pedidos sin pagar'"
+      />
+      <app-stat-card
+        label="Cobrado"
+        [value]="moneda(d.pagos.total_cobrado)"
+        icon="Bs"
+        tone="success"
+        [hint]="d.pagos.pagos.sin_venta + ' pagos sin venta asociada'"
+      />
+      <app-stat-card
+        label="Ganancia"
+        [value]="moneda(d.ganancia.total)"
+        icon="★"
+        tone="primary"
+        [hint]="'Margen ' + d.ganancia.margen_pct + '% sobre ' + moneda(d.ganancia.ingresos)"
+      />
+      <app-stat-card
+        label="Caja"
+        [value]="moneda(d.caja.saldo)"
+        icon="▣"
+        tone="success"
+        [hint]="'Entradas ' + moneda(d.caja.ingresos) + ' · Salidas ' + moneda(d.caja.egresos)"
+      />
     </div>
 
-    <!-- Inventario -->
+    <div class="stats-grid">
+      <app-stat-card
+        label="Ticket promedio"
+        [value]="moneda(d.metricas.ticket_promedio)"
+        icon="§"
+        tone="info"
+        [hint]="d.ventas.total + ' ventas cerradas'"
+      />
+      <app-stat-card
+        label="Inventario vendido"
+        [value]="d.metricas.porcentaje_inventario_vendido + '%'"
+        icon="◑"
+        tone="primary"
+        [hint]="d.metricas.prendas_vendidas + ' de ' + d.metricas.prendas_totales + ' prendas'"
+      />
+      <app-stat-card
+        label="Tiempo de venta"
+        [value]="d.metricas.tiempo_promedio_venta_dias + ' días'"
+        icon="◷"
+        tone="neutral"
+        hint="Desde el ingreso hasta la venta"
+      />
+      <app-stat-card
+        label="Por vencer"
+        [value]="d.reservas_por_vencer.length"
+        icon="◔"
+        tone="warning"
+        hint="Reservas activas"
+      />
+    </div>
+
+    <!-- ===== Ventas por período ===== -->
+    <section class="card">
+      <div class="row-between wrap-gap">
+        <div>
+          <h2 class="card-title">Ventas por período</h2>
+          <p class="card-subtitle">
+            {{ moneda(totalPeriodo()) }} en {{ ventasDelPeriodo() }} ventas ·
+            {{ etiquetaPeriodo() }}
+          </p>
+        </div>
+        <app-period-filter
+          [(periodo)]="periodo"
+          [(fechaDesde)]="fechaDesde"
+          [(fechaHasta)]="fechaHasta"
+          [cargando]="cargandoGrafico()"
+          (cambio)="alCambiarPeriodo()"
+        />
+      </div>
+
+      @if (cargandoGrafico()) {
+        <div class="center-sm">
+          <app-spinner [size]="24" />
+        </div>
+      } @else if (serieDiaria().length === 0) {
+        <app-empty-state icon="📈" title="Sin ventas en el período" message="No hay ventas registradas en estas fechas." />
+      } @else {
+        <app-chart-bars [datos]="serieDiaria()" formatoValor="monto" [altura]="200" />
+      }
+    </section>
+
+    <!-- ===== Pedidos por atender ===== -->
+    <section class="card">
+      <div class="row-between">
+        <div>
+          <h2 class="card-title">Pedidos por atender</h2>
+          <p class="card-subtitle">Pendientes y confirmados, aún sin completar</p>
+        </div>
+        <span class="pill">
+          <app-badge tone="warning">{{ d.pedidos_por_atender.length }} en pantalla</app-badge>
+        </span>
+      </div>
+
+      @if (d.pedidos_por_atender.length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Pago</th>
+                <th class="right">Total</th>
+                <th class="right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pedido of pedidosUrgentes(d.pedidos_por_atender); track pedido.id) {
+                <tr>
+                  <td class="mono">{{ pedido.numero_pedido }}</td>
+                  <td>{{ pedido.cliente }}</td>
+                  <td class="mono">{{ pedido.fecha_pedido }}</td>
+                  <td>
+                    <app-badge [tone]="tonoPedido(pedido.estado)">
+                      {{ etiquetaPedido(pedido.estado) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    <app-badge [tone]="tonoPago(pedido.estado_pago)">
+                      {{ etiquetaPago(pedido.estado_pago) }}
+                    </app-badge>
+                  </td>
+                  <td class="right mono">{{ moneda(pedido.total) }}</td>
+                  <td class="right mono">
+                    @if (tieneSaldo(pedido)) {
+                      <span class="saldo-alerta">{{ moneda(pedido.saldo) }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state
+          icon="✅"
+          title="Nada pendiente"
+          message="No hay pedidos por atender en este momento."
+        />
+      }
+    </section>
+
+    <!-- ===== Prendas sin venta + Reservas por vencer ===== -->
+    <div class="grid-2">
+      <section class="card">
+        <div class="row-between">
+          <div>
+            <h2 class="card-title">Prendas sin venta</h2>
+            <p class="card-subtitle">Disponibles hace más de 30 días</p>
+          </div>
+          <span class="pill"><app-badge tone="warning">{{ d.prendas_sin_venta.length }}</app-badge></span>
+        </div>
+
+        @if (d.prendas_sin_venta.length > 0) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Prenda</th>
+                  <th>Categoría</th>
+                  <th>Talla</th>
+                  <th class="right">Precio</th>
+                  <th class="right">Días</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (prenda of d.prendas_sin_venta; track prenda.id) {
+                  <tr>
+                    <td>
+                      {{ prenda.nombre }}
+                      @if (!prenda.publicado) {
+                        <app-badge tone="neutral">No publicada</app-badge>
+                      }
+                    </td>
+                    <td class="muted">{{ prenda.categoria }}</td>
+                    <td class="muted">{{ prenda.talla }}</td>
+                    <td class="right mono">{{ moneda(prenda.precio) }}</td>
+                    <td class="right mono">{{ prenda.dias_disponible }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <app-empty-state
+            icon="🧵"
+            title="Inventario fresco"
+            message="Ninguna prenda lleva más de 30 días sin vender."
+          />
+        }
+      </section>
+
+      <section class="card">
+        <div class="row-between">
+          <div>
+            <h2 class="card-title">Reservas por vencer</h2>
+            <p class="card-subtitle">Prendas apartadas que hay que liberar</p>
+          </div>
+          <span class="pill"><app-badge tone="warning">{{ d.reservas_por_vencer.length }}</app-badge></span>
+        </div>
+
+        @if (d.reservas_por_vencer.length > 0) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Prenda</th>
+                  <th>Cliente</th>
+                  <th>Vence</th>
+                  <th class="right">Restante</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (reserva of d.reservas_por_vencer; track reserva.id) {
+                  <tr>
+                    <td>
+                      {{ reserva.producto }}
+                      <div class="muted small">{{ reserva.categoria }}</div>
+                    </td>
+                    <td>{{ reserva.cliente }}</td>
+                    <td class="mono">{{ reserva.vence_en }}</td>
+                    <td class="right">
+                      @if (reserva.vencida) {
+                        <app-badge tone="danger">Vencida</app-badge>
+                      } @else {
+                        <span class="mono">{{ reserva.dias_restantes }} d</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <app-empty-state
+            icon="🔓"
+            title="Sin reservas activas"
+            message="No hay prendas reservadas esperando confirmación."
+          />
+        }
+      </section>
+    </div>
+
+    <!-- ===== Ganancia por prenda ===== -->
+    <section class="card">
+      <div class="row-between">
+        <div>
+          <h2 class="card-title">Ganancia por prenda</h2>
+          <p class="card-subtitle">
+            Precio de venta menos costo · total
+            {{ moneda(d.ganancia.total) }} sobre {{ moneda(d.ganancia.ingresos) }}
+          </p>
+        </div>
+        <span class="pill"><app-badge tone="success">Margen {{ d.ganancia.margen_pct }}%</app-badge></span>
+      </div>
+
+      @if (d.ganancia.prendas.length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Prenda</th>
+                <th>Categoría</th>
+                <th>Venta</th>
+                <th class="right">Precio</th>
+                <th class="right">Costo</th>
+                <th class="right">Ganancia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (prenda of d.ganancia.prendas; track prenda.id) {
+                <tr>
+                  <td>{{ prenda.nombre }}</td>
+                  <td class="muted">{{ prenda.categoria }}</td>
+                  <td class="mono">{{ prenda.fecha_venta }}</td>
+                  <td class="right mono">{{ moneda(prenda.precio_venta) }}</td>
+                  <td class="right mono muted">{{ moneda(prenda.costo) }}</td>
+                  <td class="right mono ganancia">{{ prenda.ganancia }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state icon="📉" title="Sin ventas" message="Todavía no hay prendas vendidas para calcular ganancia." />
+      }
+    </section>
+
+    <!-- ===== Categoría y talla ===== -->
+    <div class="grid-2">
+      <section class="card">
+        <h2 class="card-title">Ventas por categoría</h2>
+        @if (chartCategorias().length > 0) {
+          <app-chart-donut [datos]="chartCategorias()" [size]="180" />
+        } @else {
+          <app-empty-state icon="🗂" title="Sin datos" message="Aún no hay ventas por categoría." />
+        }
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Ventas por talla</h2>
+        @if (chartTallas().length > 0) {
+          <app-chart-donut [datos]="chartTallas()" [size]="180" />
+        } @else {
+          <app-empty-state icon="📏" title="Sin datos" message="Aún no hay ventas por talla." />
+        }
+      </section>
+    </div>
+
+    <!-- ===== Inventario por estado ===== -->
     <div class="grid-2">
       <section class="card">
         <div class="row-between">
@@ -82,7 +388,7 @@
                   <th>Fecha</th>
                   <th>Número</th>
                   <th>Cliente</th>
-                  <th>Total</th>
+                  <th class="right">Total</th>
                   <th>Estado</th>
                 </tr>
               </thead>
@@ -92,7 +398,7 @@
                     <td>{{ venta.fecha_venta }}</td>
                     <td class="mono">{{ venta.numero_venta }}</td>
                     <td>{{ venta.cliente?.nombre ?? '—' }}</td>
-                    <td>{{ moneda(venta.total) }}</td>
+                    <td class="right mono">{{ moneda(venta.total) }}</td>
                     <td>
                       <app-badge [tone]="tonoEstadoVenta(venta.estado)">
                         {{ etiquetaEstadoVenta(venta.estado) }}
@@ -113,7 +419,7 @@
       </section>
     </div>
 
-    <!-- Productos recientes -->
+    <!-- ===== Productos recientes ===== -->
     <section class="card">
       <h2 class="card-title">Productos recientes</h2>
 
@@ -127,7 +433,7 @@
                 <th>Nombre</th>
                 <th>Categoría</th>
                 <th>Talla</th>
-                <th>Precio</th>
+                <th class="right">Precio</th>
                 <th>Estado</th>
                 <th>Publicado</th>
               </tr>
@@ -146,7 +452,7 @@
                   <td>{{ producto.nombre }}</td>
                   <td>{{ producto.categoria?.nombre ?? '—' }}</td>
                   <td>{{ producto.talla?.nombre ?? '—' }}</td>
-                  <td>{{ moneda(producto.precio) }}</td>
+                  <td class="right mono">{{ moneda(producto.precio) }}</td>
                   <td>
                     <app-badge [tone]="tonoEstado(producto.estado)">
                       {{ etiquetaEstado(producto.estado) }}

@@ -1,0 +1,242 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reservas</h1>
+      <p class="page-subtitle">Prendas apartadas, fecha límite y conversión en venta</p>
+    </div>
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">Crear reserva</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Producto, cliente o pedido…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option value="">Todas</option>
+          <option value="activa">Activas</option>
+          <option value="vencidas">Vencidas</option>
+          <option value="completada">Convertidas en venta</option>
+          <option value="liberada">Liberadas</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && !resultados()) {
+      <div class="center">
+        <app-spinner [size]="28" />
+      </div>
+    }
+
+    @if (resultados(); as page) {
+      @if (page.data.length === 0) {
+        <app-empty-state
+          icon="📌"
+          title="Sin reservas"
+          message="No hay reservas que coincidan con los filtros."
+        >
+          <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Prenda</th>
+                <th>Cliente</th>
+                <th>Reservada</th>
+                <th>Fecha límite</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (reserva of page.data; track reserva.id) {
+                <tr>
+                  <td>
+                    <div class="prenda">
+                      <span class="mono">{{ reserva.producto?.codigo ?? '—' }}</span>
+                      <span>{{ etiquetaProducto(reserva) }}</span>
+                      <span class="muted">{{ moneda(reserva.producto?.precio) }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="prenda">
+                      <span>{{ nombreCliente(reserva) }}</span>
+                      @if (reserva.cliente?.telefono) {
+                        <span class="muted">{{ reserva.cliente!.telefono }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>{{ formatearFecha(reserva.created_at) }}</td>
+                  <td>
+                    <span [class.danger-text]="esVencida(reserva)">{{ formatearFecha(reserva.vence_en) }}</span>
+                  </td>
+                  <td>
+                    <app-badge [tone]="tonoEstado(reserva)">
+                      {{ etiquetaEstado(reserva) }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    @if (esActiva(reserva)) {
+                      <div class="actions">
+                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarConvertir(reserva)">
+                          Convertir en venta
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" (click)="solicitarLiberar(reserva)">
+                          Liberar
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <app-paginator
+            [page]="pagina()"
+            [lastPage]="page.last_page"
+            [total]="page.total"
+            [perPage]="perPage"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (crear().abierto) {
+  <app-modal title="Crear reserva" (closed)="cerrarCrear()">
+    <div class="stack">
+      <div class="instruction">
+        <strong>Importante:</strong> la prenda pasa a estado <app-badge tone="warning">Reservada</app-badge> y
+        no podrá venderse a otro cliente hasta liberarla o convertirla en venta.
+      </div>
+
+      <div class="field">
+        <label>Prenda a reservar</label>
+        @if (cargandoCatalogos()) {
+          <app-spinner [size]="18" />
+        } @else {
+          <select class="select" [(ngModel)]="crear().productoId">
+            <option [ngValue]="null" disabled>Selecciona una prenda disponible…</option>
+            @for (producto of productosDisponibles(); track producto.id) {
+              <option [ngValue]="producto.id">
+                {{ producto.codigo }} · {{ producto.nombre }}{{ producto.talla?.nombre ? ' (' + producto.talla!.nombre + ')' : '' }} · {{ moneda(producto.precio) }}
+              </option>
+            }
+          </select>
+          @if (productosDisponibles().length === 0) {
+            <span class="hint">No hay prendas disponibles para reservar en este momento.</span>
+          }
+        }
+      </div>
+
+      <div class="field">
+        <label>Cliente</label>
+        <select class="select" [(ngModel)]="crear().clienteId">
+          <option [ngValue]="null" disabled>Selecciona un cliente…</option>
+          @for (cliente of clientes(); track cliente.id) {
+            <option [ngValue]="cliente.id">{{ cliente.nombre }}{{ cliente.telefono ? ' · ' + cliente.telefono : '' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Fecha límite</label>
+        <input class="input" type="datetime-local" [(ngModel)]="crear().venceEn" />
+      </div>
+
+      @if (crear().error) {
+        <div class="error-box">{{ crear().error }}</div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cerrarCrear()" [attr.disabled]="crear().guardando ? '' : null">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearReserva()" [attr.disabled]="crear().guardando ? '' : null">
+          {{ crear().guardando ? 'Reservando…' : 'Reservar prenda' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (convertir().reserva; as reserva) {
+  <app-modal
+    title="{{ esReservaDirecta() ? 'Convertir en venta' : 'Completar venta del pedido' }}"
+    (closed)="cerrarConvertir()"
+  >
+    <div class="stack">
+      @if (esReservaDirecta()) {
+        <div class="instruction">
+          La reserva de <strong>{{ etiquetaProducto(reserva) }}</strong> para
+          <strong>{{ nombreCliente(reserva) }}</strong> se convertirá en una venta registrada y la
+          prenda pasará a <app-badge tone="danger">Vendida</app-badge>.
+        </div>
+
+        <div class="field">
+          <label>Costo de envío (Bs)</label>
+          <input class="input" type="number" min="0" step="0.01" [(ngModel)]="convertir().costoEnvio" />
+        </div>
+
+        <div class="field">
+          <label>Notas</label>
+          <textarea class="input textarea" rows="2" placeholder="Opcional" [(ngModel)]="convertir().notas"></textarea>
+        </div>
+      } @else {
+        <div class="instruction">
+          Esta reserva pertenece al pedido <strong>{{ reserva.pedido?.numero_pedido }}</strong>.
+          Al confirmar se completará el pedido y sus prendas quedarán como
+          <app-badge tone="danger">Vendidas</app-badge>.
+        </div>
+      }
+
+      @if (convertir().error) {
+        <div class="error-box">{{ convertir().error }}</div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cerrarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="confirmarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">
+          {{ convertir().guardando ? 'Procesando…' : 'Confirmar venta' }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+}
+
+@if (liberarObjetivo(); as reserva) {
+  <app-confirm-dialog
+    title="Liberar reserva"
+    [message]="'La prenda ' + etiquetaProducto(reserva) + ' volverá a estar Disponible y la reserva quedará cerrada.'"
+    confirmLabel="Liberar reserva"
+    tone="danger"
+    (confirm)="confirmarLiberar()"
+    (cancel)="cancelarLiberar()"
+  />
+  @if (liberando()) {
+    <app-spinner [size]="20" />
+  }
+}

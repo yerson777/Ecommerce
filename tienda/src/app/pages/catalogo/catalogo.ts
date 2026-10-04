@@ -1,14 +1,16 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
+import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../../core/models/producto';
-import { BannerPublico } from '../../core/models/banner';
 import { formatearPrecio } from '../../core/utils/precio';
+import { imagenPrincipal } from '../../core/utils/producto';
 
 @Component({
   imports: [CommonModule],
+  providers: [BannerCarouselService],
   selector: 'app-catalogo',
   styleUrl: './catalogo.scss',
   templateUrl: './catalogo.html',
@@ -20,8 +22,10 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly categorias = signal<CategoriaRef[]>([]);
   readonly tallas = signal<TallaRef[]>([]);
 
-  readonly banners = signal<BannerPublico[]>([]);
-  readonly bannerActivo = signal(0);
+  readonly carrusel = inject(BannerCarouselService);
+
+  readonly formatearPrecio = formatearPrecio;
+  readonly imagenPrincipal = imagenPrincipal;
 
   readonly busqueda = signal('');
   readonly categoriaActiva = signal<number | null>(null);
@@ -32,8 +36,6 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly ultimaPagina = signal(1);
   readonly porPagina = signal(12);
 
-  private autoplay?: ReturnType<typeof setInterval>;
-
   constructor(
     private readonly catalogo: CatalogoService,
     private readonly carrito: CartService,
@@ -42,81 +44,16 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarFiltros();
-    this.cargarBanners();
+    this.carrusel.cargar();
     this.cargar();
   }
 
   ngOnDestroy(): void {
-    this.detenerAutoplay();
-  }
-
-  cargarBanners(): void {
-    this.catalogo.banners().subscribe({
-      next: (res) => {
-        this.banners.set(res.data ?? []);
-        this.bannerActivo.set(0);
-        this.iniciarAutoplay();
-      },
-    });
-  }
-
-  irBanner(indice: number): void {
-    const total = this.banners().length;
-    if (total === 0) {
-      return;
-    }
-    this.bannerActivo.set(((indice % total) + total) % total);
-    this.iniciarAutoplay();
-  }
-
-  bannerAnterior(): void {
-    this.irBanner(this.bannerActivo() - 1);
-  }
-
-  bannerSiguiente(): void {
-    if (this.banners().length < 2) {
-      return;
-    }
-    this.bannerActivo.set((this.bannerActivo() + 1) % this.banners().length);
-  }
-
-  abrirBanner(banner: BannerPublico): void {
-    if (!banner.enlace) {
-      return;
-    }
-    if (banner.enlace.startsWith('/')) {
-      this.router.navigateByUrl(banner.enlace);
-      return;
-    }
-    window.open(banner.enlace, '_blank', 'noopener');
-  }
-
-  private iniciarAutoplay(): void {
-    this.detenerAutoplay();
-    if (this.banners().length < 2) {
-      return;
-    }
-    this.autoplay = setInterval(() => this.bannerSiguiente(), 5000);
-  }
-
-  private detenerAutoplay(): void {
-    if (this.autoplay) {
-      clearInterval(this.autoplay);
-      this.autoplay = undefined;
-    }
-  }
-
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
+    this.carrusel.destruir();
   }
 
   enCarrito(id: number): boolean {
     return this.carrito.contiene(id);
-  }
-
-  imagenPrincipal(producto: ProductoPublico): string | null {
-    const principal = producto.imagenes.find((imagen) => imagen.es_principal);
-    return principal?.url ?? producto.imagenes[0]?.url ?? null;
   }
 
   cargarFiltros(): void {

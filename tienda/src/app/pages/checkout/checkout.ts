@@ -1,6 +1,12 @@
 import { Component, OnDestroy, OnInit, Signal, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService, CartItem } from '../../core/services/cart.service';
@@ -75,9 +81,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
+  readonly formatearPrecio = formatearPrecio;
 
   costoEnvio(): number {
     const entrega = this.metodosEntrega().find(
@@ -200,7 +204,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       this.enviando()
     ) {
       if (faltaComprobante) {
-        this.comprobanteError.set('Debes adjuntar el comprobante de pago para confirmar tu pedido.');
+        this.comprobanteError.set(
+          'Debes adjuntar el comprobante de pago para confirmar tu pedido.',
+        );
       }
       return;
     }
@@ -215,9 +221,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       notas: valores.notas?.trim() || null,
       metodo_pago_id: valores.metodoPagoId ?? null,
       metodo_entrega_id: valores.metodoEntregaId ?? null,
-      codigo_cupon: this.cuponAplicado()
-        ? (this.cuponCodigo().trim().toUpperCase() || null)
-        : null,
+      codigo_cupon: this.cuponAplicado() ? this.cuponCodigo().trim().toUpperCase() || null : null,
     };
 
     this.enviando.set(true);

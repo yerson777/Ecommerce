@@ -440,3 +440,132 @@ textarea {
     width: 100%;
   }
 }
+
+/* Impresión / PDF: se oculta el cromo de la aplicación y se imprime
+   únicamente el contenido del reporte. */
+@media print {
+  .sidebar,
+  .notif,
+  .backdrop,
+  .tabs,
+  .header-actions,
+  .paginator,
+  app-toast-container {
+    display: none !important;
+  }
+
+  .shell {
+    display: block !important;
+  }
+
+  .main,
+  .content,
+  .page {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .table th,
+  .table td {
+    color: #000 !important;
+  }
+}
+
+/* Comprobante imprimible (ventas y pedidos) ------------------------------ */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    color: #000;
+    font-size: 14px;
+    padding: 2rem;
+  }
+}
+
+@page {
+  margin: 10mm;
+}
+
+.comprobante {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.comprobante-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.6rem;
+}
+
+.comprobante-titulo {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.comprobante-sub {
+  font-size: 13px;
+  color: #555;
+}
+
+.comprobante-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 13px;
+  }
+
+  span {
+    color: #666;
+  }
+}
+
+.comprobante-totales {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-top: 1px solid #bbb;
+  padding-top: 0.6rem;
+}
+
+.comprobante-totales .total-row {
+  font-weight: 700;
+  border-top: 1px solid #bbb;
+  padding-top: 0.4rem;
+}

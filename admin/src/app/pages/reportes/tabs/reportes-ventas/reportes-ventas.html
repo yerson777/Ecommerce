@@ -10,6 +10,16 @@
 
 @if (!cargando()) {
   <div class="stack">
+    <div class="report-actions no-print">
+      <button type="button" class="btn btn-outline" (click)="exportar()" [disabled]="cargando()">Exportar CSV</button>
+      <button type="button" class="btn btn-ghost" (click)="imprimir()">Imprimir / PDF</button>
+    </div>
+
+    <header class="print-only">
+      <h2 class="print-title">Reporte de ventas</h2>
+      <p class="print-sub">Período: {{ rangoTexto() }} · Generado el {{ hoyTexto() }}</p>
+    </header>
+
     <section class="card">
       <div class="row-between">
         <div>
@@ -27,19 +37,131 @@
     </section>
 
     <section class="card">
-      <h2 class="card-title">Productos más vendidos</h2>
+      <div class="row-between">
+        <h2 class="card-title">Comparación con el período anterior</h2>
+        @if (comparacion()?.rango_actual) {
+          <app-badge tone="info">
+            {{ comparacion()?.rango_actual?.desde }} → {{ comparacion()?.rango_actual?.hasta }}
+          </app-badge>
+        }
+      </div>
+
+      @if (comparacion()?.rango_anterior) {
+        <p class="report-note">
+          Período anterior: {{ comparacion()?.rango_anterior?.desde }} a {{ comparacion()?.rango_anterior?.hasta }}
+        </p>
+
+        <div class="report-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Métrica</th>
+                <th>Período actual</th>
+                <th>Período anterior</th>
+                <th>Variación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Monto vendido</td>
+                <td><strong>{{ moneda(comparacion()?.actual?.monto) }}</strong></td>
+                <td>{{ moneda(comparacion()?.anterior?.monto) }}</td>
+                <td>
+                  <app-badge [tone]="variacionTone(comparacion()?.variacion_monto)">
+                    {{ variacion(comparacion()?.variacion_monto) }}
+                  </app-badge>
+                </td>
+              </tr>
+              <tr>
+                <td>Prendas vendidas</td>
+                <td><strong>{{ comparacion()?.actual?.prendas }}</strong></td>
+                <td>{{ comparacion()?.anterior?.prendas }}</td>
+                <td>
+                  <app-badge [tone]="variacionTone(comparacion()?.variacion_prendas)">
+                    {{ variacion(comparacion()?.variacion_prendas) }}
+                  </app-badge>
+                </td>
+              </tr>
+              <tr>
+                <td>Ventas registradas</td>
+                <td><strong>{{ comparacion()?.actual?.tickets }}</strong></td>
+                <td>{{ comparacion()?.anterior?.tickets }}</td>
+                <td><span class="report-note">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <app-empty-state
+          icon="↔"
+          title="Sin comparación"
+          message="Selecciona un período con fechas para compararlo con el período inmediatamente anterior."
+        />
+      }
+    </section>
+
+    <section class="card panel">
+      <div class="panel-head">
+        <span class="panel-icon tone-info" aria-hidden="true">⏱</span>
+        <div class="panel-titles">
+          <h2 class="panel-title">Tiempo promedio de venta</h2>
+          <p class="panel-sub">Días desde el ingreso de la prenda hasta su venta</p>
+        </div>
+        <span class="panel-total">{{ dias(tiempoVenta()?.promedio_dias) }}</span>
+      </div>
+
+      @if ((tiempoVenta()?.total_prendas_vendidas ?? 0) > 0) {
+        <ul class="metrics">
+          <li>
+            <span class="m-label">Mediana</span>
+            <span class="m-value">{{ dias(tiempoVenta()?.mediana_dias) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Venta más rápida</span>
+            <span class="m-value tone-success">{{ dias(tiempoVenta()?.minimo_dias) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Venta más lenta</span>
+            <span class="m-value">{{ dias(tiempoVenta()?.maximo_dias) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Prendas medidas</span>
+            <span class="m-value">
+              {{ tiempoVenta()?.prendas_contadas }} de {{ tiempoVenta()?.total_prendas_vendidas }}
+            </span>
+          </li>
+        </ul>
+
+        @if ((tiempoVenta()?.prendas_contadas ?? 0) < (tiempoVenta()?.total_prendas_vendidas ?? 0)) {
+          <p class="report-note">
+            Calculado sobre {{ tiempoVenta()?.prendas_contadas }} de
+            {{ tiempoVenta()?.total_prendas_vendidas }} prendas vendidas; el resto no tiene fecha de ingreso
+            registrada.
+          </p>
+        }
+      } @else {
+        <app-empty-state
+          icon="⏱"
+          title="Sin datos"
+          message="No hay prendas vendidas con fecha de ingreso en este período."
+        />
+      }
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Últimas prendas vendidas</h2>
+      <p class="report-note">De la más reciente a la más antigua · cada prenda es única</p>
 
       @if (masVendidos().length > 0) {
         <div class="report-table-wrap">
           <table class="table">
             <thead>
               <tr>
-                <th>Producto</th>
+                <th>Prenda</th>
                 <th>Categoría</th>
                 <th>Talla</th>
                 <th>Precio</th>
-                <th>Última venta</th>
-                <th>Cantidad</th>
+                <th>Vendida</th>
                 <th>Monto</th>
               </tr>
             </thead>
@@ -56,8 +178,7 @@
                   <td>{{ item.talla }}</td>
                   <td>{{ moneda(item.precio) }}</td>
                   <td>{{ item.ultima_venta ?? '—' }}</td>
-                  <td><strong>{{ item.cantidad_ventas }}</strong></td>
-                  <td>{{ moneda(item.monto_total) }}</td>
+                  <td><strong>{{ moneda(item.monto_total) }}</strong></td>
                 </tr>
               }
             </tbody>
@@ -66,8 +187,8 @@
       } @else {
         <app-empty-state
           icon="🧵"
-          title="Sin productos vendidos"
-          message="No hay ventas de productos en este período."
+          title="Sin prendas vendidas"
+          message="No hay ventas de prendas en este período."
         />
       }
     </section>
@@ -88,6 +209,15 @@
           <app-chart-donut [datos]="chartTallas()" [size]="170" />
         } @else {
           <app-empty-state icon="📐" title="Sin datos" message="Sin ventas por talla en el período." />
+        }
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Ventas por marca</h2>
+        @if (porMarca().length > 0) {
+          <app-chart-donut [datos]="chartMarcas()" [size]="170" />
+        } @else {
+          <app-empty-state icon="🏷" title="Sin datos" message="Sin ventas por marca en el período." />
         }
       </section>
     </section>
@@ -141,6 +271,33 @@
             } @else {
               <tr>
                 <td colspan="3" class="table-empty">Sin ventas por talla</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="report-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Marca</th>
+              <th>Cantidad</th>
+              <th>Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (porMarca().length > 0) {
+              @for (m of porMarca(); track m.marca) {
+                <tr>
+                  <td>{{ m.marca }}</td>
+                  <td>{{ m.cantidad_productos }}</td>
+                  <td>{{ moneda(m.monto_total) }}</td>
+                </tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="3" class="table-empty">Sin ventas por marca</td>
               </tr>
             }
           </tbody>

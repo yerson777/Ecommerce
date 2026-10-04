@@ -50,12 +50,14 @@ export class SeguimientoComponent {
         if (res.success && res.data) {
           this.pedido = res.data;
         } else {
-          this.error = res.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
+          this.error =
+            res.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
         }
       },
       error: (err) => {
         this.buscando = false;
-        this.error = err.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
+        this.error =
+          err.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
       },
     });
   }
@@ -68,7 +70,5 @@ export class SeguimientoComponent {
     return ESTADO_CLASE[estado] ?? 'badge-neutral';
   }
 
-  formatearPrecio(valor: number | string): string {
-    return formatearPrecio(valor);
-  }
+  readonly formatearPrecio = formatearPrecio;
 }

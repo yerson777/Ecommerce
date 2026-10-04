@@ -6,22 +6,23 @@ use App\Events\PedidoCreado;
 use App\Events\PedidoEstadoCambiado;
 use App\Exceptions\InventarioException;
 use App\Models\Cliente;
-use App\Models\Cupon;
 use App\Models\Devolucion;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
 use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
+use App\Models\PedidoHistorial;
 use App\Models\PedidoItem;
 use App\Models\Producto;
 use App\Models\Reserva;
 use App\Models\Setting;
 use App\Models\Venta;
 use App\Models\VentaItem;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Ciclo de vida completo de un pedido de tienda.
@@ -38,9 +39,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  */
 class PedidoService
 {
-    public function __construct(private readonly InventarioService $inventario)
-    {
-    }
+    public function __construct(private readonly InventarioService $inventario) {}
 
     /**
      * Crea un pedido desde la tienda.
@@ -76,8 +75,8 @@ class PedidoService
 
                 if (! $producto || $producto->publicado !== true || $producto->estado !== Producto::ESTADO_DISPONIBLE) {
                     throw new InventarioException(
-                        'La prenda ' . ($producto?->nombre ?? "#{$productoId}")
-                            . ' ya no está disponible para la compra.'
+                        'La prenda '.($producto?->nombre ?? "#{$productoId}")
+                            .' ya no está disponible para la compra.'
                     );
                 }
 
@@ -148,6 +147,123 @@ class PedidoService
                 $this->inventario->reservar($producto->id, $venceEn, $pedido->id);
             }
 
+            $this->registrarHistorial($pedido, null, Pedido::ESTADO_PENDIENTE, 'Pedido creado desde la tienda.');
+
+            event(new PedidoCreado($pedido));
+
+            return $pedido->load([
+                'cliente',
+                'metodoPago',
+                'metodoEntrega',
+                'items.producto.talla',
+                'items.producto.imagenes',
+            ]);
+        });
+    }
+
+    /**
+     * Crea un pedido aceptado directamente desde la administración
+     * (venta presencial en tienda). El pedido nace en estado "confirmado"
+     * porque la aceptación del administrador ya viene implícita.
+     *
+     * Calcula precios y totales SIEMPRE en el servidor y reserva cada
+     * prenda única dentro de la transacción. Admite un cupón real o, en
+     * su defecto, un descuento manual registrado en "pedidos.descuento".
+     *
+     * @param  array{
+     *     productos: int[],
+     *     cliente_id: int,
+     *     metodo_entrega_id: int,
+     *     metodo_pago_id: int,
+     *     notas?: string|null,
+     *     cupon_codigo?: string|null,
+     *     descuento?: float|null,
+     *     comprobante_path?: string|null,
+     * }  $datos
+     *
+     * @throws InventarioException si alguna prenda ya no está disponible.
+     */
+    public function crearDesdeAdmin(array $datos): Pedido
+    {
+        return DB::transaction(function () use ($datos) {
+            $productosIds = array_values(array_unique(array_map('intval', $datos['productos'])));
+
+            $unidades = [];
+            foreach ($productosIds as $productoId) {
+                /** @var Producto|null $producto */
+                $producto = Producto::query()->whereKey($productoId)->lockForUpdate()->first();
+
+                if (! $producto || $producto->estado !== Producto::ESTADO_DISPONIBLE) {
+                    throw new InventarioException(
+                        'La prenda '.($producto?->nombre ?? "#{$productoId}")
+                            .' ya no está disponible para la venta.'
+                    );
+                }
+
+                $unidades[] = $producto;
+            }
+
+            /** @var MetodoEntrega $metodoEntrega */
+            $metodoEntrega = MetodoEntrega::query()->findOrFail((int) $datos['metodo_entrega_id']);
+            /** @var MetodoPago $metodoPago */
+            $metodoPago = MetodoPago::query()->findOrFail((int) $datos['metodo_pago_id']);
+
+            /** @var Cliente $cliente */
+            $cliente = Cliente::query()->findOrFail((int) $datos['cliente_id']);
+
+            $subtotal = (float) array_sum(array_map(fn (Producto $p) => (float) $p->precio, $unidades));
+            $costoEnvio = (float) $metodoEntrega->costo;
+
+            $cupon = null;
+            $descuento = 0.0;
+            if (! empty($datos['cupon_codigo'])) {
+                $aplicado = app(CuponService::class)->aplicar(trim($datos['cupon_codigo']), $subtotal);
+                $cupon = $aplicado['cupon'];
+                $descuento = $aplicado['descuento'];
+            } elseif (! empty($datos['descuento']) && (float) $datos['descuento'] > 0) {
+                $descuento = min((float) $datos['descuento'], $subtotal);
+            }
+
+            $total = max(0.0, $subtotal - $descuento) + $costoEnvio;
+
+            if (! $cliente->fecha_primer_pedido) {
+                $cliente->fecha_primer_pedido = now()->toDateString();
+            }
+            $cliente->fecha_ultimo_pedido = now()->toDateString();
+            $cliente->save();
+
+            $pedido = Pedido::create([
+                'numero_pedido' => $this->proximoNumeroPedido(),
+                'cliente_id' => $cliente->id,
+                'metodo_pago_id' => $metodoPago->id,
+                'metodo_entrega_id' => $metodoEntrega->id,
+                'estado' => Pedido::ESTADO_CONFIRMADO,
+                'subtotal' => round($subtotal, 2),
+                'costo_envio' => $costoEnvio,
+                'descuento' => round($descuento, 2),
+                'cupon_id' => $cupon?->id,
+                'total' => round($total, 2),
+                'fecha_pedido' => now()->toDateString(),
+                'notas' => $datos['notas'] ?? null,
+                'comprobante_path' => $datos['comprobante_path'] ?? null,
+            ]);
+
+            foreach ($unidades as $producto) {
+                PedidoItem::create([
+                    'pedido_id' => $pedido->id,
+                    'producto_id' => $producto->id,
+                    'precio_unitario' => (float) $producto->precio,
+                ]);
+            }
+
+            $venceEn = now()->addHours($this->horasReserva());
+
+            foreach ($unidades as $producto) {
+                $this->inventario->reservar($producto->id, $venceEn, $pedido->id);
+            }
+
+            $this->registrarHistorial($pedido, null, Pedido::ESTADO_CONFIRMADO, 'Venta presencial registrada.');
+
             event(new PedidoCreado($pedido));
 
             return $pedido->load([
@@ -192,6 +308,8 @@ class PedidoService
 
             $pedido->forceFill(['estado' => $estado])->save();
 
+            $this->registrarHistorial($pedido, $estadoAnterior, $estado);
+
             event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
 
             return $pedido->fresh(['cliente', 'metodoPago', 'metodoEntrega', 'items.producto.talla', 'items.producto.imagenes', 'venta']);
@@ -211,10 +329,33 @@ class PedidoService
      */
     public function devolver(int $pedidoId, string $motivo, ?float $montoReembolso): Pedido
     {
+        $devolucion = $this->registrarDevolucionPendiente($pedidoId, $motivo, $montoReembolso);
+
+        $this->aprobarDevolucion($devolucion->id);
+
+        return Pedido::query()
+            ->with([
+                'cliente',
+                'metodoPago',
+                'metodoEntrega',
+                'items.producto.talla',
+                'items.producto.imagenes',
+                'venta',
+                'devolucion',
+            ])
+            ->findOrFail($devolucion->pedido_id);
+    }
+
+    /**
+     * Fase 1: registra la devolución como pendiente (sin efectos sobre el
+     * inventario, los pagos ni la caja). La aprobación es un paso aparte.
+     */
+    public function registrarDevolucionPendiente(int $pedidoId, string $motivo, ?float $montoReembolso): Devolucion
+    {
         return DB::transaction(function () use ($pedidoId, $motivo, $montoReembolso) {
             /** @var Pedido|null $pedido */
             $pedido = Pedido::query()
-                ->with(['items', 'pagos', 'cliente', 'metodoPago', 'metodoEntrega'])
+                ->with(['items', 'pagos'])
                 ->whereKey($pedidoId)
                 ->lockForUpdate()
                 ->first();
@@ -234,22 +375,57 @@ class PedidoService
             }
 
             $pagado = (float) $pedido->pagos
-                ->where('estado', 'completado')
+                ->where('estado', Pago::ESTADO_COMPLETADO)
                 ->sum('monto');
 
             $aReembolsar = round(min($montoReembolso ?? $pagado, $pagado), 2);
+
+            return Devolucion::create([
+                'pedido_id' => $pedido->id,
+                'estado' => Devolucion::ESTADO_PENDIENTE,
+                'monto_reembolsado' => $aReembolsar,
+                'motivo' => $motivo,
+                'devuelto_en' => null,
+            ]);
+        });
+    }
+
+    /**
+     * Fase 2: aprueba una devolución pendiente aplicando todos los efectos.
+     *
+     * Efectos dentro de una sola transacción:
+     *  - Los pagos confirmados quedan marcados como "reembolsados".
+     *  - Si hay dinero devuelto, se crea el egreso de caja correspondiente.
+     *  - Las prendas vuelven al catálogo (vendidas -> disponible, reservadas -> liberadas).
+     *  - El pedido pasa a estado "devuelto".
+     */
+    public function aprobarDevolucion(int $devolucionId): Devolucion
+    {
+        return DB::transaction(function () use ($devolucionId) {
+            /** @var Devolucion|null $devolucion */
+            $devolucion = Devolucion::query()
+                ->with(['pedido', 'pedido.items'])
+                ->whereKey($devolucionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $devolucion) {
+                throw new ModelNotFoundException('La devolución no existe.');
+            }
+
+            if ($devolucion->estado !== Devolucion::ESTADO_PENDIENTE) {
+                throw new InventarioException('La devolución ya fue aprobada.');
+            }
+
+            /** @var Pedido $pedido */
+            $pedido = $devolucion->pedido;
+
+            $aReembolsar = (float) $devolucion->monto_reembolsado;
 
             // Cierra los pagos confirmados: el dinero vuelve al cliente.
             $pedido->pagos()
                 ->where('estado', Pago::ESTADO_COMPLETADO)
                 ->update(['estado' => Pago::ESTADO_REEMBOLSADO]);
-
-            Devolucion::create([
-                'pedido_id' => $pedido->id,
-                'monto_reembolsado' => $aReembolsar,
-                'motivo' => $motivo,
-                'devuelto_en' => now(),
-            ]);
 
             // Si hubo dinero devuelto, sale de la caja como egreso (reembolso).
             if ($aReembolsar > 0) {
@@ -257,7 +433,7 @@ class PedidoService
                     'tipo' => 'egreso',
                     'monto' => $aReembolsar,
                     'fuente' => 'ajuste',
-                    'descripcion' => 'Reembolso del pedido ' . $pedido->numero_pedido . ' · ' . $motivo,
+                    'descripcion' => 'Reembolso del pedido '.$pedido->numero_pedido.' · '.($devolucion->motivo ?: 'Devolución'),
                     'fecha' => now()->toDateString(),
                 ]);
             }
@@ -282,17 +458,16 @@ class PedidoService
             $estadoAnterior = $pedido->estado;
             $pedido->forceFill(['estado' => Pedido::ESTADO_DEVUELTO])->save();
 
+            $this->registrarHistorial($pedido, $estadoAnterior, Pedido::ESTADO_DEVUELTO, 'Devolución aprobada.');
+
+            $devolucion->forceFill([
+                'estado' => Devolucion::ESTADO_APROBADA,
+                'devuelto_en' => now(),
+            ])->save();
+
             event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
 
-            return $pedido->fresh([
-                'cliente',
-                'metodoPago',
-                'metodoEntrega',
-                'items.producto.talla',
-                'items.producto.imagenes',
-                'venta',
-                'devolucion',
-            ]);
+            return $devolucion->fresh('pedido');
         });
     }
 
@@ -310,7 +485,7 @@ class PedidoService
             $producto->id,
             $estadoAnterior,
             Producto::ESTADO_DISPONIBLE,
-            'Devuelta. Pedido ' . $pedido->numero_pedido,
+            'Devuelta. Pedido '.$pedido->numero_pedido,
             'devuelta'
         );
     }
@@ -335,7 +510,7 @@ class PedidoService
 
             if ($reserva && $reserva->pedido_id !== $pedido->id) {
                 throw new InventarioException(
-                    'La prenda ' . $producto->nombre . ' está reservada por otro pedido.'
+                    'La prenda '.$producto->nombre.' está reservada por otro pedido.'
                 );
             }
 
@@ -362,7 +537,7 @@ class PedidoService
 
             if (! $producto || $producto->estado !== Producto::ESTADO_RESERVADA) {
                 throw new InventarioException(
-                    'La prenda "' . ($producto?->nombre ?? '#' . $item->producto_id) . '" ya no está reservada para este pedido.'
+                    'La prenda "'.($producto?->nombre ?? '#'.$item->producto_id).'" ya no está reservada para este pedido.'
                 );
             }
 
@@ -373,7 +548,7 @@ class PedidoService
 
             if (! $reserva || $reserva->pedido_id !== $pedido->id) {
                 throw new InventarioException(
-                    'La prenda "' . $producto->nombre . '" no tiene reserva activa para este pedido.'
+                    'La prenda "'.$producto->nombre.'" no tiene reserva activa para este pedido.'
                 );
             }
 
@@ -387,9 +562,9 @@ class PedidoService
             'cliente_id' => $pedido->cliente_id,
             'subtotal' => round($subtotal, 2),
             'costo_envio' => (float) $pedido->costo_envio,
-            'total' => round($subtotal + (float) $pedido->costo_envio, 2),
+            'total' => round((float) $pedido->total, 2),
             'fecha_venta' => now()->toDateString(),
-            'notas' => 'Venta del pedido ' . $pedido->numero_pedido,
+            'notas' => 'Venta del pedido '.$pedido->numero_pedido,
         ]);
 
         foreach ($detalles as $detalle) {
@@ -399,9 +574,9 @@ class PedidoService
                     'producto_id' => $detalle['producto']->id,
                     'precio_unitario' => $detalle['precio'],
                 ]);
-            } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            } catch (UniqueConstraintViolationException) {
                 throw new InventarioException(
-                    'La prenda "' . $detalle['producto']->nombre . '" ya fue vendida en otra transacción.'
+                    'La prenda "'.$detalle['producto']->nombre.'" ya fue vendida en otra transacción.'
                 );
             }
 
@@ -423,7 +598,7 @@ class PedidoService
                 $detalle['producto']->id,
                 $anterior,
                 Producto::ESTADO_VENDIDA,
-                'Vendida. Venta N° ' . $venta->numero_venta,
+                'Vendida. Venta N° '.$venta->numero_venta,
                 'vendida'
             );
         }
@@ -436,13 +611,27 @@ class PedidoService
         return max(1, (int) $horas ?: 24);
     }
 
+    /**
+     * Registra una entrada inmutable en el historial de cambios del pedido.
+     */
+    public function registrarHistorial(Pedido $pedido, ?string $estadoAnterior, string $estadoNuevo, ?string $motivo = null): void
+    {
+        PedidoHistorial::create([
+            'pedido_id' => $pedido->id,
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo' => $estadoNuevo,
+            'motivo' => $motivo,
+            'user_id' => auth()->id(),
+        ]);
+    }
+
     private function proximoNumeroPedido(): string
     {
-        return 'PED-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+        return 'PED-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
     }
 
     private function proximoNumeroVenta(): string
     {
-        return 'V-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
+        return 'V-'.now()->format('Ymd').'-'.strtoupper(Str::random(5));
     }
 }

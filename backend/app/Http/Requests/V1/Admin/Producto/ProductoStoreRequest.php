@@ -3,6 +3,7 @@
 namespace App\Http\Requests\V1\Admin\Producto;
 
 use App\Http\Requests\V1\ApiFormRequest;
+use App\Models\Producto;
 use Illuminate\Validation\Rule;
 
 class ProductoStoreRequest extends ApiFormRequest
@@ -14,11 +15,12 @@ class ProductoStoreRequest extends ApiFormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'categoria_id' => ['required', Rule::exists('categorias', 'id')],
             'talla_id' => ['required', Rule::exists('tallas', 'id')],
+            'marca_nombre' => ['nullable', 'string', 'max:100'],
             'color' => ['nullable', 'string', 'max:100'],
             'descripcion' => ['nullable', 'string'],
             'costo' => ['required', 'numeric', 'min:0'],
             'precio' => ['required', 'numeric', 'min:0'],
-            'estado' => ['required', Rule::in([\App\Models\Producto::ESTADO_DISPONIBLE])],
+            'estado' => ['required', Rule::in([Producto::ESTADO_DISPONIBLE])],
             'publicado' => ['sometimes', 'boolean'],
             'fecha_ingreso' => ['nullable', 'date'],
         ];
@@ -34,6 +36,8 @@ class ProductoStoreRequest extends ApiFormRequest
             'categoria_id.exists' => 'La categoría seleccionada no existe.',
             'talla_id.required' => 'La talla es obligatoria.',
             'talla_id.exists' => 'La talla seleccionada no existe.',
+            'marca_nombre.string' => 'La marca debe ser una cadena de texto.',
+            'marca_nombre.max' => 'La marca no puede superar 100 caracteres.',
             'costo.required' => 'El costo es obligatorio.',
             'costo.numeric' => 'El costo debe ser numérico.',
             'costo.min' => 'El costo no puede ser negativo.',

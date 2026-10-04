@@ -14,9 +14,7 @@ use Illuminate\Http\Request;
 
 class PedidoController extends Controller
 {
-    public function __construct(private readonly PedidoService $pedidos)
-    {
-    }
+    public function __construct(private readonly PedidoService $pedidos) {}
 
     public function index(Request $request)
     {
@@ -51,6 +49,8 @@ class PedidoController extends Controller
             'venta',
             'devolucion',
             'cupon',
+            'historial',
+            'pagos.metodoPago',
         ])
             ->withSum(['pagos as pagos_completados_total' => fn ($q) => $q->where('estado', Pago::ESTADO_COMPLETADO)], 'monto')
             ->findOrFail($id);

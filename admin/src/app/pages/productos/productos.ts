@@ -4,6 +4,7 @@ import {
   CategoriaRef,
   ETIQUETA_ESTADO,
   EstadoPrenda,
+  MarcaRef,
   Producto,
   TONO_ESTADO,
   TallaRef,
@@ -65,6 +66,7 @@ export class ProductosComponent implements OnInit {
     busqueda: '',
     categoria: null as number | null,
     talla: null as number | null,
+    marca: null as number | null,
     estado: '' as '' | EstadoPrenda,
     publicado: '' as '' | '1' | '0',
     precio_min: null as number | null,
@@ -78,6 +80,7 @@ export class ProductosComponent implements OnInit {
 
   readonly categorias = signal<CategoriaRef[]>([]);
   readonly tallas = signal<TallaRef[]>([]);
+  readonly marcas = signal<MarcaRef[]>([]);
 
   readonly modalFormulario = signal<ModalFormulario>({ abierto: false, producto: null, readonly: false });
   readonly modalImagenes = signal<Producto | null>(null);
@@ -102,6 +105,7 @@ export class ProductosComponent implements OnInit {
       busqueda: '',
       categoria: null,
       talla: null,
+      marca: null,
       estado: '',
       publicado: '',
       precio_min: null,
@@ -138,6 +142,15 @@ export class ProductosComponent implements OnInit {
       },
       error: () => undefined,
     });
+
+    this.catalogosService.marcas().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.marcas.set(res.data);
+        }
+      },
+      error: () => undefined,
+    });
   }
 
   cargar(): void {
@@ -150,6 +163,7 @@ export class ProductosComponent implements OnInit {
         busqueda: f.busqueda || undefined,
         categoria: f.categoria,
         talla: f.talla,
+        marca: f.marca,
         estado: f.estado || null,
         publicado: f.publicado === '' ? null : f.publicado === '1',
         precio_min: f.precio_min,

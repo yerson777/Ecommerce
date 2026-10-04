@@ -13,6 +13,7 @@ class ReservarRequest extends ApiFormRequest
             'producto_id' => ['required', 'integer', Rule::exists('productos', 'id')],
             'vence_en' => ['nullable', 'date', 'after:now'],
             'pedido_id' => ['nullable', 'integer', Rule::exists('pedidos', 'id')],
+            'cliente_id' => ['nullable', 'integer', Rule::exists('clientes', 'id')],
         ];
     }
 

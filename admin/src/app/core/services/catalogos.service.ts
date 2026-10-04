@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
-import { CategoriaRef, TallaRef } from '../models/producto';
+import { CategoriaRef, MarcaRef, TallaRef } from '../models/producto';
 import { ApiService } from './api.service';
 
 @Injectable({ providedIn: 'root' })
@@ -17,5 +17,9 @@ export class CatalogosService extends ApiService {
 
   tallas(): Observable<ApiResponse<TallaRef[]>> {
     return this.get<ApiResponse<TallaRef[]>>('/v1/admin/tallas');
+  }
+
+  marcas(): Observable<ApiResponse<MarcaRef[]>> {
+    return this.get<ApiResponse<MarcaRef[]>>('/v1/admin/marcas');
   }
 }
