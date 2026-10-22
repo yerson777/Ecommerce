@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\MetodoPago;
-use App\Models\MetodoEntrega;
 use App\Models\CategoriaGasto;
+use App\Models\MetodoEntrega;
+use App\Models\MetodoPago;
+use Illuminate\Database\Seeder;
 
-class ConfiguracionComercialSeeder extends \Illuminate\Database\Seeder
+class ConfiguracionComercialSeeder extends Seeder
 {
     public function run(): void
     {
@@ -25,9 +26,10 @@ class ConfiguracionComercialSeeder extends \Illuminate\Database\Seeder
 
         $metodosEntrega = [
             ['nombre' => 'Retiro presencial (plaza Corazonistas)', 'costo' => 0, 'orden' => 0],
-            ['nombre' => 'Envío por Yando desde la plaza Corazonistas', 'costo' => 0, 'orden' => 1],
-            ['nombre' => 'Paquetería Flash Store', 'costo' => 0, 'orden' => 2],
-            ['nombre' => 'Envío Provincial o Departamental', 'costo' => 0, 'orden' => 3],
+            ['nombre' => 'Envío por Yango desde la plaza Corazonistas', 'costo' => 0, 'orden' => 1],
+            ['nombre' => 'Paquetería Flash Store (CORREO)', 'costo' => 0, 'orden' => 2],
+            ['nombre' => 'Paquetería Flash Store (QUILLACOLLO)', 'costo' => 0, 'orden' => 3],
+            ['nombre' => 'Envío Provincial o Departamental', 'costo' => 0, 'orden' => 4],
         ];
         foreach ($metodosEntrega as $datos) {
             MetodoEntrega::query()->updateOrCreate(

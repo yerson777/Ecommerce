@@ -16,6 +16,7 @@ class BannerPublicoResource extends JsonResource
         return [
             'id' => $this->id,
             'url' => $this->url,
+            'url_movil' => $this->url_movil,
             'titulo' => $this->titulo,
             'subtitulo' => $this->subtitulo,
             'enlace' => $this->enlace,

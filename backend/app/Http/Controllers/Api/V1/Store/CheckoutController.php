@@ -36,7 +36,8 @@ class CheckoutController extends Controller
         return Api::resource(
             new PedidoPublicoResource($pedido),
             'Pedido creado correctamente. Te contactaremos para confirmar la entrega.',
-            201
+            201,
+            ['avisos' => $this->pedidos->avisos]
         );
     }
 

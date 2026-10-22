@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Banner;
+use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
@@ -9,13 +11,11 @@ use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
-use App\Models\Categoria;
-use App\Models\Banner;
 use App\Models\Producto;
 use App\Models\ProductoImagen;
 use App\Models\Reserva;
-use App\Models\Talla;
 use App\Models\Setting;
+use App\Models\Talla;
 use App\Models\Venta;
 use App\Models\VentaItem;
 use Illuminate\Database\Seeder;
@@ -35,7 +35,7 @@ class DatosPruebaSeeder extends Seeder
         $metodoQR = MetodoPago::where('nombre', 'QR')->firstOrFail();
         $metodoTransferencia = MetodoPago::where('nombre', 'Transferencia')->firstOrFail();
         $entregaTienda = MetodoEntrega::where('nombre', 'Retiro presencial (plaza Corazonistas)')->firstOrFail();
-        $entregaDomicilio = MetodoEntrega::where('nombre', 'Envío por Yando desde la plaza Corazonistas')->firstOrFail();
+        $entregaDomicilio = MetodoEntrega::where('nombre', 'Envío por Yango desde la plaza Corazonistas')->firstOrFail();
 
         $cliente = Cliente::create([
             'nombre' => 'María González',

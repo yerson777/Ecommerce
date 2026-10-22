@@ -14,6 +14,7 @@ import {
   ReporteFiltros,
   ReporteResumen,
   ComparacionPeriodo,
+  GananciaPorOrigen,
   TiempoPromedioVenta,
   VentasPorCategoria,
   VentasPorMarca,
@@ -70,6 +71,10 @@ export class ReportesService {
 
   comparacion(filtros: ReporteFiltros = {}): Observable<ApiResponse<ComparacionPeriodo>> {
     return this.http.get<ApiResponse<ComparacionPeriodo>>(`${this.baseUrl}/v1/admin/reportes/comparacion`, { params: this.params(filtros) });
+  }
+
+  gananciaPorOrigen(filtros: ReporteFiltros = {}): Observable<ApiResponse<GananciaPorOrigen>> {
+    return this.http.get<ApiResponse<GananciaPorOrigen>>(`${this.baseUrl}/v1/admin/reportes/ganancia-por-origen`, { params: this.params(filtros) });
   }
 
   clientes(filtros: ReporteFiltros = {}): Observable<ApiResponse<ClientesReporte>> {

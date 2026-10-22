@@ -19,6 +19,9 @@ export interface PedidoItem {
   producto_color?: string | null;
   producto_imagen?: string | null;
   precio_unitario: string;
+  costo_unitario?: string;
+  ganancia?: string;
+  tiene_costo?: boolean;
 }
 
 export interface PedidoPago {

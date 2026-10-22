@@ -221,6 +221,8 @@
                   <th>Código</th>
                   <th>Nombre</th>
                   <th>Precio</th>
+                  <th>Costo</th>
+                  <th>Ganancia</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,6 +231,20 @@
                     <td class="mono">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
                     <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
                     <td>{{ moneda(item.precio_unitario) }}</td>
+                    <td>
+                      @if (item.tiene_costo) {
+                        {{ moneda(item.costo_unitario ?? '0') }}
+                      } @else {
+                        <span class="muted" title="Prenda sin costo cargado">—</span>
+                      }
+                    </td>
+                    <td>
+                      @if (item.tiene_costo) {
+                        {{ moneda(item.ganancia ?? '0') }}
+                      } @else {
+                        <span class="muted" title="Sin costo no se calcula ganancia">s/costo</span>
+                      }
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -318,6 +334,9 @@
         <div class="transiciones">
           <div class="transiciones-botones">
             <button type="button" class="btn btn-outline" (click)="imprimirComprobante()">Imprimir comprobante</button>
+            @if (puedeDevolver()) {
+              <button type="button" class="btn btn-outline" (click)="registrarDevolucion()">Registrar devolución</button>
+            }
             @if (!detalle.anulada_en) {
               <button type="button" class="btn btn-danger" (click)="pedirAnulacion()">Anular venta</button>
             }
@@ -370,6 +389,8 @@
           <th>Código</th>
           <th>Nombre</th>
           <th>Precio</th>
+          <th>Costo</th>
+          <th>Ganancia</th>
         </tr>
       </thead>
       <tbody>
@@ -378,6 +399,20 @@
             <td class="mono">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
             <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
             <td>{{ moneda(item.precio_unitario) }}</td>
+            <td>
+              @if (item.tiene_costo) {
+                {{ moneda(item.costo_unitario ?? '0') }}
+              } @else {
+                <span class="muted" title="Prenda sin costo cargado">—</span>
+              }
+            </td>
+            <td>
+              @if (item.tiene_costo) {
+                {{ moneda(item.ganancia ?? '0') }}
+              } @else {
+                <span class="muted" title="Sin costo no se calcula ganancia">s/costo</span>
+              }
+            </td>
           </tr>
         }
       </tbody>

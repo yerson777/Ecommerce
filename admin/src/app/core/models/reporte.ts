@@ -217,6 +217,30 @@ export interface MetodoPagoRef {
   nombre: string;
 }
 
+export interface GananciaPorOrigenFila {
+  origen: string;
+  etiqueta: string;
+  prendas_vendidas: number;
+  sin_costo: number;
+  recuperado: string;
+  costo: string;
+  ganancia: string;
+  margen_pct: string;
+}
+
+export interface GananciaPorOrigenComparacion {
+  coreano_ganancia: string;
+  americano_ganancia: string;
+  diferencia: string;
+  diferencia_pct: string | null;
+  ganador: 'fardo_coreano' | 'fardo_americano' | 'empate';
+}
+
+export interface GananciaPorOrigen {
+  por_origen: GananciaPorOrigenFila[];
+  comparacion: GananciaPorOrigenComparacion;
+}
+
 export interface ReporteFiltros {
   periodo?: PeriodoReporte;
   fecha_desde?: string;

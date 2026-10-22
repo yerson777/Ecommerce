@@ -73,6 +73,13 @@ class PedidoController extends Controller
             $id,
             trim($datos['motivo']),
             isset($datos['monto_reembolso']) ? (float) $datos['monto_reembolso'] : null,
+            [
+                'tipo' => $datos['tipo'] ?? null,
+                'motivo_categoria' => $datos['motivo_categoria'] ?? null,
+                'nota' => $datos['nota'] ?? null,
+                'reembolso_metodo_id' => isset($datos['reembolso_metodo_id']) ? (int) $datos['reembolso_metodo_id'] : null,
+                'items' => $datos['items'] ?? null,
+            ],
         );
 
         return Api::resource(new PedidoResource($pedido), 'Devolución registrada correctamente.');

@@ -1,4 +1,13 @@
-import { Component, OnDestroy, OnInit, Signal, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  Signal,
+  effect,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormControl,
@@ -40,6 +49,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly comprobantePreview = signal<string | null>(null);
   readonly comprobanteError = signal<string | null>(null);
 
+  private readonly videoCamara = viewChild<ElementRef<HTMLVideoElement>>('videoCamara');
+  private readonly inputCamara = viewChild<ElementRef<HTMLInputElement>>('comprobanteCamara');
+  private readonly streamCamara = signal<MediaStream | null>(null);
+  readonly camaraAbierta = signal(false);
+  readonly camaraError = signal<string | null>(null);
+
   readonly cuponCodigo = signal('');
   readonly cuponAplicado = signal(false);
   readonly validandoCupon = signal(false);
@@ -66,6 +81,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.cartService = cartService;
     this.items = cartService.items;
     this.subtotal = cartService.subtotal;
+
+    // Conecta el stream de la cámara al <video> en cuanto el modal se renderiza.
+    effect(() => {
+      const video = this.videoCamara()?.nativeElement;
+      const stream = this.streamCamara();
+      if (video && stream && video.srcObject !== stream) {
+        video.srcObject = stream;
+        void video.play().catch(() => undefined);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -111,6 +136,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   onComprobante(event: Event): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0] ?? null;
+    this.aplicarComprobante(archivo);
+    // Permite volver a elegir/tomar el mismo archivo más adelante.
+    input.value = '';
+  }
+
+  eliminarComprobante(): void {
+    this.comprobanteError.set(null);
+    this.aplicarComprobante(null);
+  }
+
+  private aplicarComprobante(archivo: File | null): void {
     this.comprobante.set(archivo);
 
     const previaPrevia = this.comprobantePreview();
@@ -124,7 +160,89 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Abre la cámara con getUserMedia (escritorio y móvil). Si el navegador no
+   * la soporta o la conexión no es segura, cae al input de archivo, que en
+   * móvil abre la cámara nativa gracias a `capture`.
+   */
+  async tomarFoto(): Promise<void> {
+    this.comprobanteError.set(null);
+    const soportada =
+      typeof navigator !== 'undefined' &&
+      !!navigator.mediaDevices?.getUserMedia &&
+      window.isSecureContext;
+
+    if (!soportada) {
+      this.inputCamara()?.nativeElement.click();
+      return;
+    }
+
+    this.camaraError.set(null);
+    this.camaraAbierta.set(true);
+
+    try {
+      this.streamCamara.set(await this.obtenerStream());
+    } catch {
+      this.streamCamara.set(null);
+      this.camaraError.set(
+        'No pudimos acceder a la cámara. Revisá los permisos del navegador o elegí un archivo.',
+      );
+    }
+  }
+
+  private async obtenerStream(): Promise<MediaStream> {
+    const media = navigator.mediaDevices;
+    try {
+      return await media.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+    } catch {
+      return await media.getUserMedia({ video: true, audio: false });
+    }
+  }
+
+  capturarFoto(): void {
+    const video = this.videoCamara()?.nativeElement;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      return;
+    }
+
+    const lienzo = document.createElement('canvas');
+    lienzo.width = video.videoWidth;
+    lienzo.height = video.videoHeight;
+
+    const contexto = lienzo.getContext('2d');
+    if (!contexto) {
+      return;
+    }
+    contexto.drawImage(video, 0, 0, lienzo.width, lienzo.height);
+
+    lienzo.toBlob(
+      (blob) => {
+        if (!blob) {
+          return;
+        }
+        const archivo = new File([blob], `comprobante-${Date.now()}.jpg`, {
+          type: 'image/jpeg',
+        });
+        this.aplicarComprobante(archivo);
+        this.cerrarCamara();
+      },
+      'image/jpeg',
+      0.9,
+    );
+  }
+
+  cerrarCamara(): void {
+    this.streamCamara()?.getTracks().forEach((pista) => pista.stop());
+    this.streamCamara.set(null);
+    this.camaraAbierta.set(false);
+    this.camaraError.set(null);
+  }
+
   ngOnDestroy(): void {
+    this.streamCamara()?.getTracks().forEach((pista) => pista.stop());
     const previa = this.comprobantePreview();
     if (previa) {
       URL.revokeObjectURL(previa);
@@ -158,7 +276,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.cuponMensaje.set(null);
     this.cuponError.set(false);
 
-    this.catalogo.validarCupon(codigo, this.subtotal()).subscribe({
+    const contacto = this.form.value;
+    this.catalogo.validarCupon(codigo, this.subtotal(), {
+      productos: this.items().map((item) => item.producto_id),
+      telefono: contacto.telefono ?? null,
+      email: contacto.email ?? null,
+    }).subscribe({
       next: (res) => {
         this.validandoCupon.set(false);
         const datos = res.data;
@@ -222,6 +345,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       metodo_pago_id: valores.metodoPagoId ?? null,
       metodo_entrega_id: valores.metodoEntregaId ?? null,
       codigo_cupon: this.cuponAplicado() ? this.cuponCodigo().trim().toUpperCase() || null : null,
+      precios_esperados: this.items().map((item) => ({
+        producto_id: item.producto_id,
+        precio: Number(item.precio),
+      })),
     };
 
     this.enviando.set(true);
@@ -232,10 +359,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           this.cartService.vaciar();
           try {
             sessionStorage.setItem('everly_ultimo_pedido', JSON.stringify(res.data));
+            sessionStorage.setItem(
+              'everly_ultimo_pedido_avisos',
+              JSON.stringify(res.avisos ?? []),
+            );
           } catch {
             // Sin persistencia local no bloqueamos la navegación.
           }
-          this.router.navigate(['/confirmacion'], { state: { order: res.data } });
+          this.router.navigate(['/confirmacion'], {
+            state: { order: res.data, avisos: res.avisos ?? [] },
+          });
         }
       },
       error: (error: ApiError) => {

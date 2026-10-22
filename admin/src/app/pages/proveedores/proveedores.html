@@ -1,0 +1,307 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Proveedores</h1>
+      <p class="page-subtitle">Fardos coreanos, americanos y otros. Historial de compras por proveedor</p>
+    </div>
+
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nuevo proveedor</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nombre, contacto, teléfono o ciudad…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Tipo</label>
+        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+          <option [ngValue]="''">Todos</option>
+          @for (tipo of tipos; track tipo) {
+            <option [ngValue]="tipo">{{ etiquetasTipo[tipo] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().activo" (change)="onBuscar()">
+          <option [ngValue]="''">Todos</option>
+          <option [ngValue]="'activos'">Activos</option>
+          <option [ngValue]="'inactivos'">Inactivos</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="34" />
+      </div>
+    } @else if (proveedores().length === 0) {
+      <app-empty-state
+        icon="🏭"
+        title="Sin proveedores"
+        message="No hay proveedores registrados todavía."
+      >
+        <button type="button" class="btn btn-ghost" (click)="abrirCrear()">Crear el primero</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Contacto</th>
+              <th>Ciudad</th>
+              <th>Compras</th>
+              <th>Total comprado</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (proveedor of proveedores(); track proveedor.id) {
+              <tr>
+                <td>
+                  <button type="button" class="link" (click)="verDetalle(proveedor)">
+                    <strong>{{ proveedor.nombre }}</strong>
+                  </button>
+                </td>
+                <td><app-badge tone="info">{{ tipoTexto(proveedor) }}</app-badge></td>
+                <td class="muted">
+                  {{ proveedor.contacto || '—' }}
+                  @if (proveedor.telefono) {
+                    <span class="nowrap"> · {{ proveedor.telefono }}</span>
+                  }
+                </td>
+                <td class="muted">{{ proveedor.ciudad || '—' }}</td>
+                <td class="muted">{{ proveedor.compras_count ?? 0 }}</td>
+                <td class="muted">$ {{ proveedor.total_comprado ?? '0.00' }}</td>
+                <td>
+                  <app-badge [tone]="proveedor.activo ? 'success' : 'neutral'">
+                    {{ proveedor.activo ? 'Activo' : 'Inactivo' }}
+                  </app-badge>
+                </td>
+                <td class="align-right">
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="verDetalle(proveedor)">
+                      Ver
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(proveedor)">
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      (click)="alternarActivo(proveedor)"
+                      [disabled]="alternandoId === proveedor.id"
+                    >
+                      {{ proveedor.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm danger"
+                      (click)="pedirEliminar(proveedor)"
+                      [disabled]="alternandoId === proveedor.id"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar proveedor' : 'Nuevo proveedor'"
+    width="640px"
+    (closed)="cerrarModal()"
+  >
+    <div class="modal-body">
+      @if (errorFormulario()) {
+        <div class="alert alert-error">{{ errorFormulario() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field field-full">
+          <label>Nombre</label>
+          <input class="input" type="text" placeholder="Ej: Bazar Central" [(ngModel)]="form.nombre" />
+        </div>
+
+        <div class="field">
+          <label>Tipo</label>
+          <select class="select" [(ngModel)]="form.tipo">
+            @for (tipo of tipos; track tipo) {
+              <option [ngValue]="tipo">{{ etiquetasTipo[tipo] }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input class="input" type="text" [(ngModel)]="form.ciudad" />
+        </div>
+
+        <div class="field">
+          <label>Contacto</label>
+          <input class="input" type="text" placeholder="Persona de contacto" [(ngModel)]="form.contacto" />
+        </div>
+
+        <div class="field">
+          <label>Teléfono</label>
+          <input class="input" type="text" [(ngModel)]="form.telefono" />
+        </div>
+
+        <div class="field field-full">
+          <label>Nota</label>
+          <textarea class="input" rows="3" [(ngModel)]="form.nota"></textarea>
+        </div>
+      </div>
+
+      <div class="checks">
+        <div class="check">
+          <input type="checkbox" id="proveedor-activo" [(ngModel)]="form.activo" />
+          <label for="proveedor-activo">Proveedor activo</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        @if (guardando()) {
+          <app-spinner [size]="16" />
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+  </app-modal>
+}
+
+@if (detalleAbierto()) {
+  <app-modal title="Ficha del proveedor" width="720px" (closed)="cerrarDetalle()">
+    @if (cargandoDetalle()) {
+      <div class="center">
+        <app-spinner [size]="30" />
+      </div>
+    } @else if (detalle(); as p) {
+      <div class="modal-body">
+        <div class="ficha">
+          <div>
+            <span class="ficha-label">Nombre</span>
+            <strong>{{ p.nombre }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Tipo</span>
+            <strong>{{ tipoTexto(p) }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Ciudad</span>
+            <strong>{{ p.ciudad || '—' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Contacto</span>
+            <strong>{{ p.contacto || '—' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Teléfono</span>
+            <strong>{{ p.telefono || '—' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Estado</span>
+            <strong>{{ p.activo ? 'Activo' : 'Inactivo' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Compras</span>
+            <strong>{{ p.compras_count ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Prendas</span>
+            <strong>{{ p.prendas_count ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Total comprado</span>
+            <strong>$ {{ p.total_comprado ?? '0.00' }}</strong>
+          </div>
+        </div>
+
+        @if (p.nota) {
+          <p class="muted">{{ p.nota }}</p>
+        }
+
+        <h3 class="section-title">Historial de compras</h3>
+
+        @if (!p.historial || p.historial.length === 0) {
+          <p class="muted">Sin compras registradas.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Prendas</th>
+                  <th>Costo total</th>
+                  <th>Gastos</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (compra of p.historial; track compra.id) {
+                  <tr>
+                    <td class="muted nowrap">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                    <td class="muted">{{ compra.prendas_count ?? 0 }}</td>
+                    <td class="muted">$ {{ compra.costo_total }}</td>
+                    <td class="muted">$ {{ compra.gastos_extra }}</td>
+                    <td>
+                      <app-badge [tone]="compra.estado === 'activa' ? 'success' : 'neutral'">
+                        {{ compra.estado === 'activa' ? 'Activa' : 'Anulada' }}
+                      </app-badge>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+  </app-modal>
+}
+
+@if (eliminarObjetivo) {
+  <app-confirm-dialog
+    title="Eliminar proveedor"
+    message="¿Seguro que querés eliminar el proveedor? Si tiene compras o prendas asociadas, solo podrá desactivarse."
+    confirmLabel="Eliminar"
+    tone="danger"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cancelarEliminar()"
+  />
+}

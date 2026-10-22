@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Devoluciones</h1>
-      <p class="page-subtitle">Registro y aprobación de devoluciones de ventas</p>
+      <p class="page-subtitle">Registro, aprobación y reembolso de devoluciones de ventas</p>
     </div>
     <div class="page-actions">
       <app-notification-center />
@@ -29,7 +29,28 @@
           <option value="">Todas</option>
           <option value="pendiente">Pendientes</option>
           <option value="aprobada">Aprobadas</option>
+          <option value="reembolsada">Reembolsadas</option>
+          <option value="rechazada">Rechazadas</option>
         </select>
+      </div>
+
+      <div class="field">
+        <label>Tipo</label>
+        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+          <option value="">Todos</option>
+          <option value="total">Total</option>
+          <option value="parcial">Parcial</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Desde</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fechaDesde" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Hasta</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fechaHasta" (change)="onBuscar()" />
       </div>
 
       <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
@@ -61,8 +82,9 @@
                 <th>Venta</th>
                 <th>Pedido</th>
                 <th>Cliente</th>
+                <th>Prenda(s)</th>
+                <th>Tipo</th>
                 <th>Monto</th>
-                <th>Motivo</th>
                 <th>Registrada</th>
                 <th>Estado</th>
                 <th></th>
@@ -74,24 +96,27 @@
                   <td class="mono">{{ numeroVenta(devolucion) }}</td>
                   <td class="mono">{{ numeroPedido(devolucion) }}</td>
                   <td>{{ nombreCliente(devolucion) }}</td>
+                  <td>
+                    <button type="button" class="link-btn" (click)="verDetalle(devolucion)">
+                      {{ resumenPrendas(devolucion) }}
+                    </button>
+                  </td>
+                  <td>{{ etiquetaTipo(devolucion) }}</td>
                   <td>{{ moneda(devolucion.monto_reembolsado) }}</td>
-                  <td>
-                    <span class="motivo" [title]="devolucion.motivo">{{ devolucion.motivo }}</span>
-                  </td>
                   <td>{{ formatearFecha(devolucion.created_at) }}</td>
+                  <td><app-badge [tone]="tonoEstado(devolucion)">{{ etiquetaEstado(devolucion) }}</app-badge></td>
                   <td>
-                    <app-badge [tone]="tonoEstado(devolucion)">
-                      {{ etiquetaEstado(devolucion) }}
-                    </app-badge>
-                  </td>
-                  <td>
-                    @if (esPendiente(devolucion)) {
-                      <div class="actions">
-                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarAprobar(devolucion)">
-                          Aprobar
-                        </button>
-                      </div>
-                    }
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="imprimir(devolucion)">Imprimir</button>
+                      @if (puedeAprobar(devolucion)) {
+                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarAprobar(devolucion)">Aprobar</button>
+                        <button type="button" class="btn btn-danger btn-sm" (click)="solicitarRechazar(devolucion)">Rechazar</button>
+                      }
+                      @if (puedeReembolsar(devolucion)) {
+                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarReembolsar(devolucion)">Reembolsar</button>
+                        <button type="button" class="btn btn-danger btn-sm" (click)="solicitarRechazar(devolucion)">Rechazar</button>
+                      }
+                    </div>
                   </td>
                 </tr>
               }
@@ -113,12 +138,78 @@
   </section>
 </div>
 
+@if (detalle(); as devolucion) {
+  <app-modal title="Detalle de la devolución" (closed)="cerrarDetalle()">
+    <div class="stack">
+      <div class="detalle-grid">
+        <div><span class="muted-label">Venta</span><span class="mono">{{ numeroVenta(devolucion) }}</span></div>
+        <div><span class="muted-label">Pedido</span><span class="mono">{{ numeroPedido(devolucion) }}</span></div>
+        <div><span class="muted-label">Cliente</span><span>{{ nombreCliente(devolucion) }}</span></div>
+        <div><span class="muted-label">Tipo</span><span>{{ etiquetaTipo(devolucion) }}</span></div>
+        <div><span class="muted-label">Estado</span><app-badge [tone]="tonoEstado(devolucion)">{{ etiquetaEstado(devolucion) }}</app-badge></div>
+        <div><span class="muted-label">Motivo</span><span>{{ etiquetaMotivo(devolucion.motivo_categoria) }}</span></div>
+        <div><span class="muted-label">Monto</span><span>{{ moneda(devolucion.monto_reembolsado) }}</span></div>
+        <div><span class="muted-label">Método de reembolso</span><span>{{ devolucion.reembolso_metodo ?? '—' }}</span></div>
+      </div>
+
+      @if (devolucion.motivo) {
+        <div class="notas">
+          <span class="muted-label">Detalle del motivo</span>
+          <div>{{ devolucion.motivo }}</div>
+        </div>
+      }
+
+      @if (devolucion.nota) {
+        <div class="notas">
+          <span class="muted-label">Nota</span>
+          <div>{{ devolucion.nota }}</div>
+        </div>
+      }
+
+      @if (devolucion.rechazado_motivo) {
+        <div class="error-box">
+          <span class="muted-label">Motivo de rechazo</span> {{ devolucion.rechazado_motivo }}
+        </div>
+      }
+
+      <div class="field">
+        <label>Prendas</label>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Prenda</th>
+              <th>Precio</th>
+              <th>Reingresa</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
+              <tr>
+                <td>{{ nombrePrenda(prenda) }}</td>
+                <td>{{ moneda(prenda.precio_unitario) }}</td>
+                <td>{{ prenda.reingresa === false ? 'No (dañada)' : 'Sí' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3">Sin prendas registradas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="imprimir(devolucion)">Imprimir comprobante</button>
+        <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
+      </div>
+    </div>
+  </app-modal>
+}
+
 @if (registrar().abierto) {
   <app-modal title="Registrar devolución" (closed)="cerrarRegistrar()">
     <div class="stack">
       <div class="instruction">
         La devolución quedará en estado <app-badge tone="warning">Pendiente</app-badge>.
-        Al aprobarla, las prendas volverán a Disponible y la caja registrará el egreso.
+        Al aprobarla, las prendas que reingresan vuelven a Disponible. El reembolso (egreso de caja) se aplica al confirmar.
       </div>
 
       <div class="field">
@@ -137,39 +228,92 @@
         @if (registrar().cargandoVentas) {
           <app-spinner [size]="18" />
         } @else {
-          <select class="select" [(ngModel)]="registrar().ventaId" (ngModelChange)="onSeleccionarVenta()">
-            <option [ngValue]="null" disabled>Selecciona una venta…</option>
+          <select class="select" [(ngModel)]="registrar().ventaId" (change)="onSeleccionarVenta()">
+            <option [ngValue]="null">Selecciona una venta…</option>
             @for (venta of registrar().ventas; track venta.id) {
-              <option [ngValue]="venta.id">
-                {{ venta.numero_venta }} · {{ venta.cliente?.nombre ?? 'Cliente' }} · {{ moneda(venta.total) }}
-              </option>
+              <option [ngValue]="venta.id">{{ venta.numero_venta }} · {{ venta.cliente?.nombre ?? '—' }} · {{ moneda(venta.total) }}</option>
             }
           </select>
-          @if (registrar().ventas.length === 0) {
-            <span class="hint">No hay ventas con pedido completado disponibles para devolver.</span>
-          }
         }
       </div>
 
       <div class="field">
-        <label>Motivo</label>
-        <textarea class="input textarea" rows="3" placeholder="Ej. defecto de confección, cambio de talla…" [(ngModel)]="registrar().motivo"></textarea>
+        <label>Tipo de devolución</label>
+        <div class="radio-group">
+          <label class="radio">
+            <input type="radio" name="tipo" value="total" [checked]="registrar().tipo === 'total'" (change)="onCambiarTipo('total')" />
+            Total (todas las prendas)
+          </label>
+          <label class="radio">
+            <input type="radio" name="tipo" value="parcial" [checked]="registrar().tipo === 'parcial'" (change)="onCambiarTipo('parcial')" />
+            Parcial (seleccionar prendas)
+          </label>
+        </div>
+      </div>
+
+      @if (registrar().tipo === 'parcial') {
+        <div class="field">
+          <label>Prendas a devolver</label>
+
+          @if (registrar().cargandoPrendas) {
+            <app-spinner [size]="18" />
+          } @else if (registrar().prendas.length === 0) {
+            <p class="hint">Selecciona una venta para cargar sus prendas.</p>
+          } @else {
+            <div class="prendas">
+              @for (prenda of registrar().prendas; track prenda.producto_id; let i = $index) {
+                <div class="prenda-row" [class.prenda-off]="!prenda.seleccionada">
+                  <label class="prenda-check">
+                    <input type="checkbox" [checked]="prenda.seleccionada" (change)="togglePrenda(i)" />
+                    <span>{{ nombrePrenda(prenda) }}</span>
+                    <span class="mono">{{ moneda(prenda.precio_unitario) }}</span>
+                  </label>
+                  <label class="prenda-reingresa">
+                    <input type="checkbox" [checked]="prenda.reingresa" (change)="toggleReingresa(i)" [disabled]="!prenda.seleccionada" />
+                    Reingresa al catálogo
+                  </label>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Categoría del motivo</label>
+          <select class="select" [(ngModel)]="registrar().motivoCategoria">
+            <option value="">Sin categoría</option>
+            @for (motivo of motivos; track motivo.valor) {
+              <option [value]="motivo.valor">{{ motivo.etiqueta }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Monto a reembolsar (Bs)</label>
+          <input class="input" type="number" min="0" step="0.01" [ngModel]="registrar().monto" (ngModelChange)="cambiarMonto($event)" />
+        </div>
       </div>
 
       <div class="field">
-        <label>Monto a reembolsar (Bs)</label>
-        <input
-          class="input"
-          type="number"
-          min="0"
-          step="0.01"
-          [ngModel]="registrar().monto ?? ''"
-          (ngModelChange)="cambiarMonto($event)"
-          placeholder="Se reembolsará como máximo lo cobrado"
-        />
-        <span class="hint">
-          Total de la venta: {{ moneda(totalVentaDeVentaSeleccionada()) }}. El sistema no devolverá más de lo cobrado.
-        </span>
+        <label>Método de reembolso</label>
+        <select class="select" [(ngModel)]="registrar().reembolsoMetodoId">
+          <option [ngValue]="null">Sin especificar</option>
+          @for (metodo of metodosPago(); track metodo.id) {
+            <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Motivo</label>
+        <textarea class="input" rows="2" placeholder="Describe brevemente el motivo…" [(ngModel)]="registrar().motivo"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Nota interna (opcional)</label>
+        <textarea class="input" rows="2" [(ngModel)]="registrar().nota"></textarea>
       </div>
 
       @if (registrar().error) {
@@ -189,7 +333,7 @@
 @if (aprobarObjetivo(); as devolucion) {
   <app-confirm-dialog
     title="Aprobar devolución"
-    [message]="'Se aprobará la devolución de la venta ' + numeroVenta(devolucion) + ' por ' + moneda(devolucion.monto_reembolsado) + '. Las prendas volverán a Disponible y la caja registrará el egreso.'"
+    [message]="'Se aprobará la devolución de la venta ' + numeroVenta(devolucion) + ' por ' + moneda(devolucion.monto_reembolsado) + '. Las prendas que reingresan volverán a Disponible.'"
     confirmLabel="Aprobar devolución"
     (confirm)="confirmarAprobar()"
     (cancel)="cancelarAprobar()"
@@ -197,4 +341,70 @@
   @if (aprobando()) {
     <app-spinner [size]="20" />
   }
+}
+
+@if (rechazarObjetivo(); as devolucion) {
+  <app-confirm-dialog
+    title="Rechazar devolución"
+    [message]="'Se rechazará la devolución de la venta ' + numeroVenta(devolucion) + '. Las prendas no reingresarán y no se registrará reembolso.'"
+    confirmLabel="Rechazar"
+    tone="danger"
+    (confirm)="confirmarRechazar()"
+    (cancel)="cancelarRechazar()"
+  />
+  @if (rechazando()) {
+    <app-spinner [size]="20" />
+  }
+}
+
+@if (reembolsarObjetivo(); as devolucion) {
+  <app-confirm-dialog
+    title="Reembolsar devolución"
+    [message]="'Se registrará el reembolso de la devolución de la venta ' + numeroVenta(devolucion) + ' por ' + moneda(devolucion.monto_reembolsado) + '. Se marcarán los pagos y se registrará el egreso de caja.'"
+    confirmLabel="Reembolsar"
+    (confirm)="confirmarReembolsar()"
+    (cancel)="cancelarReembolsar()"
+  />
+  @if (reembolsando()) {
+    <app-spinner [size]="20" />
+  }
+}
+
+@if (imprimiendo(); as devolucion) {
+  <div class="print-area">
+    <div class="comprobante">
+      <div class="comprobante-header">
+        <div class="comprobante-titulo">EVERLY</div>
+        <div class="comprobante-sub">Comprobante de devolución</div>
+        <div class="comprobante-meta">
+          <div><span>N° devolución</span><span>{{ devolucion.id }}</span></div>
+          <div><span>Venta</span><span>{{ numeroVenta(devolucion) }}</span></div>
+          <div><span>Pedido</span><span>{{ numeroPedido(devolucion) }}</span></div>
+          <div><span>Fecha</span><span>{{ formatearFecha(devolucion.created_at) }}</span></div>
+          <div><span>Cliente</span><span>{{ nombreCliente(devolucion) }}</span></div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Prenda</th><th>Precio</th><th>Reingresa</th></tr>
+        </thead>
+        <tbody>
+          @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
+            <tr>
+              <td>{{ nombrePrenda(prenda) }}</td>
+              <td>{{ moneda(prenda.precio_unitario) }}</td>
+              <td>{{ prenda.reingresa === false ? 'No' : 'Sí' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3">Sin prendas registradas.</td></tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="comprobante-totales">
+        <div class="row-between total-row"><span>Reembolsado</span><span>{{ moneda(devolucion.monto_reembolsado) }}</span></div>
+      </div>
+    </div>
+  </div>
 }

@@ -9,14 +9,18 @@ export interface Conteo {
 
 export type EstadoConteo = Conteo & { estado: string };
 
+export type EstadoConteoValor = { estado: string; total: number; valor: number };
+
 export interface InventarioResumen {
   total: number;
-  por_estado: EstadoConteo[];
+  valor_total: number;
+  por_estado: EstadoConteoValor[];
   publicados: number;
   no_publicados: number;
+  ocultas: { total: number; valor: number };
+  sin_rotacion: Record<string, number>;
   por_categoria: Conteo[];
   por_talla: Conteo[];
-  por_rango_precio: Conteo[];
 }
 
 /** Pedido que aún requiere acción: ni completado ni cancelado. */

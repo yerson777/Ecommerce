@@ -1,6 +1,7 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
 import {
   ComparacionPeriodo,
+  GananciaPorOrigen,
   ProductoMasVendido,
   ReporteFiltros,
   TiempoPromedioVenta,
@@ -11,6 +12,7 @@ import {
 } from '../../../../core/models/reporte';
 import { ReportesService } from '../../../../core/services/reportes.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { imprimirReporteA4 } from '../../../../core/utils/impresion';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state';
 import { BadgeComponent } from '../../../../shared/components/badge/badge';
 import { ChartBarsComponent } from '../../../../shared/components/chart-bars/chart-bars';
@@ -38,6 +40,7 @@ export class ReportesVentasComponent {
   readonly porMarca = signal<VentasPorMarca[]>([]);
   readonly tiempoVenta = signal<TiempoPromedioVenta | null>(null);
   readonly comparacion = signal<ComparacionPeriodo | null>(null);
+  readonly gananciaOrigen = signal<GananciaPorOrigen | null>(null);
   readonly cargando = signal(true);
   error: string | null = null;
 
@@ -117,6 +120,15 @@ export class ReportesVentasComponent {
       error: (err) => this.toast.error(err.message ?? 'No se pudo cargar la comparación con el período anterior.'),
     });
 
+    this.reportesService.gananciaPorOrigen(f).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.gananciaOrigen.set(res.data);
+        }
+      },
+      error: (err) => this.toast.error(err.message ?? 'No se pudo cargar la ganancia por origen.'),
+    });
+
     this.cargando.set(false);
   }
 
@@ -155,6 +167,43 @@ export class ReportesVentasComponent {
   colorPorIndice(indice: number): string {
     const paleta = ['#a13a75', '#c9a227', '#2f6f9f', '#1f8a58', '#b26a00', '#7a5fa0', '#c0392b', '#8a5a44'];
     return paleta[indice % paleta.length];
+  }
+
+  chartOrigen(): ChartDato[] {
+    const filas = this.gananciaOrigen()?.por_origen ?? [];
+    return filas
+      .filter((f) => f.origen === 'fardo_coreano' || f.origen === 'fardo_americano')
+      .map((f) => ({
+        etiqueta: f.etiqueta,
+        valor: parseFloat(f.ganancia),
+        color: f.origen === 'fardo_coreano' ? '#2f6f9f' : '#a13a75',
+      }));
+  }
+
+  ganadorTexto(): string {
+    const ganador = this.gananciaOrigen()?.comparacion?.ganador;
+    if (ganador === 'fardo_coreano') {
+      return 'Fardo coreano';
+    }
+    if (ganador === 'fardo_americano') {
+      return 'Fardo americano';
+    }
+    return 'Empate';
+  }
+
+  ganadorTone(): 'success' | 'info' {
+    const ganador = this.gananciaOrigen()?.comparacion?.ganador;
+    return ganador === 'empate' ? 'info' : 'success';
+  }
+
+  diferenciaPctTexto(): string {
+    const pct = this.gananciaOrigen()?.comparacion?.diferencia_pct;
+    if (pct === null || pct === undefined) {
+      return '—';
+    }
+    const numero = parseFloat(pct);
+    const signo = numero > 0 ? '+' : '';
+    return `${signo}${numero.toFixed(1)}%`;
   }
 
   moneda(valor: string | number | null | undefined): string {
@@ -200,7 +249,7 @@ export class ReportesVentasComponent {
   }
 
   imprimir(): void {
-    window.print();
+    imprimirReporteA4('Everly');
   }
 
   rangoTexto(): string {

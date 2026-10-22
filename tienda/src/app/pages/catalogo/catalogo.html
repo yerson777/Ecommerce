@@ -19,7 +19,10 @@
           [class.carrusel-slide--enlace]="!!banner.enlace"
           (click)="carrusel.abrir(banner)"
         >
-          <img class="carrusel-img" [src]="banner.url" [alt]="banner.titulo ?? 'Banner'" />
+          <picture>
+            <source media="(max-width: 640px)" [srcset]="banner.url_movil ?? banner.url" />
+            <img class="carrusel-img" [src]="banner.url" [alt]="banner.titulo ?? 'Banner'" />
+          </picture>
           <div class="carrusel-overlay" *ngIf="banner.titulo || banner.subtitulo">
             <span class="carrusel-titulo" *ngIf="banner.titulo">{{ banner.titulo }}</span>
             <span class="carrusel-subtitulo" *ngIf="banner.subtitulo">{{ banner.subtitulo }}</span>
@@ -112,11 +115,22 @@
 
       <button
         class="btn btn-ghost btn-sm"
-        *ngIf="busqueda() || categoriaActiva() !== null || tallaActiva() !== null"
+        *ngIf="busqueda() || categoriaActiva() !== null || tallaActiva() !== null || ofertaActiva() !== null"
         (click)="limpiarFiltros()"
       >
         Limpiar filtros
       </button>
+    </div>
+
+    <div class="oferta-banner" *ngIf="ofertaEncabezado() as oferta">
+      <span class="oferta-banner__titulo">🏷️ {{ oferta.nombre }}</span>
+      <span class="oferta-banner__detalle">
+        @if (oferta.tipo === 'porcentaje') {
+          {{ oferta.valor }}% de descuento
+        } @else {
+          $ {{ oferta.valor }} de descuento
+        }
+      </span>
     </div>
 
     <ng-container *ngIf="!cargando() && !error()">
@@ -139,6 +153,9 @@
           <span class="badge badge-success producto-nuevo" *ngIf="producto.es_nuevo"
             >Nuevo ingreso</span
           >
+          <span class="badge producto-descuento" *ngIf="tieneOferta(producto)">
+            -{{ producto.descuento_porcentaje }}%
+          </span>
           <div class="producto-body">
             <div class="producto-nombre">{{ producto.nombre }}</div>
             <div class="producto-meta">
@@ -146,7 +163,13 @@
               <span *ngIf="producto.talla?.nombre"> · Talle {{ producto.talla?.nombre }}</span>
               <span *ngIf="producto.color"> · {{ producto.color }}</span>
             </div>
-            <div class="producto-precio">{{ formatearPrecio(producto.precio) }}</div>
+            <div class="producto-precio" *ngIf="tieneOferta(producto)">
+              <span class="precio-tachado">{{ formatearPrecio(producto.precio) }}</span>
+              <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(producto)) }}</span>
+            </div>
+            <div class="producto-precio" *ngIf="!tieneOferta(producto)">
+              {{ formatearPrecio(producto.precio) }}
+            </div>
             <button
               class="btn btn-primary"
               [class.btn-outline]="enCarrito(producto.id)"

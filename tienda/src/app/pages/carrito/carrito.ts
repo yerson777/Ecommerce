@@ -55,7 +55,9 @@ export class CarritoComponent implements OnDestroy {
     this.cuponMensaje.set(null);
     this.cuponError.set(false);
 
-    this.catalogo.validarCupon(codigo, this.subtotal()).subscribe({
+    this.catalogo.validarCupon(codigo, this.subtotal(), {
+      productos: this.items().map((item) => item.producto_id),
+    }).subscribe({
       next: (res) => {
         this.validandoCupon.set(false);
         const datos = res.data;

@@ -142,6 +142,7 @@ class InventarioService
                     'venta_id' => $venta->id,
                     'producto_id' => $producto->id,
                     'precio_unitario' => $producto->precio,
+                    'costo_unitario' => $producto->costo,
                 ]);
             } catch (UniqueConstraintViolationException) {
                 throw new InventarioException('La prenda ya fue vendida en otra transacción.');

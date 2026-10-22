@@ -1,0 +1,80 @@
+<app-modal title="Clientes duplicados" width="760px" (closed)="cerrar()">
+  <div class="duplicados">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="26" />
+      </div>
+    } @else if (grupos().length === 0) {
+      <p class="vacio">No se encontraron clientes duplicados. Todos los teléfonos y correos son únicos.</p>
+    } @else {
+      <p class="intro">
+        Estos clientes comparten teléfono o correo. Elegí quién conserva el historial (principal) y uní el resto.
+        Los clientes absorbidos no se eliminan: se ocultan del listado.
+      </p>
+
+      @for (grupo of grupos(); track $index; let gi = $index) {
+        <div class="grupo">
+          <div class="grupo-cabecera">
+            <span class="grupo-titulo">Grupo {{ gi + 1 }} · {{ grupo.length }} clientes</span>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="unir(gi)"
+              [disabled]="uniendo(gi)"
+            >
+              {{ uniendo(gi) ? 'Uniendo…' : 'Unir ' + grupo.length + ' clientes' }}
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Principal</th>
+                  <th>Cliente</th>
+                  <th>Teléfono</th>
+                  <th>Correo</th>
+                  <th>Ciudad</th>
+                  <th>Pedidos</th>
+                  <th>Último pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cliente of grupo; track cliente.id) {
+                  <tr [class.es-principal]="esPrincipal(gi, cliente.id)">
+                    <td>
+                      <input
+                        type="radio"
+                        [name]="'principal-' + gi"
+                        [checked]="esPrincipal(gi, cliente.id)"
+                        (change)="elegirPrincipal(gi, cliente.id)"
+                      />
+                    </td>
+                    <td>
+                      <div class="nombre">{{ cliente.nombre }}</div>
+                      @if (cliente.bloqueado) {
+                        <app-badge tone="danger">Bloqueado</app-badge>
+                      }
+                      @if (esPrincipal(gi, cliente.id)) {
+                        <app-badge tone="primary">Principal</app-badge>
+                      }
+                    </td>
+                    <td class="muted">{{ cliente.telefono ?? '—' }}</td>
+                    <td class="muted">{{ cliente.email ?? '—' }}</td>
+                    <td class="muted">{{ cliente.ciudad ?? '—' }}</td>
+                    <td>{{ cliente.pedidos_count }}</td>
+                    <td class="muted">{{ formatearFecha(cliente.fecha_ultimo_pedido) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrar()">Cerrar</button>
+    </div>
+  </div>
+</app-modal>

@@ -1,0 +1,219 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Categorías</h1>
+      <p class="page-subtitle">Organizá el catálogo en categorías y subcategorías</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nueva categoría</button>
+      <app-notification-center />
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nombre de la categoría…"
+          [ngModel]="busqueda()"
+          (ngModelChange)="busqueda.set($event)"
+        />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [ngModel]="filtroActivo()" (ngModelChange)="filtroActivo.set($event)">
+          <option value="">Todas</option>
+          <option value="1">Activas</option>
+          <option value="0">Ocultas</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="busqueda.set(''); filtroActivo.set('')">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando() && categorias().length === 0) {
+      <div class="center"><app-spinner [size]="28" /></div>
+    }
+
+    @if (!cargando() && filtradas().length === 0) {
+      <app-empty-state icon="🗂" title="Sin categorías" message="No hay categorías que coincidan con la búsqueda.">
+        <button type="button" class="btn btn-primary btn-sm" (click)="abrirCrear()">Crear categoría</button>
+      </app-empty-state>
+    }
+
+    @if (filtradas().length > 0) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Nombre</th>
+              <th>Slug</th>
+              <th>Prendas</th>
+              <th>Subcategorías</th>
+              <th>Orden</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (categoria of filtradas(); track categoria.id) {
+              <tr>
+                <td>
+                  @if (categoria.imagen_url) {
+                    <img class="thumb" [src]="categoria.imagen_url" [alt]="categoria.nombre" />
+                  } @else {
+                    <div class="thumb thumb--empty">—</div>
+                  }
+                </td>
+                <td>
+                  <strong>{{ categoria.nombre }}</strong>
+                  @if (categoria.parent?.nombre) {
+                    <div class="muted small">en {{ categoria.parent?.nombre }}</div>
+                  }
+                </td>
+                <td class="mono">{{ categoria.slug }}</td>
+                <td>{{ categoria.productos_count ?? 0 }}</td>
+                <td>{{ categoria.hijos_count ?? 0 }}</td>
+                <td>{{ categoria.orden }}</td>
+                <td>
+                  <label class="switch" [title]="categoria.activo ? 'Ocultar' : 'Activar'">
+                    <input type="checkbox" [checked]="categoria.activo" (change)="cambiarActivo(categoria)" />
+                    <span class="slider"></span>
+                  </label>
+                </td>
+                <td>
+                  <div class="actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(categoria)">Editar</button>
+                    @if ((categoria.productos_count ?? 0) > 0) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirMover(categoria)">Mover prendas</button>
+                    }
+                    <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar(categoria)">Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Formulario -->
+@if (modalAbierto()) {
+  <app-modal [title]="editando() ? 'Editar categoría' : 'Nueva categoría'" width="520px" (closed)="cerrarModal()">
+    @if (errorFormulario()) {
+      <div class="error-banner">{{ errorFormulario() }}</div>
+    }
+
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Nombre</label>
+        <input class="input" type="text" [(ngModel)]="form.nombre" name="nombre" maxlength="100" />
+        @if (errorDe('nombre')) {
+          <span class="field-error">{{ errorDe('nombre') }}</span>
+        }
+      </div>
+
+      <div class="field field-full">
+        <label>Categoría superior (opcional)</label>
+        <select class="select" [(ngModel)]="form.parent_id" name="parent_id">
+          <option [ngValue]="null">Ninguna (categoría principal)</option>
+          @for (opcion of opcionesPadre(); track opcion.id) {
+            <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+          }
+        </select>
+        @if (errorDe('parent_id')) {
+          <span class="field-error">{{ errorDe('parent_id') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Orden</label>
+        <input class="input" type="number" min="0" [(ngModel)]="form.orden" name="orden" />
+        @if (errorDe('orden')) {
+          <span class="field-error">{{ errorDe('orden') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Slug (opcional)</label>
+        <input class="input" type="text" [(ngModel)]="form.slug" name="slug" maxlength="120" placeholder="Se genera del nombre" />
+        @if (errorDe('slug')) {
+          <span class="field-error">{{ errorDe('slug') }}</span>
+        }
+      </div>
+
+      <div class="field field-full">
+        <label>Imagen</label>
+        <div class="upload">
+          @if (form.preview) {
+            <img class="preview" [src]="form.preview" alt="Vista previa" />
+            <button type="button" class="btn btn-ghost btn-sm" (click)="quitarImagen()">Quitar imagen</button>
+          }
+          <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
+          <span class="muted small">jpeg, png, webp o gif · máx. 4 MB</span>
+        </div>
+        @if (errorDe('imagen')) {
+          <span class="field-error">{{ errorDe('imagen') }}</span>
+        }
+      </div>
+
+      <div class="field field-full">
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.activo" name="activo" />
+          <span>Visible en la tienda</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="actions end">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </app-modal>
+}
+
+<!-- Mover prendas -->
+@if (moverObjetivo(); as origen) {
+  <app-modal title="Mover prendas" width="460px" (closed)="cerrarMover()">
+    <p class="muted">
+      Se reasignarán las {{ origen.productos_count ?? 0 }} prendas de <strong>{{ origen.nombre }}</strong> a otra categoría.
+    </p>
+    <div class="field">
+      <label>Categoría destino</label>
+      <select class="select" [(ngModel)]="destinoMover" name="destino">
+        <option [ngValue]="null">Selecciona…</option>
+        @for (opcion of opcionesDestino(); track opcion.id) {
+          <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="actions end">
+      <button type="button" class="btn btn-ghost" (click)="cerrarMover()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="confirmarMover()" [disabled]="destinoMover == null">
+        Mover prendas
+      </button>
+    </div>
+  </app-modal>
+}
+
+<!-- Eliminar -->
+@if (eliminarObjetivo; as categoria) {
+  <app-confirm-dialog
+    title="Eliminar categoría"
+    [message]="'¿Eliminar la categoría ' + categoria.nombre + '? Solo es posible si no tiene prendas ni subcategorías.'"
+    confirmLabel="Eliminar"
+    (confirm)="confirmarEliminar()"
+    (cancel)="eliminarObjetivo = null"
+  />
+}

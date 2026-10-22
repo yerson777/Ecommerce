@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CategoriaRef, Producto } from '../../core/models/producto';
 import { MetodoPagoRef } from '../../core/models/pago';
 import { MetodoEntregaConfig } from '../../core/models/configuracion';
@@ -51,6 +52,7 @@ export class VentasComponent implements OnInit {
   private readonly clientesService = inject(ClientesService);
   private readonly configuracionService = inject(ConfiguracionService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   readonly filtros = signal({
     busqueda: '',
@@ -264,11 +266,25 @@ export class VentasComponent implements OnInit {
   }
 
   imprimirComprobante(): void {
+    document.body.classList.add('printeando-comprobante');
     window.print();
+    document.body.classList.remove('printeando-comprobante');
   }
 
   puedeImprimir(): boolean {
     return !!this.detalle();
+  }
+
+  registrarDevolucion(): void {
+    const venta = this.detalle();
+    if (!venta) {
+      return;
+    }
+    this.router.navigate(['/devoluciones'], { queryParams: { venta: venta.id } });
+  }
+
+  puedeDevolver(): boolean {
+    return !!this.detalle() && !this.detalle()?.anulada_en;
   }
 
   nombreProducto(productoId: number): string {

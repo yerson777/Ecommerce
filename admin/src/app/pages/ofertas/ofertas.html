@@ -1,0 +1,312 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Ofertas</h1>
+      <p class="page-subtitle">Descuentos por prenda o categoría. El precio base no se modifica</p>
+    </div>
+
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nueva oferta</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field grow">
+        <label>Buscar</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Nombre de la oferta…"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+        />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option [ngValue]="''">Todos</option>
+          @for (estado of estados; track estado) {
+            <option [ngValue]="estado">{{ etiquetasEstado[estado] }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="34" />
+      </div>
+    } @else if (ofertas().length === 0) {
+      <app-empty-state
+        icon="🏷️"
+        title="Sin ofertas"
+        message="No hay ofertas creadas todavía."
+      >
+        <button type="button" class="btn btn-ghost" (click)="abrirCrear()">Crear la primera</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descuento</th>
+              <th>Alcance</th>
+              <th>Vigencia</th>
+              <th>Cupón</th>
+              <th>Estado</th>
+              <th>Ventas</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (oferta of ofertas(); track oferta.id) {
+              <tr>
+                <td><strong>{{ oferta.nombre }}</strong></td>
+                <td>
+                  <app-badge [tone]="oferta.tipo === 'porcentaje' ? 'primary' : 'info'">
+                    {{ valorTexto(oferta) }}
+                  </app-badge>
+                </td>
+                <td class="muted">{{ alanceTexto(oferta) }}</td>
+                <td class="muted nowrap">
+                  {{ oferta.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
+                  →
+                  {{ oferta.fecha_fin | date: 'dd/MM/yy HH:mm' }}
+                </td>
+                <td class="muted">
+                  {{ oferta.permitir_cupon ? 'Acumulable' : 'No acumula' }}
+                </td>
+                <td>
+                  <app-badge [tone]="tonosEstado[oferta.estado]">
+                    {{ etiquetasEstado[oferta.estado] }}
+                  </app-badge>
+                </td>
+                <td class="muted">{{ oferta.ventas_count }}</td>
+                <td class="align-right">
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(oferta)">
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      (click)="alternarActivo(oferta)"
+                      [disabled]="alternandoId === oferta.id"
+                    >
+                      {{ oferta.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm danger"
+                      (click)="pedirEliminar(oferta)"
+                      [disabled]="oferta.ventas_count > 0"
+                      [title]="oferta.ventas_count > 0 ? 'Tiene ventas: desactívala en lugar de eliminarla' : 'Eliminar'"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar oferta' : 'Nueva oferta'"
+    width="720px"
+    (closed)="cerrarModal()"
+  >
+    <div class="modal-body">
+      @if (errorFormulario()) {
+        <div class="alert alert-error">{{ errorFormulario() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field field-full">
+          <label>Nombre</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Ej: Liquidación de verano"
+            [(ngModel)]="form.nombre"
+          />
+        </div>
+
+        <div class="field">
+          <label>Tipo de descuento</label>
+          <select class="select" [(ngModel)]="form.tipo">
+            @for (tipo of tipos; track tipo) {
+              <option [ngValue]="tipo">{{ etiquetasTipo[tipo] }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>{{ form.tipo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto ($)' }}</label>
+          <input
+            class="input"
+            type="number"
+            min="0.01"
+            step="0.01"
+            [(ngModel)]="form.valor"
+          />
+        </div>
+
+        <div class="field">
+          <label>Inicio</label>
+          <input class="input" type="datetime-local" [(ngModel)]="form.fecha_inicio" />
+        </div>
+
+        <div class="field">
+          <label>Fin</label>
+          <input class="input" type="datetime-local" [(ngModel)]="form.fecha_fin" />
+        </div>
+
+        <div class="field field-full">
+          <label>Aplicar a</label>
+          <div class="segmented">
+            <button
+              type="button"
+              class="segment"
+              [class.segment--active]="form.aplicar_a === 'prendas'"
+              (click)="form.aplicar_a = 'prendas'"
+            >
+              Prendas
+            </button>
+            <button
+              type="button"
+              class="segment"
+              [class.segment--active]="form.aplicar_a === 'categorias'"
+              (click)="form.aplicar_a = 'categorias'"
+            >
+              Categorías
+            </button>
+          </div>
+        </div>
+
+        @if (form.aplicar_a === 'prendas') {
+          <div class="field field-full">
+            <label>Buscar prendas disponibles</label>
+            <input
+              class="input"
+              type="text"
+              placeholder="Código o nombre…"
+              [(ngModel)]="busquedaPrendas"
+              (input)="buscarPrendas()"
+            />
+            @if (buscandoPrendas()) {
+              <span class="hint muted">Buscando…</span>
+            }
+
+            @if (resultadosBusqueda().length > 0) {
+              <div class="cat-grid">
+                @for (producto of resultadosBusqueda(); track producto.id) {
+                  <label class="cat-item">
+                    <input
+                      type="checkbox"
+                      [checked]="estaSeleccionado(producto.id)"
+                      (change)="alternarProducto(producto)"
+                    />
+                    <span>{{ producto.nombre }} · {{ producto.codigo }}</span>
+                  </label>
+                }
+              </div>
+            }
+
+            @if (productosSeleccionados().length > 0) {
+              <div class="chips">
+                @for (producto of productosSeleccionados(); track producto.id) {
+                  <span class="chip">
+                    {{ producto.nombre }} · {{ producto.codigo }}
+                    <button
+                      type="button"
+                      class="chip-x"
+                      (click)="quitarProducto(producto.id)"
+                      title="Quitar"
+                    >
+                      ×
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+
+            <span class="hint muted">
+              Solo se pueden incluir prendas disponibles (no vendidas ni reservadas).
+            </span>
+          </div>
+        }
+
+        @if (form.aplicar_a === 'categorias') {
+          <div class="field field-full">
+            <label>Categorías</label>
+            <div class="cat-grid">
+              @for (cat of categorias(); track cat.id) {
+                <label class="cat-item">
+                  <input
+                    type="checkbox"
+                    [checked]="categoriaMarcada(cat.id)"
+                    (change)="alternarCategoria(cat.id)"
+                  />
+                  <span>{{ cat.nombre }}</span>
+                </label>
+              } @empty {
+                <span class="muted">No hay categorías cargadas.</span>
+              }
+            </div>
+            <span class="hint muted">
+              La oferta aplica a las prendas disponibles de las categorías elegidas.
+            </span>
+          </div>
+        }
+      </div>
+
+      <div class="checks">
+        <div class="check">
+          <input type="checkbox" id="oferta-cupon" [(ngModel)]="form.permitir_cupon" />
+          <label for="oferta-cupon">Permite acumular cupón</label>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="oferta-activa" [(ngModel)]="form.activo" />
+          <label for="oferta-activa">Oferta activa</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        @if (guardando()) {
+          <app-spinner [size]="16" />
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+  </app-modal>
+}
+
+@if (eliminarObjetivo) {
+  <app-confirm-dialog
+    title="Eliminar oferta"
+    message="¿Seguro que querés eliminar la oferta? Esta acción no se puede deshacer."
+    confirmLabel="Eliminar"
+    tone="danger"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cancelarEliminar()"
+  />
+}

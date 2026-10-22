@@ -43,4 +43,14 @@ export class ProductosService extends ApiService {
   historial(id: number): Observable<ApiResponse<ProductoHistorialEntry[]>> {
     return this.get<ApiResponse<ProductoHistorialEntry[]>>(`/v1/admin/productos/${id}/historial`);
   }
+
+  duplicar(id: number): Observable<ApiResponse<Producto>> {
+    return this.post<ApiResponse<Producto>>(`/v1/admin/productos/${id}/duplicar`, {});
+  }
+
+  exportar(filtros: ProductoFiltros): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/v1/admin/productos/exportar${toQueryString({ ...filtros })}`, {
+      responseType: 'blob',
+    });
+  }
 }

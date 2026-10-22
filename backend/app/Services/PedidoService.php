@@ -19,8 +19,10 @@ use App\Models\Reserva;
 use App\Models\Setting;
 use App\Models\Venta;
 use App\Models\VentaItem;
+use App\Support\Contacto;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -39,6 +41,15 @@ use Illuminate\Support\Str;
  */
 class PedidoService
 {
+    /**
+     * Avisos generados al crear el último pedido (precios que cambiaron,
+     * cupón no aplicado por regla de no acumulación, etc.). Los consume el
+     * controlador para devolverlos al cliente en la confirmación.
+     *
+     * @var string[]
+     */
+    public array $avisos = [];
+
     public function __construct(private readonly InventarioService $inventario) {}
 
     /**
@@ -59,6 +70,7 @@ class PedidoService
      *     metodo_pago_id: int,
      *     comprobante_path?: string|null,
      *     cupon_codigo?: string|null,
+     *     precios_esperados?: array<array{producto_id: int, precio: float}>,
      * }  $datos
      *
      * @throws InventarioException si alguna prenda ya no está disponible.
@@ -66,6 +78,8 @@ class PedidoService
     public function crearDesdeTienda(array $datos): Pedido
     {
         return DB::transaction(function () use ($datos) {
+            $this->avisos = [];
+
             $productosIds = array_values(array_unique(array_map('intval', $datos['productos'])));
 
             $unidades = [];
@@ -88,20 +102,48 @@ class PedidoService
             /** @var MetodoPago $metodoPago */
             $metodoPago = MetodoPago::query()->findOrFail((int) $datos['metodo_pago_id']);
 
-            $subtotal = (float) array_sum(array_map(fn (Producto $p) => (float) $p->precio, $unidades));
-            $costoEnvio = (float) $metodoEntrega->costo;
+            $precios = $this->resolverPrecios($unidades);
+            $resolucion = $this->resolverDescuentos($unidades, $precios, $datos, [
+                'telefono' => $datos['telefono'],
+                'email' => $datos['email'] ?? null,
+            ]);
 
-            $cupon = null;
-            $descuento = 0.0;
-            if (! empty($datos['cupon_codigo'])) {
-                $aplicado = app(CuponService::class)->aplicar(trim($datos['cupon_codigo']), $subtotal);
-                $cupon = $aplicado['cupon'];
-                $descuento = $aplicado['descuento'];
-            }
+            $precios = $resolucion['precios'];
+            $subtotal = $resolucion['subtotal'];
+            $costoEnvio = (float) $metodoEntrega->costo;
+            $descuento = $resolucion['descuento'];
+            $cupon = $resolucion['cupon'];
+            $usoCupon = $resolucion['uso'];
+
+            $this->avisos = array_merge(
+                $resolucion['avisos'],
+                $this->avisosDePreciosEsperados($unidades, $precios, $datos),
+            );
 
             $total = max(0.0, $subtotal - $descuento) + $costoEnvio;
 
-            $cliente = Cliente::query()->firstOrNew(['telefono' => $datos['telefono']]);
+            // Bloqueo de clientes: se valida en el servidor comparando el
+            // teléfono y el correo normalizados. El mensaje es neutro para no
+            // revelar que el cliente está bloqueado.
+            if ($this->clienteBloqueado($datos['telefono'], $datos['email'] ?? null)) {
+                throw new InventarioException('No pudimos procesar tu pedido, contáctanos por WhatsApp.');
+            }
+
+            $telefonoNorm = Contacto::normalizarTelefono($datos['telefono']);
+
+            // Se identifica al cliente por teléfono normalizado para no duplicar
+            // fichas por diferencias de formato. No se reutiliza por correo para
+            // no fusionar a distintas personas que comparten un mismo email.
+            $cliente = null;
+            if ($telefonoNorm) {
+                $cliente = Cliente::query()->where('telefono_normalizado', $telefonoNorm)->first();
+            }
+            if (! $cliente) {
+                $cliente = new Cliente;
+            }
+
+            // El mutador de Cliente sincroniza telefono_normalizado.
+            $cliente->telefono = $datos['telefono'];
             $cliente->fill([
                 'nombre' => trim($datos['nombre']),
                 'email' => $datos['email'] ?? $cliente->email,
@@ -133,11 +175,7 @@ class PedidoService
             ]);
 
             foreach ($unidades as $producto) {
-                PedidoItem::create([
-                    'pedido_id' => $pedido->id,
-                    'producto_id' => $producto->id,
-                    'precio_unitario' => (float) $producto->precio,
-                ]);
+                $this->crearItemPedido($pedido, $producto, $precios[$producto->id]);
             }
 
             $venceEn = now()->addHours($this->horasReserva());
@@ -145,6 +183,10 @@ class PedidoService
             foreach ($unidades as $producto) {
                 // Reserva cada pieza única dentro del mismo bloqueo de fila.
                 $this->inventario->reservar($producto->id, $venceEn, $pedido->id);
+            }
+
+            if ($usoCupon) {
+                app(CuponService::class)->vincularUso($usoCupon, $pedido);
             }
 
             $this->registrarHistorial($pedido, null, Pedido::ESTADO_PENDIENTE, 'Pedido creado desde la tienda.');
@@ -157,6 +199,7 @@ class PedidoService
                 'metodoEntrega',
                 'items.producto.talla',
                 'items.producto.imagenes',
+                'items.oferta',
             ]);
         });
     }
@@ -186,6 +229,8 @@ class PedidoService
     public function crearDesdeAdmin(array $datos): Pedido
     {
         return DB::transaction(function () use ($datos) {
+            $this->avisos = [];
+
             $productosIds = array_values(array_unique(array_map('intval', $datos['productos'])));
 
             $unidades = [];
@@ -211,18 +256,22 @@ class PedidoService
             /** @var Cliente $cliente */
             $cliente = Cliente::query()->findOrFail((int) $datos['cliente_id']);
 
-            $subtotal = (float) array_sum(array_map(fn (Producto $p) => (float) $p->precio, $unidades));
-            $costoEnvio = (float) $metodoEntrega->costo;
+            $precios = $this->resolverPrecios($unidades);
+            $resolucion = $this->resolverDescuentos($unidades, $precios, [
+                'cupon_codigo' => $datos['cupon_codigo'] ?? null,
+                'descuento' => $datos['descuento'] ?? null,
+            ], [
+                'telefono' => $cliente->telefono,
+                'email' => $cliente->email,
+                'cliente_id' => $cliente->id,
+            ]);
 
-            $cupon = null;
-            $descuento = 0.0;
-            if (! empty($datos['cupon_codigo'])) {
-                $aplicado = app(CuponService::class)->aplicar(trim($datos['cupon_codigo']), $subtotal);
-                $cupon = $aplicado['cupon'];
-                $descuento = $aplicado['descuento'];
-            } elseif (! empty($datos['descuento']) && (float) $datos['descuento'] > 0) {
-                $descuento = min((float) $datos['descuento'], $subtotal);
-            }
+            $precios = $resolucion['precios'];
+            $subtotal = $resolucion['subtotal'];
+            $costoEnvio = (float) $metodoEntrega->costo;
+            $descuento = $resolucion['descuento'];
+            $cupon = $resolucion['cupon'];
+            $usoCupon = $resolucion['uso'];
 
             $total = max(0.0, $subtotal - $descuento) + $costoEnvio;
 
@@ -238,7 +287,7 @@ class PedidoService
                 'metodo_pago_id' => $metodoPago->id,
                 'metodo_entrega_id' => $metodoEntrega->id,
                 'estado' => Pedido::ESTADO_CONFIRMADO,
-                'subtotal' => round($subtotal, 2),
+                'subtotal' => $subtotal,
                 'costo_envio' => $costoEnvio,
                 'descuento' => round($descuento, 2),
                 'cupon_id' => $cupon?->id,
@@ -249,17 +298,17 @@ class PedidoService
             ]);
 
             foreach ($unidades as $producto) {
-                PedidoItem::create([
-                    'pedido_id' => $pedido->id,
-                    'producto_id' => $producto->id,
-                    'precio_unitario' => (float) $producto->precio,
-                ]);
+                $this->crearItemPedido($pedido, $producto, $precios[$producto->id]);
             }
 
             $venceEn = now()->addHours($this->horasReserva());
 
             foreach ($unidades as $producto) {
                 $this->inventario->reservar($producto->id, $venceEn, $pedido->id);
+            }
+
+            if ($usoCupon) {
+                app(CuponService::class)->vincularUso($usoCupon, $pedido);
             }
 
             $this->registrarHistorial($pedido, null, Pedido::ESTADO_CONFIRMADO, 'Venta presencial registrada.');
@@ -272,6 +321,7 @@ class PedidoService
                 'metodoEntrega',
                 'items.producto.talla',
                 'items.producto.imagenes',
+                'items.oferta',
             ]);
         });
     }
@@ -317,21 +367,28 @@ class PedidoService
     }
 
     /**
-     * Registra una devolución controlada del pedido.
+     * Registra una devolución controlada del pedido (flujo completo).
      *
-     * Efectos dentro de una sola transacción:
-     *  - Los pagos confirmados quedan marcados como "reembolsados".
-     *  - Se registra la devolución con su motivo y monto devuelto.
-     *  - Si hay dinero devuelto, se crea el egreso de caja correspondiente.
-     *  - Las prendas vendidas vuelven a estar disponibles en el catálogo.
+     * Encadena las tres fases: registrar (pendiente), aprobar (reingreso de
+     * prendas) y reembolsar (pagos + caja). Cada fase también puede invocarse
+     * por separado desde los endpoints administrativos.
+     *
+     * @param  array{
+     *     tipo?: string,
+     *     motivo_categoria?: string|null,
+     *     nota?: string|null,
+     *     reembolso_metodo_id?: int|null,
+     *     items?: array<int, array{producto_id?:int, reingresa?:bool}|int>
+     * }  $opciones
      *
      * @throws InventarioException si el pedido no admite una devolución.
      */
-    public function devolver(int $pedidoId, string $motivo, ?float $montoReembolso): Pedido
+    public function devolver(int $pedidoId, string $motivo, ?float $montoReembolso, array $opciones = []): Pedido
     {
-        $devolucion = $this->registrarDevolucionPendiente($pedidoId, $motivo, $montoReembolso);
+        $devolucion = $this->registrarDevolucionPendiente($pedidoId, $motivo, $montoReembolso, $opciones);
 
         $this->aprobarDevolucion($devolucion->id);
+        $this->reembolsarDevolucion($devolucion->id, $opciones['reembolso_metodo_id'] ?? null);
 
         return Pedido::query()
             ->with([
@@ -348,11 +405,20 @@ class PedidoService
 
     /**
      * Fase 1: registra la devolución como pendiente (sin efectos sobre el
-     * inventario, los pagos ni la caja). La aprobación es un paso aparte.
+     * inventario, los pagos ni la caja). Guarda las prendas incluidas y si
+     * cada una vuelve al catálogo.
+     *
+     * @param  array{
+     *     tipo?: string,
+     *     motivo_categoria?: string|null,
+     *     nota?: string|null,
+     *     reembolso_metodo_id?: int|null,
+     *     items?: array<int, array{producto_id?:int, reingresa?:bool}|int>
+     * }  $opciones
      */
-    public function registrarDevolucionPendiente(int $pedidoId, string $motivo, ?float $montoReembolso): Devolucion
+    public function registrarDevolucionPendiente(int $pedidoId, string $motivo, ?float $montoReembolso, array $opciones = []): Devolucion
     {
-        return DB::transaction(function () use ($pedidoId, $motivo, $montoReembolso) {
+        return DB::transaction(function () use ($pedidoId, $motivo, $montoReembolso, $opciones) {
             /** @var Pedido|null $pedido */
             $pedido = Pedido::query()
                 ->with(['items', 'pagos'])
@@ -374,37 +440,120 @@ class PedidoService
                 throw new InventarioException('El pedido ya tiene una devolución registrada.');
             }
 
+            $seleccion = $this->normalizarItemsDevolucion($pedido, $opciones['items'] ?? null);
+
+            $tipo = $opciones['tipo'] ?? null;
+            if ($tipo !== Devolucion::TIPO_TOTAL && $tipo !== Devolucion::TIPO_PARCIAL) {
+                $tipo = count($seleccion) < $pedido->items->count()
+                    ? Devolucion::TIPO_PARCIAL
+                    : Devolucion::TIPO_TOTAL;
+            }
+
             $pagado = (float) $pedido->pagos
                 ->where('estado', Pago::ESTADO_COMPLETADO)
                 ->sum('monto');
 
-            $aReembolsar = round(min($montoReembolso ?? $pagado, $pagado), 2);
+            $montoBase = $montoReembolso ?? (float) collect($seleccion)->sum('precio_unitario');
+            $aReembolsar = round(min($montoBase, $pagado), 2);
 
-            return Devolucion::create([
+            /** @var Devolucion $devolucion */
+            $devolucion = Devolucion::create([
                 'pedido_id' => $pedido->id,
                 'estado' => Devolucion::ESTADO_PENDIENTE,
+                'tipo' => $tipo,
                 'monto_reembolsado' => $aReembolsar,
+                'reembolso_metodo_id' => $opciones['reembolso_metodo_id'] ?? null,
                 'motivo' => $motivo,
+                'motivo_categoria' => $opciones['motivo_categoria'] ?? null,
+                'nota' => $opciones['nota'] ?? null,
                 'devuelto_en' => null,
             ]);
+
+            foreach ($seleccion as $item) {
+                $devolucion->items()->create([
+                    'pedido_item_id' => $item['pedido_item_id'],
+                    'producto_id' => $item['producto_id'],
+                    'precio_unitario' => $item['precio_unitario'],
+                    'reingresa' => $item['reingresa'],
+                ]);
+            }
+
+            return $devolucion->load('items');
         });
     }
 
     /**
-     * Fase 2: aprueba una devolución pendiente aplicando todos los efectos.
+     * Normaliza las prendas incluidas en la devolución.
      *
-     * Efectos dentro de una sola transacción:
-     *  - Los pagos confirmados quedan marcados como "reembolsados".
-     *  - Si hay dinero devuelto, se crea el egreso de caja correspondiente.
-     *  - Las prendas vuelven al catálogo (vendidas -> disponible, reservadas -> liberadas).
-     *  - El pedido pasa a estado "devuelto".
+     * Sin ítems indicados se incluyen TODAS las prendas del pedido con
+     * reingreso. Con ítems, se validan contra el pedido y se marca por prenda
+     * si vuelve al catálogo (reingresa) o queda fuera (dañada).
+     *
+     * @param  array<int, array{producto_id?:int, reingresa?:bool}|int>|null  $items
+     * @return array<int, array{pedido_item_id:int, producto_id:int, precio_unitario:float, reingresa:bool}>
+     */
+    private function normalizarItemsDevolucion(Pedido $pedido, ?array $items): array
+    {
+        /** @var Collection<int, PedidoItem> $disponibles */
+        $disponibles = $pedido->items->keyBy('producto_id');
+
+        if ($items === null || $items === []) {
+            return $disponibles->map(fn (PedidoItem $item) => [
+                'pedido_item_id' => $item->id,
+                'producto_id' => (int) $item->producto_id,
+                'precio_unitario' => (float) $item->precio_unitario,
+                'reingresa' => true,
+            ])->values()->all();
+        }
+
+        $seleccion = [];
+        $vistos = [];
+
+        foreach ($items as $entrada) {
+            $productoId = is_array($entrada) ? (int) ($entrada['producto_id'] ?? 0) : (int) $entrada;
+            $reingresa = is_array($entrada) ? (bool) ($entrada['reingresa'] ?? true) : true;
+
+            if (isset($vistos[$productoId])) {
+                continue;
+            }
+
+            /** @var PedidoItem|null $item */
+            $item = $disponibles->get($productoId);
+
+            if (! $item) {
+                throw new InventarioException('Una de las prendas seleccionadas no pertenece al pedido.');
+            }
+
+            $vistos[$productoId] = true;
+
+            $seleccion[] = [
+                'pedido_item_id' => $item->id,
+                'producto_id' => (int) $item->producto_id,
+                'precio_unitario' => (float) $item->precio_unitario,
+                'reingresa' => $reingresa,
+            ];
+        }
+
+        if ($seleccion === []) {
+            throw new InventarioException('Selecciona al menos una prenda para la devolución.');
+        }
+
+        return $seleccion;
+    }
+
+    /**
+     * Fase 2: aprueba una devolución pendiente.
+     *
+     * Reingresa al catálogo las prendas marcadas (o las libera si aún estaban
+     * reservadas) y, si la devolución es total, marca el pedido como "devuelto".
+     * No toca pagos ni caja: el reembolso es un paso aparte.
      */
     public function aprobarDevolucion(int $devolucionId): Devolucion
     {
         return DB::transaction(function () use ($devolucionId) {
             /** @var Devolucion|null $devolucion */
             $devolucion = Devolucion::query()
-                ->with(['pedido', 'pedido.items'])
+                ->with(['pedido', 'items'])
                 ->whereKey($devolucionId)
                 ->lockForUpdate()
                 ->first();
@@ -414,32 +563,17 @@ class PedidoService
             }
 
             if ($devolucion->estado !== Devolucion::ESTADO_PENDIENTE) {
-                throw new InventarioException('La devolución ya fue aprobada.');
+                throw new InventarioException('La devolución ya fue revisada.');
             }
 
             /** @var Pedido $pedido */
             $pedido = $devolucion->pedido;
 
-            $aReembolsar = (float) $devolucion->monto_reembolsado;
+            foreach ($devolucion->items as $item) {
+                if (! $item->reingresa) {
+                    continue;
+                }
 
-            // Cierra los pagos confirmados: el dinero vuelve al cliente.
-            $pedido->pagos()
-                ->where('estado', Pago::ESTADO_COMPLETADO)
-                ->update(['estado' => Pago::ESTADO_REEMBOLSADO]);
-
-            // Si hubo dinero devuelto, sale de la caja como egreso (reembolso).
-            if ($aReembolsar > 0) {
-                Movimiento::create([
-                    'tipo' => 'egreso',
-                    'monto' => $aReembolsar,
-                    'fuente' => 'ajuste',
-                    'descripcion' => 'Reembolso del pedido '.$pedido->numero_pedido.' · '.($devolucion->motivo ?: 'Devolución'),
-                    'fecha' => now()->toDateString(),
-                ]);
-            }
-
-            // Las prendas vendidas vuelven al catálogo; las reservadas se liberan.
-            foreach ($pedido->items as $item) {
                 $producto = Producto::query()->whereKey($item->producto_id)->lockForUpdate()->first();
 
                 if (! $producto) {
@@ -455,17 +589,107 @@ class PedidoService
                 };
             }
 
-            $estadoAnterior = $pedido->estado;
-            $pedido->forceFill(['estado' => Pedido::ESTADO_DEVUELTO])->save();
+            if ($devolucion->tipo === Devolucion::TIPO_TOTAL) {
+                $estadoAnterior = $pedido->estado;
+                $pedido->forceFill(['estado' => Pedido::ESTADO_DEVUELTO])->save();
+                $this->registrarHistorial($pedido, $estadoAnterior, Pedido::ESTADO_DEVUELTO, 'Devolución aprobada.');
+                event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
+            }
 
-            $this->registrarHistorial($pedido, $estadoAnterior, Pedido::ESTADO_DEVUELTO, 'Devolución aprobada.');
+            app(CuponService::class)->liberar($pedido);
 
             $devolucion->forceFill([
                 'estado' => Devolucion::ESTADO_APROBADA,
                 'devuelto_en' => now(),
+                'revisado_en' => now(),
             ])->save();
 
-            event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
+            return $devolucion->fresh('pedido');
+        });
+    }
+
+    /**
+     * Marca una devolución como reembolsada: cierra los pagos confirmados
+     * (solo en devolución total) y registra el egreso de caja si hay monto.
+     */
+    public function reembolsarDevolucion(int $devolucionId, ?int $metodoPagoId = null): Devolucion
+    {
+        return DB::transaction(function () use ($devolucionId, $metodoPagoId) {
+            /** @var Devolucion|null $devolucion */
+            $devolucion = Devolucion::query()
+                ->with(['pedido'])
+                ->whereKey($devolucionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $devolucion) {
+                throw new ModelNotFoundException('La devolución no existe.');
+            }
+
+            if (! in_array($devolucion->estado, [Devolucion::ESTADO_PENDIENTE, Devolucion::ESTADO_APROBADA], true)) {
+                throw new InventarioException('La devolución no está pendiente de reembolso.');
+            }
+
+            if ($metodoPagoId) {
+                $devolucion->reembolso_metodo_id = $metodoPagoId;
+            }
+
+            /** @var Pedido $pedido */
+            $pedido = $devolucion->pedido;
+
+            if ($devolucion->tipo === Devolucion::TIPO_TOTAL) {
+                $pedido->pagos()
+                    ->where('estado', Pago::ESTADO_COMPLETADO)
+                    ->update(['estado' => Pago::ESTADO_REEMBOLSADO]);
+            }
+
+            $aReembolsar = (float) $devolucion->monto_reembolsado;
+
+            if ($aReembolsar > 0) {
+                Movimiento::create([
+                    'tipo' => 'egreso',
+                    'monto' => round($aReembolsar, 2),
+                    'fuente' => 'ajuste',
+                    'descripcion' => 'Reembolso del pedido '.$pedido->numero_pedido.' · '.($devolucion->motivo ?: 'Devolución'),
+                    'fecha' => now()->toDateString(),
+                ]);
+            }
+
+            $devolucion->forceFill([
+                'estado' => Devolucion::ESTADO_REEMBOLSADA,
+                'reembolsado_en' => now(),
+                'revisado_en' => $devolucion->revisado_en ?? now(),
+            ])->save();
+
+            return $devolucion->fresh('pedido');
+        });
+    }
+
+    /**
+     * Rechaza una devolución pendiente sin efectos sobre inventario, pagos ni caja.
+     */
+    public function rechazarDevolucion(int $devolucionId, ?string $motivoRechazo = null): Devolucion
+    {
+        return DB::transaction(function () use ($devolucionId, $motivoRechazo) {
+            /** @var Devolucion|null $devolucion */
+            $devolucion = Devolucion::query()
+                ->whereKey($devolucionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $devolucion) {
+                throw new ModelNotFoundException('La devolución no existe.');
+            }
+
+            if ($devolucion->estado !== Devolucion::ESTADO_PENDIENTE) {
+                throw new InventarioException('La devolución ya fue revisada.');
+            }
+
+            $devolucion->forceFill([
+                'estado' => Devolucion::ESTADO_RECHAZADA,
+                'rechazado_motivo' => $motivoRechazo,
+                'revisado_en' => now(),
+            ])->save();
 
             return $devolucion->fresh('pedido');
         });
@@ -516,6 +740,8 @@ class PedidoService
 
             $this->inventario->liberar($producto->id);
         }
+
+        app(CuponService::class)->liberar($pedido);
     }
 
     /**
@@ -552,7 +778,7 @@ class PedidoService
                 );
             }
 
-            $detalles[] = ['producto' => $producto, 'precio' => (float) $item->precio_unitario];
+            $detalles[] = ['producto' => $producto, 'item' => $item];
             $subtotal += (float) $item->precio_unitario;
         }
 
@@ -572,7 +798,11 @@ class PedidoService
                 VentaItem::create([
                     'venta_id' => $venta->id,
                     'producto_id' => $detalle['producto']->id,
-                    'precio_unitario' => $detalle['precio'],
+                    'oferta_id' => $detalle['item']->oferta_id,
+                    'precio_unitario' => (float) $detalle['item']->precio_unitario,
+                    'precio_original' => (float) ($detalle['item']->precio_original ?? $detalle['item']->precio_unitario),
+                    'descuento' => (float) ($detalle['item']->descuento ?? 0),
+                    'costo_unitario' => (float) ($detalle['item']->costo_unitario ?? $detalle['producto']->costo),
                 ]);
             } catch (UniqueConstraintViolationException) {
                 throw new InventarioException(
@@ -602,6 +832,212 @@ class PedidoService
                 'vendida'
             );
         }
+    }
+
+    /**
+     * Precio final de cada prenda con la mejor oferta vigente que la cubra.
+     * El precio base del producto nunca se modifica.
+     *
+     * @param  array<int, Producto>  $unidades
+     * @return array<int, array{precio_original: float, precio_final: float, descuento: float, oferta: Oferta|null}>
+     */
+    private function resolverPrecios(array $unidades): array
+    {
+        $conOferta = app(OfertaService::class)->preciosPara($unidades);
+
+        $mapa = [];
+
+        foreach ($unidades as $producto) {
+            $oferta = $conOferta[$producto->id] ?? null;
+            $original = (float) $producto->precio;
+
+            $mapa[$producto->id] = [
+                'precio_original' => $original,
+                'precio_final' => $oferta['precio_final'] ?? $original,
+                'descuento' => $oferta['descuento'] ?? 0.0,
+                'oferta' => $oferta['oferta'] ?? null,
+            ];
+        }
+
+        return $mapa;
+    }
+
+    /**
+     * Aplica ofertas y cupón (o descuento manual en el admin) con la regla
+     * de no acumulación: si alguna oferta del pedido no permite cupón, solo
+     * se aplica el que dé mayor descuento. El subtotal devuelto es la suma
+     * de los precios finales que se cobrarán.
+     *
+     * @param  array<int, Producto>  $unidades
+     * @param  array<int, array{precio_original: float, precio_final: float, descuento: float, oferta: Oferta|null}>  $precios
+     * @param  array{cupon_codigo?: string|null, descuento?: float|null}  $datos
+     * @param  array{telefono?: string|null, email?: string|null, cliente_id?: int|null}  $contextoCupon
+     * @return array{precios: array<int, array{precio_original: float, precio_final: float, descuento: float, oferta: Oferta|null}>, subtotal: float, descuento: float, cupon: Cupon|null, uso: CuponUso|null, avisos: string[]}
+     */
+    private function resolverDescuentos(array $unidades, array $precios, array $datos, array $contextoCupon): array
+    {
+        $subtotalOriginal = round(array_sum(array_map(fn (Producto $u) => (float) $u->precio, $unidades)), 2);
+        $subtotalOfertado = round(array_sum(array_map(fn (array $p) => $p['precio_final'], $precios)), 2);
+        $ahorroOferta = round($subtotalOriginal - $subtotalOfertado, 2);
+
+        $cupon = null;
+        $uso = null;
+        $descuento = 0.0;
+        $avisos = [];
+
+        $hayCupon = ! empty($datos['cupon_codigo']);
+
+        if ($hayCupon) {
+            $codigo = trim($datos['cupon_codigo']);
+
+            $algunaSinCupon = collect($precios)
+                ->contains(fn (array $p) => $p['oferta'] !== null && ! $p['oferta']->permitir_cupon);
+
+            if ($algunaSinCupon) {
+                // Comparación justa sobre los precios originales: si el cupón
+                // gana, la oferta no se aplica; si no, el cupón no se gasta.
+                $validado = app(CuponService::class)->validar($codigo, $unidades, array_merge($contextoCupon, [
+                    'subtotal' => $subtotalOriginal,
+                ]));
+
+                if ($validado['descuento'] > $ahorroOferta + 0.005) {
+                    $aplicado = app(CuponService::class)->aplicar($codigo, $unidades, array_merge($contextoCupon, [
+                        'subtotal' => $subtotalOriginal,
+                    ]));
+
+                    $cupon = $aplicado['cupon'];
+                    $uso = $aplicado['uso'];
+                    $descuento = $aplicado['descuento'];
+
+                    foreach ($precios as $id => $precio) {
+                        $precios[$id]['oferta'] = null;
+                        $precios[$id]['precio_final'] = $precio['precio_original'];
+                        $precios[$id]['descuento'] = 0.0;
+                    }
+
+                    $avisos[] = 'La oferta no se aplicó porque el cupón '.$cupon->codigo.' dio un descuento mayor.';
+                } else {
+                    $avisos[] = 'El cupón no se aplicó porque la oferta dio un descuento igual o mayor.';
+                }
+            } else {
+                $aplicado = app(CuponService::class)->aplicar($codigo, $unidades, array_merge($contextoCupon, [
+                    'subtotal' => $subtotalOfertado,
+                    'precios_efectivos' => array_map(fn (array $p) => $p['precio_final'], $precios),
+                ]));
+
+                $cupon = $aplicado['cupon'];
+                $uso = $aplicado['uso'];
+                $descuento = $aplicado['descuento'];
+            }
+        } elseif (! empty($datos['descuento']) && (float) $datos['descuento'] > 0) {
+            // Descuento manual del admin (venta presencial): se aplica sobre
+            // el precio ya con oferta, como ajuste explícito del vendedor.
+            $descuento = min((float) $datos['descuento'], $subtotalOfertado);
+        }
+
+        $subtotal = round(array_sum(array_map(fn (array $p) => $p['precio_final'], $precios)), 2);
+
+        return [
+            'precios' => $precios,
+            'subtotal' => $subtotal,
+            'descuento' => round($descuento, 2),
+            'cupon' => $cupon,
+            'uso' => $uso,
+            'avisos' => $avisos,
+        ];
+    }
+
+    /**
+     * Avisos cuando el precio que el cliente vio al agregar la prenda ya no
+     * es el que se cobra (la oferta venció, se desactivó o el precio cambió).
+     * Solo informativo: el cobro siempre usa el precio vigente del servidor.
+     *
+     * @param  array<int, Producto>  $unidades
+     * @param  array<int, array{precio_final: float}>  $precios
+     * @param  array{precios_esperados?: array<array{producto_id: int|string, precio: float|string}>}  $datos
+     * @return string[]
+     */
+    private function avisosDePreciosEsperados(array $unidades, array $precios, array $datos): array
+    {
+        $esperados = [];
+
+        foreach ($datos['precios_esperados'] ?? [] as $fila) {
+            if (is_array($fila) && isset($fila['producto_id'])) {
+                $esperados[(int) $fila['producto_id']] = (float) ($fila['precio'] ?? 0);
+            }
+        }
+
+        if (empty($esperados)) {
+            return [];
+        }
+
+        $avisos = [];
+
+        foreach ($unidades as $producto) {
+            $esperado = $esperados[$producto->id] ?? null;
+
+            if ($esperado === null) {
+                continue;
+            }
+
+            $cobrado = (float) $precios[$producto->id]['precio_final'];
+
+            if (abs($esperado - $cobrado) > 0.005) {
+                $avisos[] = sprintf(
+                    'El precio de %s cambió: se cobró Bs %s (antes Bs %s).',
+                    $producto->nombre,
+                    number_format($cobrado, 2, '.', ''),
+                    number_format($esperado, 2, '.', ''),
+                );
+            }
+        }
+
+        return $avisos;
+    }
+
+    /**
+     * Registra el ítem del pedido con el historial de precios: original,
+     * descuento de oferta y precio cobrado.
+     *
+     * @param  array{precio_original: float, precio_final: float, descuento: float, oferta: Oferta|null}  $precio
+     */
+    private function crearItemPedido(Pedido $pedido, Producto $producto, array $precio): void
+    {
+        PedidoItem::create([
+            'pedido_id' => $pedido->id,
+            'producto_id' => $producto->id,
+            'oferta_id' => $precio['oferta']?->id,
+            'precio_unitario' => $precio['precio_final'],
+            'precio_original' => $precio['precio_original'],
+            'descuento' => $precio['descuento'],
+            'costo_unitario' => (float) $producto->costo,
+        ]);
+    }
+
+    /**
+     * ¿El teléfono o el correo corresponden a un cliente bloqueado?
+     * Compara valores normalizados (sin espacios ni símbolos; correo minúsculas).
+     */
+    private function clienteBloqueado(string $telefono, ?string $email): bool
+    {
+        $tel = Contacto::normalizarTelefono($telefono);
+        $mail = Contacto::normalizarEmail($email);
+
+        if (! $tel && ! $mail) {
+            return false;
+        }
+
+        return Cliente::query()
+            ->where('bloqueado', true)
+            ->where(function ($q) use ($tel, $mail) {
+                if ($tel) {
+                    $q->orWhere('telefono_normalizado', $tel);
+                }
+                if ($mail) {
+                    $q->orWhereRaw('LOWER(email) = ?', [$mail]);
+                }
+            })
+            ->exists();
     }
 
     private function horasReserva(): int

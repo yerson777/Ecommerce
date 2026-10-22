@@ -19,7 +19,7 @@ export class LayoutComponent implements OnInit {
 
   readonly usuario = this.auth.usuario;
   readonly menuAbierto = signal(false);
-  readonly gruposAbiertos = signal<Record<string, boolean>>({ general: false, ventas: false, catalogo: false, caja: false, sistema: false });
+  readonly gruposAbiertos = signal<Record<string, boolean>>({ general: false, ventas: false, catalogo: false, compras: false, caja: false, sistema: false });
 
   toggleGrupo(grupo: string): void {
     this.gruposAbiertos.update((estado) => ({ ...estado, [grupo]: !estado[grupo] }));

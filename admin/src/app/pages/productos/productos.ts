@@ -2,12 +2,15 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CategoriaRef,
+  CondicionRef,
   ETIQUETA_ESTADO,
+  ETIQUETA_ORDEN,
   EstadoPrenda,
   MarcaRef,
+  OrdenProducto,
   Producto,
-  TONO_ESTADO,
   TallaRef,
+  TONO_ESTADO,
 } from '../../core/models/producto';
 import { Paginated } from '../../core/models/paginated';
 import { CatalogosService } from '../../core/services/catalogos.service';
@@ -67,10 +70,12 @@ export class ProductosComponent implements OnInit {
     categoria: null as number | null,
     talla: null as number | null,
     marca: null as number | null,
+    condicion: null as number | null,
     estado: '' as '' | EstadoPrenda,
     publicado: '' as '' | '1' | '0',
     precio_min: null as number | null,
     precio_max: null as number | null,
+    orden: 'recientes' as OrdenProducto,
   });
 
   readonly pagina = signal(1);
@@ -81,6 +86,7 @@ export class ProductosComponent implements OnInit {
   readonly categorias = signal<CategoriaRef[]>([]);
   readonly tallas = signal<TallaRef[]>([]);
   readonly marcas = signal<MarcaRef[]>([]);
+  readonly condiciones = signal<CondicionRef[]>([]);
 
   readonly modalFormulario = signal<ModalFormulario>({ abierto: false, producto: null, readonly: false });
   readonly modalImagenes = signal<Producto | null>(null);
@@ -89,6 +95,7 @@ export class ProductosComponent implements OnInit {
 
   eliminarObjetivo: Producto | null = null;
   liberarObjetivo: Producto | null = null;
+  ocultarObjetivo: Producto | null = null;
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -106,21 +113,23 @@ export class ProductosComponent implements OnInit {
       categoria: null,
       talla: null,
       marca: null,
+      condicion: null,
       estado: '',
       publicado: '',
       precio_min: null,
       precio_max: null,
+      orden: 'recientes',
     });
     this.onBuscar();
   }
 
-  onPagina(nueva: number): void {
-    this.pagina.set(nueva);
+  onPagina(page: number): void {
+    this.pagina.set(page);
     this.cargar();
   }
 
-  onPerPage(cantidad: number): void {
-    this.perPage.set(cantidad);
+  onPerPage(perPage: number): void {
+    this.perPage.set(perPage);
     this.onBuscar();
   }
 
@@ -151,6 +160,15 @@ export class ProductosComponent implements OnInit {
       },
       error: () => undefined,
     });
+
+    this.catalogosService.condiciones().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.condiciones.set(res.data);
+        }
+      },
+      error: () => undefined,
+    });
   }
 
   cargar(): void {
@@ -164,10 +182,12 @@ export class ProductosComponent implements OnInit {
         categoria: f.categoria,
         talla: f.talla,
         marca: f.marca,
+        condicion: f.condicion,
         estado: f.estado || null,
         publicado: f.publicado === '' ? null : f.publicado === '1',
         precio_min: f.precio_min,
         precio_max: f.precio_max,
+        orden: f.orden,
         page: this.pagina(),
         per_page: this.perPage(),
       })
@@ -226,10 +246,28 @@ export class ProductosComponent implements OnInit {
   }
 
   cambiarPublicado(producto: Producto): void {
+    if (producto.estado !== 'disponible' && producto.publicado) {
+      this.ocultarObjetivo = producto;
+      return;
+    }
+
+    this.ejecutarCambioPublicado(producto);
+  }
+
+  confirmarOcultar(): void {
+    const producto = this.ocultarObjetivo;
+    this.ocultarObjetivo = null;
+
+    if (producto) {
+      this.ejecutarCambioPublicado(producto);
+    }
+  }
+
+  private ejecutarCambioPublicado(producto: Producto): void {
     this.productosService.actualizar(producto.id, { publicado: !producto.publicado }).subscribe({
       next: (res) => {
         if (res.success) {
-          this.toast.success(producto.publicado ? 'Prenda despublicada.' : 'Prenda publicada.');
+          this.toast.success(producto.publicado ? 'Prenda oculta de la tienda.' : 'Prenda publicada.');
           this.cargar();
         }
       },
@@ -237,6 +275,54 @@ export class ProductosComponent implements OnInit {
         this.toast.error(err.message ?? 'No se pudo cambiar la publicación.');
       },
     });
+  }
+
+  duplicar(producto: Producto): void {
+    this.productosService.duplicar(producto.id).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.toast.success('Prenda duplicada. Ajustá los datos y guardá.');
+          this.cargar();
+          this.modalFormulario.set({ abierto: true, producto: res.data, readonly: false });
+        }
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? 'No se pudo duplicar la prenda.');
+      },
+    });
+  }
+
+  exportar(): void {
+    const f = this.filtros();
+
+    this.productosService
+      .exportar({
+        busqueda: f.busqueda || undefined,
+        categoria: f.categoria,
+        talla: f.talla,
+        marca: f.marca,
+        condicion: f.condicion,
+        estado: f.estado || null,
+        publicado: f.publicado === '' ? null : f.publicado === '1',
+        precio_min: f.precio_min,
+        precio_max: f.precio_max,
+        orden: f.orden,
+      })
+      .subscribe({
+        next: (blob) => this.descargarBlob(blob, 'everly_productos.csv'),
+        error: (err) => this.toast.error(err.message ?? 'No se pudo exportar el listado.'),
+      });
+  }
+
+  private descargarBlob(blob: Blob, nombre: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   solicitarEliminar(producto: Producto): void {
@@ -279,7 +365,7 @@ export class ProductosComponent implements OnInit {
     this.inventarioService.liberar(producto.id).subscribe({
       next: (res) => {
         if (res.success) {
-          this.toast.success('Reserva liberada y prenda disponible.');
+          this.toast.success('Reserva liberada y prenda disponible nuevamente.');
           this.cargar();
         }
       },
@@ -289,8 +375,16 @@ export class ProductosComponent implements OnInit {
     });
   }
 
+  readonly opcionesOrden: { valor: OrdenProducto; etiqueta: string }[] = Object.entries(ETIQUETA_ORDEN).map(
+    ([valor, etiqueta]) => ({ valor: valor as OrdenProducto, etiqueta }),
+  );
+
   etiquetaEstado(estado: string): string {
     return ETIQUETA_ESTADO[estado as keyof typeof ETIQUETA_ESTADO] ?? estado;
+  }
+
+  etiquetaCondicion(condicion: { nombre: string } | null | undefined): string {
+    return condicion?.nombre ?? '—';
   }
 
   tonoEstado(estado: string): string {

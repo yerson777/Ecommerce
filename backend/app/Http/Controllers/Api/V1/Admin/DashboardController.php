@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\ProductoResource;
 use App\Http\Resources\V1\VentaResource;
 use App\Models\Cliente;
+use App\Models\Devolucion;
 use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
@@ -53,6 +54,8 @@ class DashboardController extends Controller
 
         $saldo = $this->resumenSaldos();
 
+        $devolucionesMonto = (float) Devolucion::where('estado', Devolucion::ESTADO_REEMBOLSADA)->sum('monto_reembolsado');
+
         return Api::success([
             'productos' => [
                 'total' => Producto::count(),
@@ -66,6 +69,7 @@ class DashboardController extends Controller
             'ventas' => [
                 'total' => Venta::count(),
                 'monto' => number_format((float) Venta::sum('total'), 2, '.', ''),
+                'monto_neto' => number_format(max(0.0, (float) Venta::sum('total') - $devolucionesMonto), 2, '.', ''),
                 'recientes' => VentaResource::collection($ventasRecientes),
             ],
             'pedidos' => Pedido::count(),
@@ -133,6 +137,7 @@ class DashboardController extends Controller
             'prendas_sin_venta' => $this->prendasSinVenta(),
             'reservas_por_vencer' => $this->reservasPorVencer(),
             'ganancia' => $this->ganancia(),
+            'devoluciones' => $this->devolucionesResumen(),
             'metricas' => $this->metricas(),
             'ventas_por_categoria' => $this->reporteService->ventasPorCategoria(null, null, null),
             'ventas_por_talla' => $this->reporteService->ventasPorTalla(null, null, null),
@@ -234,6 +239,23 @@ class DashboardController extends Controller
     }
 
     /**
+     * Resumen de devoluciones: total, pendientes y monto reembolsado.
+     */
+    private function devolucionesResumen(): array
+    {
+        return [
+            'total' => Devolucion::count(),
+            'pendientes' => Devolucion::where('estado', Devolucion::ESTADO_PENDIENTE)->count(),
+            'monto_reembolsado' => number_format(
+                (float) Devolucion::where('estado', Devolucion::ESTADO_REEMBOLSADA)->sum('monto_reembolsado'),
+                2,
+                '.',
+                ''
+            ),
+        ];
+    }
+
+    /**
      * Prendas únicas disponibles que llevan más de N días sin vender.
      */
     private function prendasSinVenta(): array
@@ -319,17 +341,20 @@ class DashboardController extends Controller
     }
 
     /**
-     * Ganancia por prenda = precio de venta - costo del producto.
+     * Ganancia por prenda = precio realmente cobrado - costo con el que se
+     * vendió (venta_items.costo_unitario, congelado al vender).
      *
-     * Nota: usa el costo ACTUAL de productos.costo (no congelado al vender),
-     * por decisión explícita: no se agrega costo_unitario a venta_items.
+     * No se cuentan las ventas anuladas ni las prendas sin costo; se avisa
+     * cuántas quedaron fuera por no tener costo.
      */
     private function ganancia(): array
     {
         $base = DB::table('venta_items')
             ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
             ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
-            ->leftJoin('categorias', 'categorias.id', '=', 'productos.categoria_id');
+            ->leftJoin('categorias', 'categorias.id', '=', 'productos.categoria_id')
+            ->whereNull('ventas.anulada_en')
+            ->where('venta_items.costo_unitario', '>', 0);
 
         $porPrenda = (clone $base)
             ->select(
@@ -339,8 +364,8 @@ class DashboardController extends Controller
                 'categorias.nombre as categoria',
                 'ventas.fecha_venta',
                 DB::raw('venta_items.precio_unitario as precio_venta'),
-                DB::raw('productos.costo as costo'),
-                DB::raw('(venta_items.precio_unitario - productos.costo) as ganancia'),
+                DB::raw('venta_items.costo_unitario as costo'),
+                DB::raw('(venta_items.precio_unitario - venta_items.costo_unitario) as ganancia'),
             )
             ->orderByDesc('ganancia')
             ->limit(self::TOP)
@@ -360,19 +385,30 @@ class DashboardController extends Controller
         $totales = (clone $base)
             ->selectRaw(
                 'COALESCE(SUM(venta_items.precio_unitario), 0) as ingresos,
-                 COALESCE(SUM(productos.costo), 0) as costos,
-                 COALESCE(SUM(venta_items.precio_unitario - productos.costo), 0) as ganancia'
+                 COALESCE(SUM(venta_items.costo_unitario), 0) as costos,
+                 COALESCE(SUM(venta_items.precio_unitario - venta_items.costo_unitario), 0) as ganancia'
             )
             ->first();
 
         $ingresos = (float) ($totales->ingresos ?? 0);
         $ganancia = (float) ($totales->ganancia ?? 0);
 
+        // Prendas vendidas sin costo cargado (no se cuentan en la ganancia).
+        $sinCosto = DB::table('venta_items')
+            ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->whereNull('ventas.anulada_en')
+            ->where(function ($q) {
+                $q->whereNull('venta_items.costo_unitario')
+                    ->orWhere('venta_items.costo_unitario', '<=', 0);
+            })
+            ->count();
+
         return [
             'total' => number_format($ganancia, 2, '.', ''),
             'ingresos' => number_format($ingresos, 2, '.', ''),
             'costos' => number_format((float) ($totales->costos ?? 0), 2, '.', ''),
             'margen_pct' => $ingresos > 0 ? number_format($ganancia / $ingresos * 100, 1, '.', '') : '0.0',
+            'prendas_sin_costo' => $sinCosto,
             'prendas' => $porPrenda,
         ];
     }

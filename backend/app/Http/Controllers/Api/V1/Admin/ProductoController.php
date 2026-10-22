@@ -13,6 +13,7 @@ use App\Models\ProductoHistorial;
 use App\Services\ProductoImagenService;
 use App\Support\Api;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -22,31 +23,54 @@ class ProductoController extends Controller
 
     public function index(Request $request)
     {
-        $productos = Producto::query()
-            ->with(['categoria', 'talla', 'marca', 'imagenes'])
+        $query = $this->consultaProductos($request);
+
+        match ($request->input('orden', 'recientes')) {
+            'antiguedad' => $query->orderBy('created_at'),
+            'precio_asc' => $query->orderBy('precio'),
+            'precio_desc' => $query->orderByDesc('precio'),
+            'dias' => $query->orderByRaw('fecha_publicacion IS NULL')->orderBy('fecha_publicacion'),
+            default => $query->orderByDesc('created_at'),
+        };
+
+        return Api::collection(
+            ProductoResource::collection($query->paginate((int) $request->integer('per_page', 20))),
+            'Productos listados.'
+        );
+    }
+
+    /**
+     * Consulta base del listado, reutilizada por el export a Excel/CSV.
+     */
+    private function consultaProductos(Request $request)
+    {
+        return Producto::query()
+            ->with(['categoria', 'talla', 'marca', 'condicion', 'imagenes'])
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))
             ->when($request->filled('publicado'), fn ($q) => $q->where('publicado', $request->boolean('publicado')))
             ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', $request->integer('categoria')))
             ->when($request->filled('talla'), fn ($q) => $q->where('talla_id', $request->integer('talla')))
             ->when($request->filled('marca'), fn ($q) => $q->where('marca_id', $request->integer('marca')))
+            ->when($request->filled('condicion'), fn ($q) => $q->where('condicion_id', $request->integer('condicion')))
             ->when($request->filled('precio_min'), fn ($q) => $q->where('precio', '>=', $request->input('precio_min')))
             ->when($request->filled('precio_max'), fn ($q) => $q->where('precio', '<=', $request->input('precio_max')))
-            ->when($request->filled('busqueda'), fn ($q) => $q->where(function ($query) use ($request) {
-                $busqueda = $request->input('busqueda');
-                $query->where('codigo', 'like', "%{$busqueda}%")
-                    ->orWhere('nombre', 'like', "%{$busqueda}%");
-            }))
-            ->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 15));
-
-        return Api::collection(ProductoResource::collection($productos), 'Listado de productos.');
+            ->when($request->filled('busqueda'), function ($q) use ($request) {
+                $termino = $request->input('busqueda');
+                $q->where(fn ($sub) => $sub
+                    ->where('nombre', 'like', "%{$termino}%")
+                    ->orWhere('codigo', 'like', "%{$termino}%"));
+            });
     }
 
     public function store(ProductoStoreRequest $request)
     {
         $datos = $request->validated();
-        $datos['marca_id'] = $this->resolverMarcaId($datos['marca_nombre'] ?? null);
+        $datos['marca_id'] = $this->resolverMarcaId($datos);
         unset($datos['marca_nombre']);
+
+        if (! empty($datos['publicado'])) {
+            $datos['fecha_publicacion'] = now()->toDateString();
+        }
 
         $producto = Producto::create($datos);
 
@@ -60,7 +84,7 @@ class ProductoController extends Controller
         ]);
 
         return Api::resource(
-            new ProductoResource($producto->load(['categoria', 'talla', 'marca'])),
+            new ProductoResource($producto->load(['categoria', 'talla', 'marca', 'condicion'])),
             'Producto creado correctamente.',
             201
         );
@@ -68,7 +92,7 @@ class ProductoController extends Controller
 
     public function show(int $id)
     {
-        $producto = Producto::with(['categoria', 'talla', 'marca', 'imagenes'])->findOrFail($id);
+        $producto = Producto::with(['categoria', 'talla', 'marca', 'condicion', 'imagenes'])->findOrFail($id);
 
         return Api::resource(new ProductoResource($producto), 'Detalle del producto.');
     }
@@ -76,19 +100,23 @@ class ProductoController extends Controller
     public function update(ProductoUpdateRequest $request, int $id)
     {
         /** @var Producto $producto */
-        $producto = Producto::with(['categoria', 'talla', 'marca', 'imagenes'])->findOrFail($id);
+        $producto = Producto::with(['categoria', 'talla', 'marca', 'condicion', 'imagenes'])->findOrFail($id);
 
-        if ($producto->estado === Producto::ESTADO_VENDIDA) {
+        $datos = $request->validated();
+
+        // Reservada y Vendida conservan su precio: no se permite modificarlo.
+        $bloqueaPrecio = in_array($producto->estado, [Producto::ESTADO_RESERVADA, Producto::ESTADO_VENDIDA], true);
+
+        if ($bloqueaPrecio && array_key_exists('precio', $datos) && (float) $datos['precio'] !== (float) $producto->precio) {
             throw ValidationException::withMessages([
-                'estado' => 'No se puede editar un producto vendido.',
+                'precio' => 'No se puede cambiar el precio de una prenda reservada o vendida.',
             ]);
         }
 
-        $datos = $request->validated();
         $publicadoNuevo = $datos['publicado'] ?? null;
 
-        if (array_key_exists('marca_nombre', $datos)) {
-            $datos['marca_id'] = $this->resolverMarcaId($datos['marca_nombre']);
+        if (array_key_exists('marca_id', $datos) || array_key_exists('marca_nombre', $datos)) {
+            $datos['marca_id'] = $this->resolverMarcaId($datos);
             unset($datos['marca_nombre']);
         }
 
@@ -102,12 +130,16 @@ class ProductoController extends Controller
                 'detalle' => $publicadoNuevo ? 'Prenda publicada en la tienda.' : 'Prenda oculta de la tienda.',
                 'user_id' => $request->user()?->id,
             ]);
+
+            if ($publicadoNuevo && ! $producto->fecha_publicacion) {
+                $datos['fecha_publicacion'] = now()->toDateString();
+            }
         }
 
         $producto->update($datos);
 
         return Api::resource(
-            new ProductoResource($producto->fresh(['categoria', 'talla', 'marca', 'imagenes'])),
+            new ProductoResource($producto->fresh(['categoria', 'talla', 'marca', 'condicion', 'imagenes'])),
             'Producto actualizado correctamente.'
         );
     }
@@ -136,9 +168,119 @@ class ProductoController extends Controller
         return Api::noContent('Producto eliminado correctamente.');
     }
 
+    public function duplicar(Request $request, int $id)
+    {
+        $original = Producto::findOrFail($id);
+
+        $copia = Producto::create([
+            'codigo' => $this->generarCodigoCopia($original->codigo),
+            'nombre' => $original->nombre,
+            'categoria_id' => $original->categoria_id,
+            'talla_id' => $original->talla_id,
+            'marca_id' => $original->marca_id,
+            'color' => $original->color,
+            'condicion_id' => $original->condicion_id,
+            'medidas' => $original->medidas,
+            'descripcion' => $original->descripcion,
+            'costo' => $original->costo,
+            'precio' => $original->precio,
+            'estado' => Producto::ESTADO_DISPONIBLE,
+            'publicado' => false,
+            'fecha_ingreso' => now()->toDateString(),
+        ]);
+
+        ProductoHistorial::create([
+            'producto_id' => $copia->id,
+            'evento' => 'creado',
+            'estado_anterior' => null,
+            'estado_nuevo' => $copia->estado,
+            'detalle' => "Prenda duplicada de {$original->codigo}.",
+            'user_id' => $request->user()?->id,
+        ]);
+
+        return Api::resource(
+            new ProductoResource($copia->load(['categoria', 'talla', 'marca', 'condicion'])),
+            'Prenda duplicada correctamente.',
+            201
+        );
+    }
+
+    public function exportar(Request $request)
+    {
+        $productos = $this->consultaProductos($request)
+            ->with(['categoria', 'talla', 'marca'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $headers = [
+            'Código', 'Nombre', 'Categoría', 'Talla', 'Marca', 'Color', 'Condición', 'Medidas',
+            'Costo (Bs)', 'Precio (Bs)', 'Margen (Bs)', 'Estado', 'Publicado',
+            'Fecha publicación', 'Días en inventario', 'Fecha ingreso',
+        ];
+
+        $rows = $productos->map(fn (Producto $p) => [
+            $p->codigo,
+            $p->nombre,
+            $p->categoria?->nombre,
+            $p->talla?->nombre,
+            $p->marca?->nombre,
+            $p->color,
+            $p->condicion?->nombre,
+            $p->medidas,
+            $p->costo,
+            $p->precio,
+            number_format((float) $p->precio - (float) $p->costo, 2, '.', ''),
+            $p->estado,
+            $p->publicado ? 'Sí' : 'No',
+            $p->fecha_publicacion?->toDateString(),
+            $p->diasEnInventario(),
+            $p->fecha_ingreso?->toDateString(),
+        ])->all();
+
+        $nombre = 'everly_productos_'.now()->format('Y-m-d_His').'.csv';
+
+        return Response::make($this->generarCsv($headers, $rows), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$nombre}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'no-cache',
+        ]);
+    }
+
+    private function generarCodigoCopia(string $codigo): string
+    {
+        $base = mb_substr($codigo, 0, 24);
+        $intento = 1;
+
+        do {
+            $candidato = "{$base}-C{$intento}";
+            $intento++;
+        } while (Producto::where('codigo', $candidato)->exists());
+
+        return $candidato;
+    }
+
+    private function generarCsv(array $headers, array $rows): string
+    {
+        $output = fopen('php://temp', 'r+');
+
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, $headers, ',', '"');
+
+        foreach ($rows as $row) {
+            fputcsv($output, $row, ',', '"');
+        }
+
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return $csv;
+    }
+
     public function historial(int $id)
     {
-        $producto = Producto::with(['historial'])->findOrFail($id);
+        $producto = Producto::with(['historial.usuario'])->findOrFail($id);
 
         return Api::collection(
             ProductoHistorialResource::collection($producto->historial),
@@ -151,9 +293,13 @@ class ProductoController extends Controller
      * Si la marca no existe todavía la crea, para no obligar a un alta previa.
      * Cadena vacía = sin marca.
      */
-    private function resolverMarcaId(?string $nombre): ?int
+    private function resolverMarcaId(array $datos): ?int
     {
-        $nombre = trim((string) $nombre);
+        if (! empty($datos['marca_id'])) {
+            return (int) $datos['marca_id'];
+        }
+
+        $nombre = trim((string) ($datos['marca_nombre'] ?? ''));
 
         if ($nombre === '') {
             return null;

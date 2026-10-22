@@ -11,7 +11,11 @@ class CuponStoreRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'codigo' => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9_\-]+$/', Rule::unique('cupones', 'codigo')],
+            'codigo' => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9_\-]+$/', function ($attribute, $value, $fail) {
+                if (Cupon::query()->whereRaw('UPPER(codigo) = ?', [mb_strtoupper(trim((string) $value))])->exists()) {
+                    $fail('Ya existe un cupón con ese código.');
+                }
+            }],
             'tipo' => ['required', Rule::in(Cupon::TIPOS)],
             'valor' => ['required', 'numeric', 'min:0.01', 'max:1000000', function ($attribute, $value, $fail) {
                 if ($this->input('tipo') === Cupon::TIPO_PORCENTAJE && (float) $value > 100) {
@@ -20,8 +24,12 @@ class CuponStoreRequest extends ApiFormRequest
             }],
             'minimo_compra' => ['nullable', 'numeric', 'min:0'],
             'limite_usos' => ['nullable', 'integer', 'min:1'],
+            'limite_por_cliente' => ['nullable', 'integer', 'min:1'],
             'activo' => ['boolean'],
+            'fecha_inicio' => ['nullable', 'date'],
             'vence_en' => ['nullable', 'date', 'after_or_equal:today'],
+            'categorias' => ['nullable', 'array'],
+            'categorias.*' => ['integer', 'exists:categorias,id'],
         ];
     }
 
@@ -34,7 +42,9 @@ class CuponStoreRequest extends ApiFormRequest
             'tipo.in' => 'El tipo de descuento no es válido.',
             'valor.required' => 'Indica el valor del descuento.',
             'valor.min' => 'El valor debe ser mayor a 0.',
+            'limite_por_cliente.min' => 'El límite por cliente debe ser al menos 1.',
             'vence_en.after_or_equal' => 'La fecha de vencimiento no puede ser anterior a hoy.',
+            'categorias.*.exists' => 'Alguna de las categorías seleccionadas no es válida.',
         ];
     }
 
@@ -42,6 +52,10 @@ class CuponStoreRequest extends ApiFormRequest
     {
         if ($this->has('activo')) {
             $this->merge(['activo' => filter_var($this->input('activo'), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+
+        if ($this->has('codigo')) {
+            $this->merge(['codigo' => mb_strtoupper(trim((string) $this->input('codigo')))]);
         }
     }
 }

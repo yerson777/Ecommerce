@@ -16,7 +16,7 @@
     </div>
 
     <header class="print-only">
-      <h2 class="print-title">Reporte de ventas</h2>
+      <h2 class="print-title">Everly · Reporte de ventas y estadísticas</h2>
       <p class="print-sub">Período: {{ rangoTexto() }} · Generado el {{ hoyTexto() }}</p>
     </header>
 
@@ -144,6 +144,83 @@
           icon="⏱"
           title="Sin datos"
           message="No hay prendas vendidas con fecha de ingreso en este período."
+        />
+      }
+    </section>
+
+    <section class="card">
+      <div class="row-between">
+        <div>
+          <h2 class="card-title">Ganancia por origen</h2>
+          <p class="report-note">Fardo coreano vs. fardo americano · usa el costo congelado al vender</p>
+        </div>
+        @if (gananciaOrigen()) {
+          <app-badge [tone]="ganadorTone()">Gana: {{ ganadorTexto() }}</app-badge>
+        }
+      </div>
+
+      @if (gananciaOrigen() && gananciaOrigen()!.por_origen.length > 0) {
+        @if (chartOrigen().length > 0) {
+          <app-chart-bars [datos]="chartOrigen()" formatoValor="monto" [altura]="180" />
+        }
+
+        <div class="report-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Origen</th>
+                <th>Prendas vendidas</th>
+                <th>Recuperado</th>
+                <th>Costo</th>
+                <th>Ganancia</th>
+                <th>Margen</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of gananciaOrigen()!.por_origen; track fila.origen) {
+                <tr>
+                  <td>{{ fila.etiqueta }}</td>
+                  <td>{{ fila.prendas_vendidas }}</td>
+                  <td>{{ moneda(fila.recuperado) }}</td>
+                  <td>{{ moneda(fila.costo) }}</td>
+                  <td><strong>{{ moneda(fila.ganancia) }}</strong></td>
+                  <td>{{ fila.margen_pct }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <ul class="metrics">
+          <li>
+            <span class="m-label">Ganancia fardo coreano</span>
+            <span class="m-value tone-success">{{ moneda(gananciaOrigen()?.comparacion?.coreano_ganancia) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Ganancia fardo americano</span>
+            <span class="m-value tone-success">{{ moneda(gananciaOrigen()?.comparacion?.americano_ganancia) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Diferencia (coreano − americano)</span>
+            <span class="m-value">{{ moneda(gananciaOrigen()?.comparacion?.diferencia) }}</span>
+          </li>
+          <li>
+            <span class="m-label">Diferencia %</span>
+            <span class="m-value">{{ diferenciaPctTexto() }}</span>
+          </li>
+        </ul>
+
+        @if ((gananciaOrigen()?.por_origen?.length ?? 0) > 0) {
+          <p class="report-note">
+            Las prendas sin costo cargado no suman ganancia. Los orígenes "Otro" y las prendas sin proveedor se
+            muestran aparte para no distorsionar la comparación.
+          </p>
+        }
+      } @else {
+        <app-empty-state
+          icon="🏭"
+          title="Sin datos por origen"
+          message="Aún no hay ventas con costo congelado asociadas a proveedores de fardo coreano o americano."
         />
       }
     </section>

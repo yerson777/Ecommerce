@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cupon extends Model
@@ -11,6 +12,7 @@ class Cupon extends Model
     use HasFactory;
 
     public const TIPO_PORCENTAJE = 'porcentaje';
+
     public const TIPO_FIJO = 'fijo';
 
     public const TIPOS = [
@@ -26,8 +28,10 @@ class Cupon extends Model
         'valor',
         'minimo_compra',
         'limite_usos',
+        'limite_por_cliente',
         'usos',
         'activo',
+        'fecha_inicio',
         'vence_en',
     ];
 
@@ -37,6 +41,7 @@ class Cupon extends Model
             'valor' => 'decimal:2',
             'minimo_compra' => 'decimal:2',
             'activo' => 'boolean',
+            'fecha_inicio' => 'date',
             'vence_en' => 'date',
         ];
     }
@@ -44,6 +49,25 @@ class Cupon extends Model
     public function pedidos(): HasMany
     {
         return $this->hasMany(Pedido::class);
+    }
+
+    /**
+     * Registros de uso reales del cupón. No se llama "usos" porque la
+     * columna contador "usos" (int) tiene prioridad como atributo.
+     */
+    public function registros(): HasMany
+    {
+        return $this->hasMany(CuponUso::class);
+    }
+
+    public function categorias(): BelongsToMany
+    {
+        return $this->belongsToMany(Categoria::class, 'categoria_cupon');
+    }
+
+    public function noIniciado(): bool
+    {
+        return $this->fecha_inicio !== null && $this->fecha_inicio->isAfter(now()->startOfDay());
     }
 
     public function vencido(): bool
@@ -67,6 +91,7 @@ class Cupon extends Model
         if ($this->agotado()) {
             return 'agotado';
         }
+
         return 'activo';
     }
 }

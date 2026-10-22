@@ -19,6 +19,9 @@
       <div class="entry-head">
         <app-badge [tone]="tonoEvento(registro.evento)">{{ registro.evento }}</app-badge>
         <span class="muted">{{ registro.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+        @if (registro.usuario) {
+          <span class="muted">· {{ registro.usuario }}</span>
+        }
       </div>
 
       <div class="entry-body">

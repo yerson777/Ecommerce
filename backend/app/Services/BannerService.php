@@ -46,9 +46,9 @@ class BannerService
      *
      * @param  array<string, mixed>  $datos
      */
-    public function crear(array $datos, UploadedFile $archivo): Banner
+    public function crear(array $datos, UploadedFile $archivo, ?UploadedFile $archivoMovil = null): Banner
     {
-        return DB::transaction(function () use ($datos, $archivo) {
+        return DB::transaction(function () use ($datos, $archivo, $archivoMovil) {
             $ruta = $this->almacenamiento()->putFileAs(
                 $this->carpeta(),
                 $archivo,
@@ -56,11 +56,21 @@ class BannerService
                 'public'
             );
 
+            $rutaMovil = $archivoMovil
+                ? $this->almacenamiento()->putFileAs(
+                    $this->carpeta(),
+                    $archivoMovil,
+                    $this->nombreArchivo($archivoMovil),
+                    'public'
+                )
+                : null;
+
             $orden = (int) Banner::max('orden');
 
             return Banner::create([
                 'ruta' => $ruta,
                 ...$datos,
+                'ruta_movil' => $rutaMovil,
                 'orden' => $datos['orden'] ?? ($orden + 1),
             ]);
         });
@@ -68,13 +78,17 @@ class BannerService
 
     /**
      * Actualiza los datos de un banner. Si se envía una imagen, reemplaza
-     * el archivo físico y elimina el anterior.
+     * el archivo físico y elimina el anterior. Con "sin_imagen_movil" se
+     * quita la versión móvil.
      *
      * @param  array<string, mixed>  $datos
      */
-    public function actualizar(Banner $banner, array $datos, ?UploadedFile $archivo = null): Banner
+    public function actualizar(Banner $banner, array $datos, ?UploadedFile $archivo = null, ?UploadedFile $archivoMovil = null): Banner
     {
-        return DB::transaction(function () use ($banner, $datos, $archivo) {
+        return DB::transaction(function () use ($banner, $datos, $archivo, $archivoMovil) {
+            $quitarMovil = (bool) ($datos['sin_imagen_movil'] ?? false);
+            unset($datos['sin_imagen_movil']);
+
             $cambios = $datos;
 
             if ($archivo) {
@@ -89,10 +103,27 @@ class BannerService
             }
 
             $rutaAnterior = $archivo ? $banner->ruta : null;
+            $rutaMovilAnterior = $banner->ruta_movil;
+
+            if ($archivoMovil) {
+                $cambios['ruta_movil'] = $this->almacenamiento()->putFileAs(
+                    $this->carpeta(),
+                    $archivoMovil,
+                    $this->nombreArchivo($archivoMovil),
+                    'public'
+                );
+            } elseif ($quitarMovil) {
+                $cambios['ruta_movil'] = null;
+            }
+
             $banner->update($cambios);
 
             if ($rutaAnterior) {
                 $this->eliminarArchivoSiExiste($rutaAnterior);
+            }
+
+            if ($rutaMovilAnterior && array_key_exists('ruta_movil', $cambios) && $cambios['ruta_movil'] !== $rutaMovilAnterior) {
+                $this->eliminarArchivoSiExiste($rutaMovilAnterior);
             }
 
             return $banner->fresh();
@@ -140,15 +171,92 @@ class BannerService
     }
 
     /**
-     * Banners activos para la tienda, ordenados según la secuencia del admin.
+     * Banners activos y vigentes para la tienda, ordenados según la
+     * secuencia del admin. Los rangos de fecha son opcionales: un null
+     * significa sin límite de ese lado.
      */
     public function activos(): Collection
     {
+        $ahora = now();
+
         return Banner::query()
             ->where('activo', true)
+            ->where(function ($query) use ($ahora) {
+                $query->whereNull('fecha_inicio')->orWhere('fecha_inicio', '<=', $ahora);
+            })
+            ->where(function ($query) use ($ahora) {
+                $query->whereNull('fecha_fin')->orWhere('fecha_fin', '>=', $ahora);
+            })
             ->orderBy('orden')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * Ruta que se persiste en "enlace" para cada tipo de destino: rutas
+     * internas de la tienda, o la URL externa tal cual.
+     *
+     * @throws ValidationException si el destino no existe.
+     */
+    public function resolverEnlace(string $tipo, ?int $id, ?string $urlExterna = null): ?string
+    {
+        if ($tipo === Banner::ENLACE_NINGUNO) {
+            return null;
+        }
+
+        if ($tipo === Banner::ENLACE_URL) {
+            return $urlExterna;
+        }
+
+        $this->validarDestino($tipo, $id);
+
+        return match ($tipo) {
+            Banner::ENLACE_PRODUCTO => '/producto/'.$id,
+            Banner::ENLACE_CATEGORIA => '/catalogo?categoria='.$id,
+            Banner::ENLACE_OFERTA => '/catalogo?oferta='.$id,
+            default => null,
+        };
+    }
+
+    /**
+     * Verifica que el destino referenciado exista para evitar enlaces rotos.
+     *
+     * @throws ValidationException
+     */
+    public function validarDestino(string $tipo, ?int $id): void
+    {
+        if ($tipo === Banner::ENLACE_NINGUNO || $tipo === Banner::ENLACE_URL) {
+            return;
+        }
+
+        if (! $id) {
+            throw ValidationException::withMessages([
+                'enlace_id' => 'Seleccioná el destino del enlace.',
+            ]);
+        }
+
+        $tabla = match ($tipo) {
+            Banner::ENLACE_PRODUCTO => 'productos',
+            Banner::ENLACE_CATEGORIA => 'categorias',
+            Banner::ENLACE_OFERTA => 'ofertas',
+            default => null,
+        };
+
+        if ($tabla === null) {
+            throw ValidationException::withMessages([
+                'enlace_tipo' => 'El tipo de enlace no es válido.',
+            ]);
+        }
+
+        if (! DB::table($tabla)->where('id', $id)->exists()) {
+            throw ValidationException::withMessages([
+                'enlace_id' => match ($tipo) {
+                    Banner::ENLACE_PRODUCTO => 'La prenda seleccionada ya no existe.',
+                    Banner::ENLACE_CATEGORIA => 'La categoría seleccionada ya no existe.',
+                    Banner::ENLACE_OFERTA => 'La oferta seleccionada ya no existe.',
+                },
+            ]);
+        }
     }
 
     protected function carpeta(): string

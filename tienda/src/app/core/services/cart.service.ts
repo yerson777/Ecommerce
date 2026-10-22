@@ -6,7 +6,11 @@ export interface CartItem {
   nombre: string;
   color: string | null;
   talla: string | null;
+  /** Precio a cobrar (con oferta si la había al agregarlo). */
   precio: string;
+  /** Precio base tachado; solo se llena si había oferta. */
+  precio_original?: string | null;
+  descuento_porcentaje?: number | null;
   imagen: string | null;
 }
 

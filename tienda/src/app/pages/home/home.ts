@@ -13,7 +13,7 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ProductoPublico } from '../../core/models/producto';
-import { formatearPrecio } from '../../core/utils/precio';
+import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { esDisponible, estadoTexto, imagenPrincipal } from '../../core/utils/producto';
 import { RevealDirective, motionReducido } from './reveal';
 
@@ -72,7 +72,7 @@ const FEATURES: readonly ItemEstatico[] = [
     icono: 'pago',
     titulo: 'Pago seguro',
     texto:
-      'Transferencia, QR o efectivo con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
+      'Transferencia o QR con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
   },
   {
     icono: 'entrega',
@@ -254,6 +254,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ---------- Productos ---------- */
 
   readonly formatearPrecio = formatearPrecio;
+  readonly precioEfectivo = precioEfectivo;
+  readonly tieneOferta = tieneOferta;
   readonly imagenPrincipal = imagenPrincipal;
   readonly esDisponible = esDisponible;
   readonly estadoTexto = estadoTexto;
@@ -272,7 +274,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       nombre: producto.nombre,
       color: producto.color,
       talla: producto.talla?.nombre ?? null,
-      precio: producto.precio,
+      precio: this.precioEfectivo(producto),
+      precio_original: this.tieneOferta(producto) ? producto.precio : null,
+      descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen: this.imagenPrincipal(producto),
     });
   }

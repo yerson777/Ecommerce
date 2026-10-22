@@ -123,7 +123,9 @@ export class PedidosComponent implements OnInit {
   }
 
   imprimirComprobante(): void {
+    document.body.classList.add('printeando-comprobante');
     window.print();
+    document.body.classList.remove('printeando-comprobante');
   }
 
   private aplicarRefrescoAutomatico(): void {
@@ -235,7 +237,7 @@ export class PedidosComponent implements OnInit {
       return `Se confirmará el pedido ${numero}. Las prendas permanecen reservadas hasta completarlo.`;
     }
     if (transicion.estado === 'completado') {
-      return `El pedido ${numero} pasará a Completado: se registrará la venta con los precios históricos y las prendas quedarán marcadas como vendidas. Esta acción no se puede deshacer.`;
+      return `El pedido ${numero} pasará a Completado: se registrará la venta con los precios históricos y las prendas quedarán marcadas como vendidas. Esta acción no se puede deshacer porque el comprobante queda registrado como venta definitiva.`;
     }
     return `Se cancelará el pedido ${numero} y las prendas volverán a estar disponibles. Esta acción no se puede deshacer.`;
   }

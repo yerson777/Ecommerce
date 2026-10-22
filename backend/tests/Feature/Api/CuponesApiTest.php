@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Cupon;
+use App\Models\CuponUso;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
 use App\Models\Pedido;
@@ -215,7 +216,7 @@ class CuponesApiTest extends TestCase
             ->json('data.0.id');
 
         $this->withToken($token)
-            ->putJson('/api/v1/admin/cupones/' . $id, ['activo' => false])
+            ->putJson('/api/v1/admin/cupones/'.$id, ['activo' => false])
             ->assertStatus(200)
             ->assertJsonPath('data.estado', 'inactivo');
     }
@@ -230,5 +231,255 @@ class CuponesApiTest extends TestCase
             'tipo' => Cupon::TIPO_PORCENTAJE,
             'valor' => 150,
         ])->assertStatus(422);
+    }
+
+    private function crearProductoEnCategoria(int $categoriaId, string $codigo, float $precio): Producto
+    {
+        return Producto::create([
+            'codigo' => $codigo,
+            'nombre' => 'Prenda '.$codigo,
+            'categoria_id' => $categoriaId,
+            'talla_id' => $this->producto->talla_id,
+            'costo' => 50,
+            'precio' => $precio,
+            'estado' => 'disponible',
+            'publicado' => true,
+        ]);
+    }
+
+    private function tokenAdmin(): string
+    {
+        $admin = User::factory()->create(['role' => User::ROL_ADMIN]);
+
+        return $admin->createToken('test')->plainTextToken;
+    }
+
+    private function pagarPedido(array $productos, ?string $cupon = null): array
+    {
+        $payload = [
+            'productos' => $productos,
+            'nombre' => 'Cliente X',
+            'telefono' => '70000000',
+            'ciudad' => 'Cochabamba',
+            'direccion' => 'Av. América 123',
+            'metodo_entrega_id' => $this->metodoEntrega->id,
+            'metodo_pago_id' => $this->metodoPago->id,
+        ];
+
+        if ($cupon !== null) {
+            $payload['cupon_codigo'] = $cupon;
+        }
+
+        return $payload;
+    }
+
+    public function test_cupon_con_categorias_descuenta_solo_prendas_elegibles(): void
+    {
+        $cupon = $this->crearCupon();
+        $cupon->categorias()->sync([$this->producto->categoria_id]);
+
+        $otraCategoria = Categoria::create(['nombre' => 'Blusas', 'slug' => 'blusas', 'activo' => true, 'orden' => 0]);
+        $otraPrenda = $this->crearProductoEnCategoria($otraCategoria->id, 'BLU-001', 300.00);
+
+        $this->postJson('/api/v1/store/pedidos', $this->pagarPedido([$this->producto->id, $otraPrenda->id], 'BIENVENIDA10'))
+            ->assertStatus(201)
+            ->assertJsonPath('data.subtotal', '500.00')
+            ->assertJsonPath('data.descuento', '20.00')
+            ->assertJsonPath('data.total', '500.00');
+    }
+
+    public function test_cupon_con_categorias_rechaza_pedido_sin_prendas_elegibles(): void
+    {
+        $cupon = $this->crearCupon();
+        $cupon->categorias()->sync([$this->producto->categoria_id]);
+
+        $otraCategoria = Categoria::create(['nombre' => 'Blusas', 'slug' => 'blusas', 'activo' => true, 'orden' => 0]);
+        $otraPrenda = $this->crearProductoEnCategoria($otraCategoria->id, 'BLU-002', 300.00);
+
+        $this->postJson('/api/v1/store/pedidos', $this->pagarPedido([$otraPrenda->id], 'BIENVENIDA10'))
+            ->assertStatus(422)
+            ->assertJsonStructure(['errors' => ['cupon_codigo']]);
+
+        $this->assertSame(0, Pedido::count());
+    }
+
+    public function test_cupon_no_vigente_por_fecha_de_inicio(): void
+    {
+        $this->crearCupon(['fecha_inicio' => now()->addDay()->toDateString()]);
+
+        $this->hacerPedido('BIENVENIDA10')
+            ->assertStatus(422)
+            ->assertJsonStructure(['errors' => ['cupon_codigo']]);
+    }
+
+    public function test_cupon_limite_por_cliente(): void
+    {
+        $this->crearCupon(['limite_por_cliente' => 1]);
+
+        $this->hacerPedido('BIENVENIDA10')->assertStatus(201);
+
+        $otraPrenda = $this->crearProductoEnCategoria($this->producto->categoria_id, 'VES-003', 200.00);
+
+        $this->postJson('/api/v1/store/pedidos', $this->pagarPedido([$otraPrenda->id], 'BIENVENIDA10'))
+            ->assertStatus(422)
+            ->assertJsonStructure(['errors' => ['cupon_codigo']]);
+    }
+
+    public function test_registra_uso_y_lo_libera_al_cancelar(): void
+    {
+        $this->crearCupon();
+        $this->hacerPedido('BIENVENIDA10')->assertStatus(201);
+
+        $pedido = Pedido::firstOrFail();
+        $cupon = Cupon::where('codigo', 'BIENVENIDA10')->firstOrFail();
+
+        $this->assertSame(1, CuponUso::count());
+        $uso = CuponUso::firstOrFail();
+        $this->assertSame($pedido->id, $uso->pedido_id);
+        $this->assertSame('20.00', $uso->monto_descontado);
+        $this->assertSame('70000000', $uso->telefono_normalizado);
+
+        $this->withToken($this->tokenAdmin())
+            ->putJson("/api/v1/admin/pedidos/{$pedido->id}/estado", ['estado' => 'cancelado'])
+            ->assertStatus(200);
+
+        $this->assertSame(0, CuponUso::count());
+        $this->assertSame(0, $cupon->fresh()->usos);
+    }
+
+    public function test_libera_uso_al_aprobar_devolucion(): void
+    {
+        $this->crearCupon();
+        $this->hacerPedido('BIENVENIDA10')->assertStatus(201);
+
+        $pedido = Pedido::firstOrFail();
+        $token = $this->tokenAdmin();
+
+        $this->withToken($token)
+            ->putJson("/api/v1/admin/pedidos/{$pedido->id}/estado", ['estado' => 'confirmado'])
+            ->assertStatus(200);
+
+        $this->withToken($token)
+            ->postJson("/api/v1/admin/pedidos/{$pedido->id}/devolver", ['motivo' => 'No le quedó'])
+            ->assertStatus(200);
+
+        $this->assertSame(0, CuponUso::count());
+        $this->assertSame(0, Cupon::where('codigo', 'BIENVENIDA10')->firstOrFail()->usos);
+    }
+
+    public function test_admin_no_elimina_cupon_con_usos(): void
+    {
+        $this->crearCupon();
+        $this->hacerPedido('BIENVENIDA10')->assertStatus(201);
+
+        $cupon = Cupon::where('codigo', 'BIENVENIDA10')->firstOrFail();
+
+        $this->withToken($this->tokenAdmin())
+            ->deleteJson("/api/v1/admin/cupones/{$cupon->id}")
+            ->assertStatus(422);
+
+        $this->assertNotNull($cupon->fresh());
+    }
+
+    public function test_admin_crea_cupon_con_codigo_en_mayusculas_y_restricciones(): void
+    {
+        $categoriaId = $this->producto->categoria_id;
+
+        $this->withToken($this->tokenAdmin())
+            ->postJson('/api/v1/admin/cupones', [
+                'codigo' => 'relampago',
+                'tipo' => Cupon::TIPO_PORCENTAJE,
+                'valor' => 15,
+                'fecha_inicio' => now()->toDateString(),
+                'vence_en' => now()->addDays(5)->toDateString(),
+                'limite_por_cliente' => 2,
+                'categorias' => [$categoriaId],
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.codigo', 'RELAMPAGO')
+            ->assertJsonPath('data.limite_por_cliente', 2)
+            ->assertJsonPath('data.categorias_ids', [$categoriaId]);
+
+        $this->assertDatabaseHas('categoria_cupon', ['categoria_id' => $categoriaId]);
+    }
+
+    public function test_admin_rechaza_codigo_duplicado_sin_importar_mayusculas(): void
+    {
+        $this->crearCupon(['codigo' => 'VERANO25']);
+
+        $this->withToken($this->tokenAdmin())
+            ->postJson('/api/v1/admin/cupones', [
+                'codigo' => 'verano25',
+                'tipo' => Cupon::TIPO_PORCENTAJE,
+                'valor' => 10,
+            ])
+            ->assertStatus(422)
+            ->assertJsonStructure(['errors' => ['codigo']]);
+    }
+
+    public function test_admin_filtra_por_estado(): void
+    {
+        $this->crearCupon(['codigo' => 'ACTIVO1']);
+        $this->crearCupon(['codigo' => 'INACTIVO1', 'activo' => false]);
+        $this->crearCupon(['codigo' => 'VENCIDO1', 'vence_en' => now()->subDay()->toDateString()]);
+        $this->crearCupon(['codigo' => 'AGOTADO1', 'limite_usos' => 1, 'usos' => 1]);
+
+        $token = $this->tokenAdmin();
+
+        $this->withToken($token)
+            ->getJson('/api/v1/admin/cupones?estado=inactivo')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.codigo', 'INACTIVO1')
+            ->assertJsonCount(1, 'data');
+
+        $this->withToken($token)
+            ->getJson('/api/v1/admin/cupones?estado=vencido')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.codigo', 'VENCIDO1')
+            ->assertJsonCount(1, 'data');
+
+        $this->withToken($token)
+            ->getJson('/api/v1/admin/cupones?estado=agotado')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.codigo', 'AGOTADO1')
+            ->assertJsonCount(1, 'data');
+
+        $this->withToken($token)
+            ->getJson('/api/v1/admin/cupones?estado=activo')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.codigo', 'ACTIVO1')
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_admin_detalle_incluye_usos_y_total_descontado(): void
+    {
+        $this->crearCupon();
+        $this->hacerPedido('BIENVENIDA10')->assertStatus(201);
+
+        $cupon = Cupon::where('codigo', 'BIENVENIDA10')->firstOrFail();
+
+        $this->withToken($this->tokenAdmin())
+            ->getJson("/api/v1/admin/cupones/{$cupon->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.total_descontado', '20.00')
+            ->assertJsonPath('data.usos_registrados.0.monto_descontado', '20.00');
+    }
+
+    public function test_validar_en_tienda_respeta_categorias(): void
+    {
+        $cupon = $this->crearCupon();
+        $cupon->categorias()->sync([$this->producto->categoria_id]);
+
+        $otraCategoria = Categoria::create(['nombre' => 'Blusas', 'slug' => 'blusas', 'activo' => true, 'orden' => 0]);
+        $otraPrenda = $this->crearProductoEnCategoria($otraCategoria->id, 'BLU-003', 300.00);
+
+        $this->getJson('/api/v1/store/cupones/validar?codigo=BIENVENIDA10&subtotal=200&productos[]='.$this->producto->id)
+            ->assertStatus(200)
+            ->assertJsonPath('data.valido', true)
+            ->assertJsonPath('data.descuento', '20.00');
+
+        $this->getJson('/api/v1/store/cupones/validar?codigo=BIENVENIDA10&subtotal=300&productos[]='.$otraPrenda->id)
+            ->assertStatus(200)
+            ->assertJsonPath('data.valido', false);
     }
 }

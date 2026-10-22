@@ -18,6 +18,20 @@ class ProductoController extends Controller
             ->with(['categoria', 'talla', 'imagenes'])
             ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', $request->integer('categoria')))
             ->when($request->filled('talla'), fn ($q) => $q->where('talla_id', $request->integer('talla')))
+            ->when($request->filled('oferta'), function ($q) use ($request) {
+                $ofertaId = $request->integer('oferta');
+
+                $vigente = fn ($query) => $query
+                    ->whereKey($ofertaId)
+                    ->where('activo', true)
+                    ->where('fecha_inicio', '<=', now())
+                    ->where('fecha_fin', '>=', now());
+
+                $q->where(function ($sub) use ($vigente) {
+                    $sub->whereHas('ofertas', $vigente)
+                        ->orWhereHas('categoria.ofertas', $vigente);
+                });
+            })
             ->when($request->filled('busqueda'), function ($q) use ($request) {
                 $busqueda = $request->input('busqueda');
                 $q->where(fn ($query) => $query

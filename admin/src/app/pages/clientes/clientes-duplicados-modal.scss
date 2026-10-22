@@ -1,0 +1,67 @@
+.duplicados {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.vacio {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.intro {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.grupo {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.grupo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.grupo-titulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.nombre {
+  font-size: 14px;
+}
+
+.es-principal {
+  background: rgba(163, 102, 216, 0.06);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}

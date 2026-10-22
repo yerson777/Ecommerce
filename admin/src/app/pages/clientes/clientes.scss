@@ -24,6 +24,79 @@
   margin-top: 1rem;
 }
 
+.toolbar-space {
+  flex: 1;
+}
+
+.filtros-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.filtro-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  &.activo {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+}
+
+.cliente-nombre {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.bloqueo-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: #fdecea;
+  border: 1px solid #f5c6c0;
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  font-size: 14px;
+
+  .muted-label {
+    color: var(--danger);
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.btn-danger-text {
+  color: var(--danger);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 0.4rem;
+}
+
 .detalle-encabezado {
   display: flex;
   flex-direction: column;

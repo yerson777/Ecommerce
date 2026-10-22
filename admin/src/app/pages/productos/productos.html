@@ -5,6 +5,7 @@
       <p class="page-subtitle">Catálogo de prendas únicas físicas</p>
     </div>
     <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="exportar()">Exportar Excel</button>
       <button type="button" class="btn btn-primary" (click)="nuevoProducto()">+ Nuevo producto</button>
       <app-notification-center />
     </div>
@@ -54,6 +55,16 @@
       </div>
 
       <div class="field">
+        <label>Condición</label>
+        <select class="select" [(ngModel)]="filtros().condicion" (change)="onBuscar()">
+          <option [ngValue]="null">Todas</option>
+          @for (condicion of condiciones(); track condicion.id) {
+            <option [ngValue]="condicion.id">{{ condicion.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
         <label>Estado</label>
         <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
           <option value="">Todos</option>
@@ -69,6 +80,15 @@
           <option value="">Todos</option>
           <option value="1">Publicados</option>
           <option value="0">No publicados</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Ordenar por</label>
+        <select class="select" [(ngModel)]="filtros().orden" (change)="onBuscar()">
+          @for (opcion of opcionesOrden; track opcion.valor) {
+            <option [ngValue]="opcion.valor">{{ opcion.etiqueta }}</option>
+          }
         </select>
       </div>
 
@@ -118,7 +138,9 @@
                 <th>Categoría</th>
                 <th>Talla</th>
                 <th>Marca</th>
+                <th>Condición</th>
                 <th>Precio</th>
+                <th>Días</th>
                 <th>Estado</th>
                 <th>Publicado</th>
                 <th>Acciones</th>
@@ -144,16 +166,20 @@
                   <td>{{ producto.categoria?.nombre ?? '—' }}</td>
                   <td>{{ producto.talla?.nombre ?? '—' }}</td>
                   <td>{{ producto.marca?.nombre ?? '—' }}</td>
+                  <td>{{ etiquetaCondicion(producto.condicion) }}</td>
                   <td>{{ moneda(producto.precio) }}</td>
+                  <td>{{ producto.dias_en_inventario ?? '—' }}</td>
                   <td>
                     <app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge>
+                    @if (!producto.publicado) {
+                      <app-badge tone="neutral">Oculta</app-badge>
+                    }
                   </td>
                   <td>
                     <label class="switch">
                       <input
                         type="checkbox"
                         [checked]="producto.publicado"
-                        [disabled]="producto.estado === 'vendida'"
                         (change)="cambiarPublicado(producto)"
                       />
                       <span class="slider"></span>
@@ -162,9 +188,8 @@
                   <td>
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" title="Ver" (click)="abrirLectura(producto)">Ver</button>
-                      @if (producto.estado !== 'vendida') {
-                        <button type="button" class="btn btn-ghost btn-sm" title="Editar" (click)="abrirEdicion(producto)">Editar</button>
-                      }
+                      <button type="button" class="btn btn-ghost btn-sm" title="Editar" (click)="abrirEdicion(producto)">Editar</button>
+                      <button type="button" class="btn btn-ghost btn-sm" title="Duplicar" (click)="duplicar(producto)">Duplicar</button>
                       <button type="button" class="btn btn-ghost btn-sm" title="Imágenes" (click)="abrirImagenes(producto)">🖼</button>
                       <button type="button" class="btn btn-ghost btn-sm" title="Historial" (click)="abrirHistorial(producto)">🕓</button>
                       @if (producto.estado === 'disponible') {
@@ -207,8 +232,10 @@
     [categorias]="categorias()"
     [tallas]="tallas()"
     [marcas]="marcas()"
+    [condiciones]="condiciones()"
     [soloLectura]="modalFormulario().readonly"
     (guardado)="cargar(); cerrarFormulario()"
+    (agregado)="cargar()"
     (cerrado)="cerrarFormulario()"
   />
 }
@@ -252,5 +279,16 @@
     confirmLabel="Liberar"
     (confirm)="confirmarLiberar()"
     (cancel)="liberarObjetivo = null"
+  />
+}
+
+<!-- Ocultar prenda reservada o vendida -->
+@if (ocultarObjetivo; as producto) {
+  <app-confirm-dialog
+    title="Ocultar prenda"
+    [message]="'La prenda ' + producto.nombre + ' (' + producto.codigo + ') está ' + etiquetaEstado(producto.estado).toLowerCase() + '. ¿Ocultarla de la tienda igualmente? Dejará de mostrarse a las clientas.'"
+    confirmLabel="Ocultar"
+    (confirm)="confirmarOcultar()"
+    (cancel)="ocultarObjetivo = null"
   />
 }

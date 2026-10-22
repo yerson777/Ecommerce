@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Models\Cliente;
+use App\Models\Devolucion;
 use App\Models\Gasto;
 use App\Models\MetodoPago;
 use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\Producto;
+use App\Models\Proveedor;
 use App\Models\Venta;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Carbon;
@@ -126,16 +128,35 @@ class ReporteService
 
         $totalPendiente = $this->saldoPendienteTotal();
 
+        $totalDevoluciones = $this->devolucionesReembolsadas($inicio, $fin);
+
         return [
             'total' => $totalVentas,
             'monto' => number_format($totalMonto, 2, '.', ''),
             'cobrado' => number_format($totalCobrado, 2, '.', ''),
             'pendiente' => number_format($totalPendiente, 2, '.', ''),
+            'devoluciones' => number_format($totalDevoluciones, 2, '.', ''),
+            'monto_neto' => number_format(max(0.0, $totalMonto - $totalDevoluciones), 2, '.', ''),
         ];
     }
 
     /**
+     * Suma de devoluciones reembolsadas en un rango de fechas (por fecha de registro).
+     */
+    private function devolucionesReembolsadas(?Carbon $inicio, ?Carbon $fin): float
+    {
+        return (float) Devolucion::query()
+            ->where('estado', Devolucion::ESTADO_REEMBOLSADA)
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('created_at', [$inicio, $fin]))
+            ->sum('monto_reembolsado');
+    }
+
+    /**
      * Rentabilidad del período: margen real = ventas - costo de mercadería - gastos operativos.
+     *
+     * El costo de mercadería usa el costo congelado al vender
+     * (venta_items.costo_unitario) y no cuenta ventas anuladas. Las prendas
+     * sin costo no se cuentan y se informa cuántas quedaron fuera.
      */
     private function estadisticasRentabilidad(?Carbon $inicio, ?Carbon $fin): array
     {
@@ -148,11 +169,19 @@ class ReporteService
         $cantidadVentas = (clone $query)->count();
         $totalMonto = (float) (clone $query)->sum('total');
 
-        $costoMercaderia = (float) DB::table('venta_items')
+        $costoQuery = DB::table('venta_items')
             ->join('ventas', 'venta_items.venta_id', '=', 'ventas.id')
-            ->join('productos', 'venta_items.producto_id', '=', 'productos.id')
-            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]))
-            ->sum('productos.costo');
+            ->whereNull('ventas.anulada_en')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('ventas.fecha_venta', [$inicio, $fin]));
+
+        $costoMercaderia = (float) (clone $costoQuery)->sum('venta_items.costo_unitario');
+
+        $prendasSinCosto = (clone $costoQuery)
+            ->where(function ($q) {
+                $q->whereNull('venta_items.costo_unitario')
+                    ->orWhere('venta_items.costo_unitario', '<=', 0);
+            })
+            ->count();
 
         $gastosOperativos = (float) Gasto::when(
             $inicio && $fin,
@@ -162,6 +191,8 @@ class ReporteService
         $gananciaNeta = $totalMonto - $costoMercaderia - $gastosOperativos;
         $ticketPromedio = $cantidadVentas > 0 ? $totalMonto / $cantidadVentas : 0.0;
 
+        $totalDevoluciones = $this->devolucionesReembolsadas($inicio, $fin);
+
         $fmt = fn (float $v): string => number_format($v, 2, '.', '');
 
         return [
@@ -169,8 +200,13 @@ class ReporteService
             'costo_mercaderia' => $fmt($costoMercaderia),
             'gastos_operativos' => $fmt($gastosOperativos),
             'ganancia_neta' => $fmt($gananciaNeta),
+            'margen_pct' => $totalMonto > 0 ? number_format($gananciaNeta / $totalMonto * 100, 1, '.', '') : '0.0',
+            'prendas_sin_costo' => $prendasSinCosto,
             'ticket_promedio' => $fmt($ticketPromedio),
             'cantidad_ventas' => $cantidadVentas,
+            'devoluciones' => $fmt($totalDevoluciones),
+            'ingresos_neto' => $fmt(max(0.0, $totalMonto - $totalDevoluciones)),
+            'ganancia_neta_ajustada' => $fmt($gananciaNeta - $totalDevoluciones),
         ];
     }
 
@@ -322,10 +358,12 @@ class ReporteService
             ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
             ->leftJoin('categorias', 'categorias.id', '=', 'productos.categoria_id')
             ->leftJoin('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->whereNull('ventas.anulada_en')
             ->select(
                 'categorias.nombre as categoria',
                 DB::raw('COUNT(venta_items.id) as cantidad_productos'),
                 DB::raw('SUM(venta_items.precio_unitario) as monto_total'),
+                DB::raw('SUM(CASE WHEN venta_items.costo_unitario > 0 THEN venta_items.precio_unitario - venta_items.costo_unitario ELSE 0 END) as ganancia'),
             )
             ->groupBy('categorias.nombre')
             ->orderByDesc('monto_total');
@@ -338,6 +376,10 @@ class ReporteService
             'categoria' => $row->categoria ?? 'Sin categoría',
             'cantidad_productos' => (int) $row->cantidad_productos,
             'monto_total' => number_format((float) $row->monto_total, 2, '.', ''),
+            'ganancia' => number_format((float) $row->ganancia, 2, '.', ''),
+            'margen_pct' => (float) $row->monto_total > 0
+                ? number_format((float) $row->ganancia / (float) $row->monto_total * 100, 1, '.', '')
+                : '0.0',
         ])->toArray();
     }
 
@@ -500,10 +542,12 @@ class ReporteService
             ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
             ->leftJoin('marcas', 'marcas.id', '=', 'productos.marca_id')
             ->leftJoin('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->whereNull('ventas.anulada_en')
             ->select(
                 'marcas.nombre as marca',
                 DB::raw('COUNT(venta_items.id) as cantidad_productos'),
                 DB::raw('SUM(venta_items.precio_unitario) as monto_total'),
+                DB::raw('SUM(CASE WHEN venta_items.costo_unitario > 0 THEN venta_items.precio_unitario - venta_items.costo_unitario ELSE 0 END) as ganancia'),
             )
             ->groupBy('marcas.nombre')
             ->orderByDesc('monto_total');
@@ -516,7 +560,174 @@ class ReporteService
             'marca' => $row->marca ?? 'Sin marca',
             'cantidad_productos' => (int) $row->cantidad_productos,
             'monto_total' => number_format((float) $row->monto_total, 2, '.', ''),
+            'ganancia' => number_format((float) $row->ganancia, 2, '.', ''),
+            'margen_pct' => (float) $row->monto_total > 0
+                ? number_format((float) $row->ganancia / (float) $row->monto_total * 100, 1, '.', '')
+                : '0.0',
         ])->toArray();
+    }
+
+    /**
+     * Ganancia agrupada por lote (compra). Las prendas sin costo no se
+     * cuentan. Incluye costo del lote, recuperado y resultados por lote.
+     */
+    public function gananciaPorLote(?string $periodo, ?string $fechaDesde, ?string $fechaHasta): array
+    {
+        [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
+
+        $query = DB::table('compras')
+            ->leftJoin('proveedores', 'proveedores.id', '=', 'compras.proveedor_id')
+            ->select(
+                'compras.id',
+                'compras.fecha',
+                'compras.estado',
+                'compras.costo_total',
+                'compras.gastos_extra',
+                'proveedores.nombre as proveedor',
+            )
+            ->orderByDesc('compras.fecha');
+
+        if ($inicio && $fin) {
+            $query->whereBetween('compras.fecha', [$inicio, $fin]);
+        }
+
+        return $query->get()->map(function ($row) {
+            $productoIds = DB::table('compra_productos')
+                ->where('compra_id', $row->id)
+                ->pluck('producto_id')
+                ->all();
+
+            $cantidad = count($productoIds);
+
+            $stats = ['recuperado' => 0.0, 'ganancia' => 0.0, 'vendidas' => 0, 'sin_costo' => 0];
+
+            if ($cantidad > 0) {
+                $base = DB::table('venta_items')
+                    ->join('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+                    ->whereNull('ventas.anulada_en')
+                    ->whereIn('venta_items.producto_id', $productoIds);
+
+                $recuperado = (float) (clone $base)->sum('venta_items.precio_unitario');
+                $ganancia = (float) (clone $base)
+                    ->where('venta_items.costo_unitario', '>', 0)
+                    ->sum(DB::raw('venta_items.precio_unitario - venta_items.costo_unitario'));
+                $sinCosto = (clone $base)
+                    ->where(function ($q) {
+                        $q->whereNull('venta_items.costo_unitario')
+                            ->orWhere('venta_items.costo_unitario', '<=', 0);
+                    })
+                    ->count();
+
+                $stats = [
+                    'recuperado' => $recuperado,
+                    'ganancia' => $ganancia,
+                    'vendidas' => (int) Producto::whereIn('id', $productoIds)
+                        ->where('estado', Producto::ESTADO_VENDIDA)
+                        ->count(),
+                    'sin_costo' => $sinCosto,
+                ];
+            }
+
+            $costoLote = (float) $row->costo_total + (float) $row->gastos_extra;
+
+            return [
+                'compra_id' => (int) $row->id,
+                'fecha' => $row->fecha,
+                'proveedor' => $row->proveedor ?? 'Sin proveedor',
+                'estado' => $row->estado,
+                'prendas' => $cantidad,
+                'vendidas' => $stats['vendidas'],
+                'sin_costo' => $stats['sin_costo'],
+                'costo_lote' => number_format($costoLote, 2, '.', ''),
+                'recuperado' => number_format($stats['recuperado'], 2, '.', ''),
+                'ganancia' => number_format($stats['ganancia'], 2, '.', ''),
+                'margen_pct' => $stats['recuperado'] > 0
+                    ? number_format($stats['ganancia'] / $stats['recuperado'] * 100, 1, '.', '')
+                    : '0.0',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Ganancia comparada por origen del proveedor (fardo coreano vs americano).
+     * Las prendas sin costo no suman ganancia. El origen "otro" y las prendas
+     * sin proveedor se agrupan aparte para no distorsionar la comparación.
+     */
+    public function gananciaPorOrigen(?string $periodo, ?string $fechaDesde, ?string $fechaHasta): array
+    {
+        [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
+
+        $query = DB::table('venta_items')
+            ->join('productos', 'productos.id', '=', 'venta_items.producto_id')
+            ->leftJoin('proveedores', 'proveedores.id', '=', 'productos.proveedor_id')
+            ->leftJoin('ventas', 'ventas.id', '=', 'venta_items.venta_id')
+            ->whereNull('ventas.anulada_en')
+            ->select(
+                'proveedores.tipo as origen',
+                DB::raw('COUNT(venta_items.id) as prendas_vendidas'),
+                DB::raw('SUM(venta_items.precio_unitario) as recuperado'),
+                DB::raw('SUM(CASE WHEN venta_items.costo_unitario > 0 THEN venta_items.costo_unitario ELSE 0 END) as costo'),
+                DB::raw('SUM(CASE WHEN venta_items.costo_unitario > 0 THEN venta_items.precio_unitario - venta_items.costo_unitario ELSE 0 END) as ganancia'),
+                DB::raw('SUM(CASE WHEN venta_items.costo_unitario > 0 THEN 0 ELSE 1 END) as sin_costo'),
+            )
+            ->groupBy('proveedores.tipo');
+
+        if ($inicio && $fin) {
+            $query->whereBetween('ventas.fecha_venta', [$inicio, $fin]);
+        }
+
+        $etiquetas = [
+            Proveedor::TIPO_FARDO_COREANO => 'Fardo coreano',
+            Proveedor::TIPO_FARDO_AMERICANO => 'Fardo americano',
+            Proveedor::TIPO_OTRO => 'Otro',
+        ];
+
+        $filas = $query->get()->map(function ($row) use ($etiquetas) {
+            $recuperado = (float) $row->recuperado;
+            $ganancia = (float) $row->ganancia;
+
+            return [
+                'origen' => $row->origen ?? 'sin_proveedor',
+                'etiqueta' => $etiquetas[$row->origen] ?? ($row->origen === null ? 'Sin proveedor' : $row->origen),
+                'prendas_vendidas' => (int) $row->prendas_vendidas,
+                'sin_costo' => (int) $row->sin_costo,
+                'recuperado' => number_format($recuperado, 2, '.', ''),
+                'costo' => number_format((float) $row->costo, 2, '.', ''),
+                'ganancia' => number_format($ganancia, 2, '.', ''),
+                'margen_pct' => $recuperado > 0
+                    ? number_format($ganancia / $recuperado * 100, 1, '.', '')
+                    : '0.0',
+            ];
+        });
+
+        $orden = [
+            Proveedor::TIPO_FARDO_COREANO => 0,
+            Proveedor::TIPO_FARDO_AMERICANO => 1,
+            Proveedor::TIPO_OTRO => 2,
+        ];
+
+        $filas = $filas->sortBy(fn ($f) => $orden[$f['origen']] ?? 99)->values();
+
+        $coreano = $filas->firstWhere('origen', Proveedor::TIPO_FARDO_COREANO);
+        $americano = $filas->firstWhere('origen', Proveedor::TIPO_FARDO_AMERICANO);
+
+        $gananciaCoreano = $coreano ? (float) str_replace(',', '', $coreano['ganancia']) : 0.0;
+        $gananciaAmericano = $americano ? (float) str_replace(',', '', $americano['ganancia']) : 0.0;
+
+        return [
+            'por_origen' => $filas->toArray(),
+            'comparacion' => [
+                'coreano_ganancia' => number_format($gananciaCoreano, 2, '.', ''),
+                'americano_ganancia' => number_format($gananciaAmericano, 2, '.', ''),
+                'diferencia' => number_format($gananciaCoreano - $gananciaAmericano, 2, '.', ''),
+                'diferencia_pct' => $gananciaAmericano > 0
+                    ? number_format(($gananciaCoreano - $gananciaAmericano) / $gananciaAmericano * 100, 1, '.', '')
+                    : null,
+                'ganador' => $gananciaCoreano === $gananciaAmericano
+                    ? 'empate'
+                    : ($gananciaCoreano > $gananciaAmericano ? Proveedor::TIPO_FARDO_COREANO : Proveedor::TIPO_FARDO_AMERICANO),
+            ],
+        ];
     }
 
     /**
@@ -526,11 +737,11 @@ class ReporteService
     {
         [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
 
-        $total = Cliente::count();
-        $conPedidos = Cliente::whereHas('pedidos')->count();
+        $total = Cliente::where('es_prueba', false)->count();
+        $conPedidos = Cliente::where('es_prueba', false)->whereHas('pedidos')->count();
         $sinCompras = $total - $conPedidos;
 
-        $queryNuevos = Cliente::query();
+        $queryNuevos = Cliente::query()->where('es_prueba', false);
         if ($inicio && $fin) {
             $queryNuevos->where(function ($q) use ($inicio, $fin) {
                 $q->whereBetween('created_at', [$inicio, $fin])
@@ -545,15 +756,18 @@ class ReporteService
         }
         $nuevos = $queryNuevos->count();
 
-        $recurrentes = Cliente::whereHas('pedidos', fn () => true, '>=', 2)->count();
+        $recurrentes = Cliente::where('es_prueba', false)->whereHas('pedidos', fn () => true, '>=', 2)->count();
 
         $sinRecompra = (int) DB::table('clientes')
+            ->where('es_prueba', false)
             ->whereNotNull('fecha_primer_pedido')
             ->whereColumn('fecha_primer_pedido', 'fecha_ultimo_pedido')
             ->count();
 
         $topClientes = DB::table('clientes')
             ->join('pedidos', 'pedidos.cliente_id', '=', 'clientes.id')
+            ->where('clientes.es_prueba', false)
+            ->whereNotIn('pedidos.estado', ['cancelado', 'devuelto'])
             ->select(
                 'clientes.id',
                 'clientes.nombre',

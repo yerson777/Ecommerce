@@ -193,6 +193,7 @@
                   <th>Talla</th>
                   <th>Color</th>
                   <th>Precio</th>
+                  <th>Ganancia</th>
                 </tr>
               </thead>
               <tbody>
@@ -210,6 +211,13 @@
                     <td>{{ item.producto_talla ?? '—' }}</td>
                     <td>{{ item.producto_color ?? '—' }}</td>
                     <td>{{ moneda(item.precio_unitario) }}</td>
+                    <td>
+                      @if (item.tiene_costo) {
+                        {{ moneda(item.ganancia ?? '0') }}
+                      } @else {
+                        <span class="muted" title="Sin costo no se calcula ganancia">s/costo</span>
+                      }
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -489,6 +497,7 @@
           <th>Talla</th>
           <th>Color</th>
           <th>Precio</th>
+          <th>Ganancia</th>
         </tr>
       </thead>
       <tbody>
@@ -499,6 +508,13 @@
             <td>{{ item.producto_talla ?? '—' }}</td>
             <td>{{ item.producto_color ?? '—' }}</td>
             <td>{{ moneda(item.precio_unitario) }}</td>
+            <td>
+              @if (item.tiene_costo) {
+                {{ moneda(item.ganancia ?? '0') }}
+              } @else {
+                <span class="muted" title="Sin costo no se calcula ganancia">s/costo</span>
+              }
+            </td>
           </tr>
         }
       </tbody>
@@ -507,6 +523,9 @@
       <div class="row-between"><span>Subtotal</span><span>{{ moneda(d.subtotal) }}</span></div>
       @if (d.descuento && descuentoPositivo(d.descuento)) {
         <div class="row-between"><span>Descuento</span><span>− {{ moneda(d.descuento) }}</span></div>
+      }
+      @if (d.cupon) {
+        <div class="row-between"><span>Cupón</span><span>{{ d.cupon }}</span></div>
       }
       <div class="row-between"><span>Costo de envío</span><span>{{ moneda(d.costo_envio) }}</span></div>
       <div class="row-between total-row"><span>Total</span><span>{{ moneda(d.total) }}</span></div>

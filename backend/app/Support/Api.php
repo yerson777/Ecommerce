@@ -47,12 +47,16 @@ class Api
         ], $status);
     }
 
+    /**
+     * @param  array<string, mixed>  $extra  Claves adicionales al nivel raíz (p. ej. avisos).
+     */
     public static function resource(
         JsonResource|AnonymousResourceCollection $resource,
         string $message = 'Operación exitosa.',
-        int $status = 200
+        int $status = 200,
+        array $extra = []
     ): JsonResponse {
-        $resource->additional(['success' => true, 'message' => $message]);
+        $resource->additional(array_merge(['success' => true, 'message' => $message], $extra));
 
         return $resource
             ->response()

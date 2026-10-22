@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\Admin\AuthController;
 use App\Http\Controllers\Api\V1\Admin\CajaController;
 use App\Http\Controllers\Api\V1\Admin\ClienteController;
 use App\Http\Controllers\Api\V1\Admin\ComunicacionController;
+use App\Http\Controllers\Api\V1\Admin\CompraController;
+use App\Http\Controllers\Api\V1\Admin\CondicionController;
 use App\Http\Controllers\Api\V1\Admin\ConfiguracionController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DevolucionController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Api\V1\Admin\PagoController;
 use App\Http\Controllers\Api\V1\Admin\PedidoController;
 use App\Http\Controllers\Api\V1\Admin\PlantillaMensajeController;
 use App\Http\Controllers\Api\V1\Admin\ProductoImagenController;
+use App\Http\Controllers\Api\V1\Admin\ProveedorController;
 use App\Http\Controllers\Api\V1\Admin\ReporteController;
 use App\Http\Controllers\Api\V1\Admin\ReservaController;
 use App\Http\Controllers\Api\V1\Admin\UsuarioController;
@@ -23,6 +26,7 @@ use App\Http\Controllers\Api\V1\Store\BannerController;
 use App\Http\Controllers\Api\V1\Store\CategoriaController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
 use App\Http\Controllers\Api\V1\Store\CuponController;
+use App\Http\Controllers\Api\V1\Store\OfertaController;
 use App\Http\Controllers\Api\V1\Store\ProductoController;
 use App\Http\Controllers\Api\V1\Store\TallaController;
 use Illuminate\Http\Request;
@@ -58,6 +62,9 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('/categories', [CategoriaController::class, 'index'])->name('categorias.index');
         Route::get('/sizes', [TallaController::class, 'index'])->name('tallas.index');
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
+
+        // Oferta vigente (encabezado del catálogo al llegar desde un banner)
+        Route::get('/ofertas/{id}', [OfertaController::class, 'show'])->name('ofertas.show');
 
         // Cupones disponibles para promociones activas (validación real en checkout)
         Route::get('/cupones/validar', [CuponController::class, 'validar'])->name('cupones.validar');
@@ -102,14 +109,21 @@ Route::group(['prefix' => 'v1'], function () {
         Route::middleware(['auth:sanctum', 'role:super_admin,admin,vendedor'])->group(function () {
             Route::get('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'index'])->name('productos.index');
             Route::post('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'store'])->name('productos.store');
+            Route::get('/productos/exportar', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'exportar'])->name('productos.exportar');
+            Route::post('/productos/{id}/duplicar', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'duplicar'])->name('productos.duplicar');
             Route::get('/productos/{id}', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'show'])->name('productos.show');
             Route::put('/productos/{id}', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'update'])->name('productos.update');
             Route::delete('/productos/{id}', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'destroy'])->name('productos.destroy');
 
             Route::get('/inventario', [InventarioController::class, 'resumen'])->name('inventario.resumen');
+            Route::get('/inventario/listado', [InventarioController::class, 'listado'])->name('inventario.listado');
+            Route::get('/inventario/sin-rotacion', [InventarioController::class, 'sinRotacion'])->name('inventario.sin-rotacion');
+            Route::get('/inventario/exportar', [InventarioController::class, 'exportar'])->name('inventario.exportar');
             Route::post('/inventario/reservar', [InventarioController::class, 'reservar'])->name('inventario.reservar');
             Route::post('/inventario/liberar', [InventarioController::class, 'liberar'])->name('inventario.liberar');
             Route::post('/inventario/vender', [InventarioController::class, 'vender'])->name('inventario.vender');
+            Route::post('/inventario/verificar', [InventarioController::class, 'verificar'])->name('inventario.verificar');
+            Route::post('/inventario/revision', [InventarioController::class, 'revision'])->name('inventario.revision');
 
             Route::get('/productos/{id}/historial', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'historial'])->name('productos.historial');
 
@@ -124,8 +138,15 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/categorias', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'index'])->name('categorias.index');
             Route::post('/categorias', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'store'])->name('categorias.store');
             Route::get('/categorias/{id}', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'show'])->name('categorias.show');
-            Route::put('/categorias/{id}', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'update'])->name('categorias.update');
+            Route::match(['put', 'post'], '/categorias/{id}', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'update'])->name('categorias.update');
             Route::delete('/categorias/{id}', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'destroy'])->name('categorias.destroy');
+            Route::post('/categorias/{id}/mover-productos', [App\Http\Controllers\Api\V1\Admin\CategoriaController::class, 'moverProductos'])->name('categorias.mover-productos');
+
+            Route::get('/condiciones', [CondicionController::class, 'index'])->name('condiciones.index');
+            Route::post('/condiciones', [CondicionController::class, 'store'])->name('condiciones.store');
+            Route::get('/condiciones/{id}', [CondicionController::class, 'show'])->name('condiciones.show');
+            Route::put('/condiciones/{id}', [CondicionController::class, 'update'])->name('condiciones.update');
+            Route::delete('/condiciones/{id}', [CondicionController::class, 'destroy'])->name('condiciones.destroy');
 
             Route::get('/tallas', [App\Http\Controllers\Api\V1\Admin\TallaController::class, 'index'])->name('tallas.index');
             Route::post('/tallas', [App\Http\Controllers\Api\V1\Admin\TallaController::class, 'store'])->name('tallas.store');
@@ -136,12 +157,15 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/marcas', [MarcaController::class, 'index'])->name('marcas.index');
             Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
             Route::get('/marcas/{id}', [MarcaController::class, 'show'])->name('marcas.show');
-            Route::put('/marcas/{id}', [MarcaController::class, 'update'])->name('marcas.update');
+            Route::match(['put', 'post'], '/marcas/{id}', [MarcaController::class, 'update'])->name('marcas.update');
             Route::delete('/marcas/{id}', [MarcaController::class, 'destroy'])->name('marcas.destroy');
 
             Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
             Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
             Route::get('/clientes/opciones', [ClienteController::class, 'opciones'])->name('clientes.opciones');
+            Route::get('/clientes/duplicados', [ClienteController::class, 'duplicados'])->name('clientes.duplicados');
+            Route::get('/clientes/exportar', [ClienteController::class, 'exportar'])->name('clientes.exportar');
+            Route::post('/clientes/unir', [ClienteController::class, 'unir'])->name('clientes.unir');
             Route::get('/clientes/{id}', [ClienteController::class, 'show'])->name('clientes.show');
             Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
             Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
@@ -169,6 +193,8 @@ Route::group(['prefix' => 'v1'], function () {
             Route::post('/devoluciones', [DevolucionController::class, 'store'])->name('devoluciones.store');
             Route::get('/devoluciones/{id}', [DevolucionController::class, 'show'])->name('devoluciones.show');
             Route::post('/devoluciones/{id}/aprobar', [DevolucionController::class, 'aprobar'])->name('devoluciones.aprobar');
+            Route::post('/devoluciones/{id}/rechazar', [DevolucionController::class, 'rechazar'])->name('devoluciones.rechazar');
+            Route::post('/devoluciones/{id}/reembolsar', [DevolucionController::class, 'reembolsar'])->name('devoluciones.reembolsar');
 
             // Banners del carrusel de la tienda
             Route::get('/banners', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'index'])->name('banners.index');
@@ -176,6 +202,14 @@ Route::group(['prefix' => 'v1'], function () {
             Route::put('/banners/orden', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'reorder'])->name('banners.orden');
             Route::post('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'update'])->name('banners.update');
             Route::delete('/banners/{id}', [App\Http\Controllers\Api\V1\Admin\BannerController::class, 'destroy'])->name('banners.destroy');
+
+            // Ofertas (catálogo): el precio final siempre lo calcula el servidor
+            Route::get('/ofertas', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'index'])->name('ofertas.index');
+            Route::post('/ofertas', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'store'])->name('ofertas.store');
+            Route::post('/ofertas/{id}/estado', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'cambiarEstado'])->name('ofertas.estado');
+            Route::get('/ofertas/{id}', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'show'])->name('ofertas.show');
+            Route::put('/ofertas/{id}', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'update'])->name('ofertas.update');
+            Route::delete('/ofertas/{id}', [App\Http\Controllers\Api\V1\Admin\OfertaController::class, 'destroy'])->name('ofertas.destroy');
         });
 
         // ==== Módulos financieros (super_admin y admin) ====
@@ -215,6 +249,22 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/config/metodos-entrega', [ConfiguracionController::class, 'metodosEntrega'])->name('config.metodos-entrega');
             Route::put('/config/metodos-entrega/{id}', [ConfiguracionController::class, 'actualizarMetodoEntrega'])->name('config.metodos-entrega.update');
 
+            // ==== Compras y proveedores ====
+            Route::get('/proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
+            Route::post('/proveedores', [ProveedorController::class, 'store'])->name('proveedores.store');
+            Route::get('/proveedores/{id}', [ProveedorController::class, 'show'])->name('proveedores.show');
+            Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->name('proveedores.update');
+            Route::post('/proveedores/{id}/estado', [ProveedorController::class, 'cambiarEstado'])->name('proveedores.estado');
+            Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
+
+            Route::get('/compras', [CompraController::class, 'index'])->name('compras.index');
+            Route::post('/compras', [CompraController::class, 'store'])->name('compras.store');
+            Route::get('/compras/exportar', [CompraController::class, 'exportar'])->name('compras.exportar');
+            Route::get('/compras/{id}', [CompraController::class, 'show'])->name('compras.show');
+            Route::put('/compras/{id}', [CompraController::class, 'update'])->name('compras.update');
+            Route::post('/compras/{id}/anular', [CompraController::class, 'anular'])->name('compras.anular');
+            Route::delete('/compras/{id}', [CompraController::class, 'destroy'])->name('compras.destroy');
+
             // ==== Reportes y Estadísticas ====
             Route::get('/reportes/resumen', [ReporteController::class, 'resumen'])->name('reportes.resumen');
             Route::get('/reportes/dashboard', [ReporteController::class, 'resumenFiltrado'])->name('reportes.dashboard');
@@ -223,6 +273,8 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/reportes/ventas-por-categoria', [ReporteController::class, 'ventasPorCategoria'])->name('reportes.ventas-por-categoria');
             Route::get('/reportes/ventas-por-talla', [ReporteController::class, 'ventasPorTalla'])->name('reportes.ventas-por-talla');
             Route::get('/reportes/ventas-por-marca', [ReporteController::class, 'ventasPorMarca'])->name('reportes.ventas-por-marca');
+            Route::get('/reportes/ganancia-por-lote', [ReporteController::class, 'gananciaPorLote'])->name('reportes.ganancia-por-lote');
+            Route::get('/reportes/ganancia-por-origen', [ReporteController::class, 'gananciaPorOrigen'])->name('reportes.ganancia-por-origen');
             Route::get('/reportes/tiempo-promedio-venta', [ReporteController::class, 'tiempoPromedioVenta'])->name('reportes.tiempo-promedio-venta');
             Route::get('/reportes/comparacion', [ReporteController::class, 'comparacionPeriodo'])->name('reportes.comparacion');
             Route::get('/reportes/clientes', [ReporteController::class, 'clientes'])->name('reportes.clientes');

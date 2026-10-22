@@ -16,6 +16,10 @@ export interface VentaItem {
   producto_codigo?: string;
   producto_nombre?: string;
   precio_unitario: string;
+  costo_unitario?: string;
+  ganancia?: string;
+  margen?: number;
+  tiene_costo?: boolean;
 }
 
 export interface PedidoInfo {

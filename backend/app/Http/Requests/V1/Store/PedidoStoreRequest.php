@@ -21,6 +21,10 @@ class PedidoStoreRequest extends ApiFormRequest
             'metodo_entrega_id' => ['required', 'integer', Rule::exists('metodos_entrega', 'id')->where('activo', true)],
             'metodo_pago_id' => ['required', 'integer', Rule::exists('metodos_pago', 'id')->where('activo', true)],
             'cupon_codigo' => ['nullable', 'string', 'max:30'],
+            'precios_esperados' => ['nullable', 'array', 'max:20'],
+            'precios_esperados.*' => ['array'],
+            'precios_esperados.*.producto_id' => ['required', 'integer'],
+            'precios_esperados.*.precio' => ['required', 'numeric', 'min:0'],
             'comprobante' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
         ];
     }

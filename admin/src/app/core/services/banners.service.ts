@@ -15,18 +15,33 @@ export class BannersService extends ApiService {
     return this.get<ApiResponse<Banner[]>>('/v1/admin/banners');
   }
 
-  crear(archivo: File, datos: BannerPayload): Observable<ApiResponse<Banner>> {
+  crear(
+    archivo: File,
+    datos: BannerPayload,
+    archivoMovil: File | null = null,
+  ): Observable<ApiResponse<Banner>> {
     const formData = new FormData();
     formData.append('imagen', archivo);
+    if (archivoMovil) {
+      formData.append('imagen_movil', archivoMovil);
+    }
     this.agregarDatos(formData, datos);
 
     return this.postFormData<ApiResponse<Banner>>('/v1/admin/banners', formData);
   }
 
-  actualizar(id: number, archivo: File | null, datos: BannerPayload): Observable<ApiResponse<Banner>> {
+  actualizar(
+    id: number,
+    archivo: File | null,
+    datos: BannerPayload,
+    archivoMovil: File | null = null,
+  ): Observable<ApiResponse<Banner>> {
     const formData = new FormData();
     if (archivo) {
       formData.append('imagen', archivo);
+    }
+    if (archivoMovil) {
+      formData.append('imagen_movil', archivoMovil);
     }
     this.agregarDatos(formData, datos);
 
@@ -48,8 +63,23 @@ export class BannersService extends ApiService {
     if (datos.subtitulo !== null && datos.subtitulo !== undefined) {
       formData.append('subtitulo', datos.subtitulo);
     }
-    if (datos.enlace !== null && datos.enlace !== undefined) {
-      formData.append('enlace', datos.enlace);
+    if (datos.enlace_tipo !== undefined && datos.enlace_tipo !== null) {
+      formData.append('enlace_tipo', datos.enlace_tipo);
+    }
+    if (datos.enlace_id !== undefined && datos.enlace_id !== null) {
+      formData.append('enlace_id', String(datos.enlace_id));
+    }
+    if (datos.enlace_url !== undefined && datos.enlace_url !== null) {
+      formData.append('enlace_url', datos.enlace_url);
+    }
+    if (datos.fecha_inicio !== undefined) {
+      formData.append('fecha_inicio', datos.fecha_inicio ?? '');
+    }
+    if (datos.fecha_fin !== undefined) {
+      formData.append('fecha_fin', datos.fecha_fin ?? '');
+    }
+    if (datos.sin_imagen_movil) {
+      formData.append('sin_imagen_movil', '1');
     }
     if (datos.activo !== undefined) {
       formData.append('activo', datos.activo ? '1' : '0');

@@ -16,6 +16,7 @@ class ProductoHistorialResource extends JsonResource
             'estado_nuevo' => $this->estado_nuevo,
             'detalle' => $this->detalle,
             'user_id' => $this->user_id,
+            'usuario' => $this->whenLoaded('usuario', fn () => $this->usuario?->name),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

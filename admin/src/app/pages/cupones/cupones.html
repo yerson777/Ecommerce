@@ -36,14 +36,14 @@
 
       <div class="field">
         <label>Estado</label>
-        <select class="select" [(ngModel)]="filtros().tipo" (change)="onBuscar()">
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
           <option [ngValue]="''">Todos</option>
           <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
+          <option value="inactivo">Desactivado</option>
           <option value="vencido">Vencido</option>
           <option value="agotado">Agotado</option>
         </select>
-        </div>
+      </div>
 
       <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
       <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
@@ -77,10 +77,11 @@
               <th>Código</th>
               <th>Tipo</th>
               <th>Valor</th>
+              <th>Mínimo</th>
               <th>Estado</th>
               <th>Usos</th>
-              <th>Disponibles</th>
               <th>Vence</th>
+              <th>Categorías</th>
               <th></th>
             </tr>
           </thead>
@@ -98,15 +99,22 @@
                     $ {{ cupon.valor }}
                   }
                 </td>
+                <td class="muted">
+                  @if (cupon.minimo_compra) {
+                    $ {{ cupon.minimo_compra }}
+                  } @else {
+                    —
+                  }
+                </td>
                 <td>
                   <app-badge [tone]="tonosEstado[cupon.estado]">{{ etiquetasEstado[cupon.estado] }}</app-badge>
                 </td>
-                <td class="muted">{{ cupon.usos }}</td>
                 <td class="muted">
+                  {{ cupon.usos }}
                   @if (cupon.limite_usos) {
-                    {{ cupon.limite_usos - cupon.usos }} restantes
+                    / {{ cupon.limite_usos }}
                   } @else {
-                    Ilimitado
+                    / ∞
                   }
                 </td>
                 <td class="muted">
@@ -116,14 +124,29 @@
                     —
                   }
                 </td>
+                <td class="muted">{{ nombresCategorias(cupon) }}</td>
                 <td class="align-right">
                   <div class="row-actions">
-                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(cupon)">Editar</button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirDetalle(cupon)">
+                      Usos
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(cupon)">
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      (click)="alternarActivo(cupon)"
+                      [disabled]="alternandoId === cupon.id"
+                    >
+                      {{ cupon.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
                     <button
                       type="button"
                       class="btn btn-ghost btn-sm danger"
                       (click)="pedirEliminar(cupon)"
-                      [disabled]="cupon.id === eliminarObjetivo?.id"
+                      [disabled]="cupon.usos > 0 || cupon.pedidos_count > 0"
+                      [title]="cupon.usos > 0 ? 'Tiene usos: desactívalo en lugar de eliminarlo' : 'Eliminar'"
                     >
                       Eliminar
                     </button>
@@ -201,12 +224,33 @@
         </div>
 
         <div class="field">
-          <label>Límite de usos</label>
+          <label>Límite de usos (total)</label>
           <input
             class="input"
             type="number"
             min="1"
+            placeholder="Ilimitado"
             [(ngModel)]="form.limite_usos"
+          />
+        </div>
+
+        <div class="field">
+          <label>Límite por cliente</label>
+          <input
+            class="input"
+            type="number"
+            min="1"
+            placeholder="Sin límite"
+            [(ngModel)]="form.limite_por_cliente"
+          />
+        </div>
+
+        <div class="field">
+          <label>Inicia el</label>
+          <input
+            class="input"
+            type="date"
+            [(ngModel)]="form.fecha_inicio"
           />
         </div>
 
@@ -217,6 +261,27 @@
             type="date"
             [(ngModel)]="form.vence_en"
           />
+        </div>
+
+        <div class="field field-full">
+          <label>Categorías (opcional)</label>
+          <div class="cat-grid">
+            @for (cat of categorias(); track cat.id) {
+              <label class="cat-item">
+                <input
+                  type="checkbox"
+                  [checked]="estaSeleccionada(cat.id)"
+                  (change)="toggleCategoria(cat.id)"
+                />
+                <span>{{ cat.nombre }}</span>
+              </label>
+            } @empty {
+              <span class="muted">No hay categorías cargadas.</span>
+            }
+          </div>
+          <span class="hint muted">
+            Si no seleccionás ninguna, el cupón aplica a todas las prendas.
+          </span>
         </div>
       </div>
 
@@ -239,6 +304,80 @@
   </app-modal>
 }
 
+@if (detalleAbierto()) {
+  <app-modal title="Detalle del cupón" width="640px" (closed)="cerrarDetalle()">
+    @if (cargandoDetalle() || !detalle()) {
+      <div class="center">
+        <app-spinner [size]="30" />
+      </div>
+    } @else {
+      <div class="modal-body">
+        <div class="detalle-head">
+          <div>
+            <span class="mono detalle-codigo">{{ detalle()!.codigo }}</span>
+            <app-badge [tone]="tonosEstado[detalle()!.estado]">
+              {{ etiquetasEstado[detalle()!.estado] }}
+            </app-badge>
+          </div>
+          <div class="muted">
+            @if (detalle()!.tipo === 'porcentaje') {
+              {{ detalle()!.valor }}% de descuento
+            } @else {
+              $ {{ detalle()!.valor }} de descuento
+            }
+          </div>
+        </div>
+
+        <div class="detalle-grid">
+          <div><span class="muted">Mínimo de compra</span><strong>{{ detalle()!.minimo_compra ? '$ ' + detalle()!.minimo_compra : '—' }}</strong></div>
+          <div><span class="muted">Usos</span><strong>{{ detalle()!.usos }}@if (detalle()!.limite_usos) { / {{ detalle()!.limite_usos }} }</strong></div>
+          <div><span class="muted">Límite por cliente</span><strong>{{ detalle()!.limite_por_cliente ?? 'Sin límite' }}</strong></div>
+          <div><span class="muted">Inicia el</span><strong>{{ detalle()!.fecha_inicio ? (detalle()!.fecha_inicio | date: 'dd MMM yyyy') : '—' }}</strong></div>
+          <div><span class="muted">Vence el</span><strong>{{ detalle()!.vence_en ? (detalle()!.vence_en | date: 'dd MMM yyyy') : '—' }}</strong></div>
+          <div><span class="muted">Categorías</span><strong>{{ nombresCategorias(detalle()!) }}</strong></div>
+          <div><span class="muted">Total descontado</span><strong>$ {{ detalle()!.total_descontado ?? '0.00' }}</strong></div>
+        </div>
+
+        <div class="usos-block">
+          <h3 class="subtitle">Registro de usos</h3>
+          @if (usosDe(detalle()!).length === 0) {
+            <p class="muted center-text">Este cupón todavía no fue usado.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Pedido</th>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Descontado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (uso of usosDe(detalle()!); track uso.id) {
+                    <tr>
+                      <td class="muted">{{ uso.fecha | date: 'dd MMM yyyy HH:mm' }}</td>
+                      <td class="mono">{{ uso.numero_pedido ?? '—' }}</td>
+                      <td>{{ uso.cliente ?? '—' }}</td>
+                      <td class="muted">{{ uso.telefono ?? uso.email ?? '—' }}</td>
+                      <td>$ {{ uso.monto_descontado }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+      </div>
+    }
+  </app-modal>
+}
+
 @if (eliminarObjetivo) {
   <app-confirm-dialog
     title="Eliminar cupón"
@@ -246,6 +385,6 @@
     confirmLabel="Eliminar"
     tone="danger"
     (confirm)="confirmarEliminar()"
-    (cancel)="cerrarModal()"
+    (cancel)="cancelarEliminar()"
   />
 }

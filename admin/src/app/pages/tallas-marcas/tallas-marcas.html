@@ -1,0 +1,246 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Tallas y marcas</h1>
+      <p class="page-subtitle">Administrá las tallas, marcas y condiciones de las prendas</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="abrirCrear(pestana())">
+        + Nueva {{ pestana() === 'tallas' ? 'talla' : pestana() === 'marcas' ? 'marca' : 'condición' }}
+      </button>
+      <app-notification-center />
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'tallas'" (click)="cambiarPestana('tallas')">
+      Tallas
+    </button>
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'marcas'" (click)="cambiarPestana('marcas')">
+      Marcas
+    </button>
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'condiciones'" (click)="cambiarPestana('condiciones')">
+      Condiciones
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="center"><app-spinner [size]="28" /></div>
+  }
+
+  @if (!cargando() && pestana() === 'tallas') {
+    <section class="card">
+      @if (tallas().length === 0) {
+        <app-empty-state icon="📐" title="Sin tallas" message="Agregá la primera talla del catálogo." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Prendas</th>
+                <th>Orden</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (talla of tallas(); track talla.id) {
+                <tr>
+                  <td><strong>{{ talla.nombre }}</strong></td>
+                  <td>{{ talla.productos_count ?? 0 }}</td>
+                  <td>{{ talla.orden }}</td>
+                  <td>
+                    <label class="switch" [title]="talla.activo ? 'Ocultar' : 'Activar'">
+                      <input type="checkbox" [checked]="talla.activo" (change)="cambiarActivo('tallas', talla)" />
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('tallas', talla)">Editar</button>
+                      <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('tallas', talla)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  @if (!cargando() && pestana() === 'marcas') {
+    <section class="card">
+      @if (marcas().length === 0) {
+        <app-empty-state icon="🏷" title="Sin marcas" message="Agregá la primera marca del catálogo." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Nombre</th>
+                <th>Slug</th>
+                <th>Prendas</th>
+                <th>Orden</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (marca of marcas(); track marca.id) {
+                <tr>
+                  <td>
+                    @if (marca.logo_url) {
+                      <img class="thumb" [src]="marca.logo_url" [alt]="marca.nombre" />
+                    } @else {
+                      <div class="thumb thumb--empty">—</div>
+                    }
+                  </td>
+                  <td><strong>{{ marca.nombre }}</strong></td>
+                  <td class="mono">{{ marca.slug }}</td>
+                  <td>{{ marca.productos_count ?? 0 }}</td>
+                  <td>{{ marca.orden }}</td>
+                  <td>
+                    <label class="switch" [title]="marca.activo ? 'Ocultar' : 'Activar'">
+                      <input type="checkbox" [checked]="marca.activo" (change)="cambiarActivo('marcas', marca)" />
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('marcas', marca)">Editar</button>
+                      <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('marcas', marca)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  @if (!cargando() && pestana() === 'condiciones') {
+    <section class="card">
+      @if (condiciones().length === 0) {
+        <app-empty-state icon="✦" title="Sin condiciones" message="Agregá la primera condición del catálogo." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Prendas</th>
+                <th>Orden</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (condicion of condiciones(); track condicion.id) {
+                <tr>
+                  <td><strong>{{ condicion.nombre }}</strong></td>
+                  <td>{{ condicion.productos_count ?? 0 }}</td>
+                  <td>{{ condicion.orden }}</td>
+                  <td>
+                    <label class="switch" [title]="condicion.activo ? 'Ocultar' : 'Activar'">
+                      <input type="checkbox" [checked]="condicion.activo" (change)="cambiarActivo('condiciones', condicion)" />
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('condiciones', condicion)">Editar</button>
+                      <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('condiciones', condicion)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+<!-- Formulario -->
+@if (modalAbierto()) {
+  <app-modal [title]="tituloModal()" width="480px" (closed)="cerrarModal()">
+    @if (errorFormulario()) {
+      <div class="error-banner">{{ errorFormulario() }}</div>
+    }
+
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Nombre</label>
+        <input class="input" type="text" [(ngModel)]="form.nombre" name="nombre" maxlength="100" />
+        @if (errorDe('nombre')) {
+          <span class="field-error">{{ errorDe('nombre') }}</span>
+        }
+      </div>
+
+      @if (tipoForm() === 'marcas') {
+        <div class="field field-full">
+          <label>Slug (opcional)</label>
+          <input class="input" type="text" [(ngModel)]="form.slug" name="slug" maxlength="120" placeholder="Se genera del nombre" />
+          @if (errorDe('slug')) {
+            <span class="field-error">{{ errorDe('slug') }}</span>
+          }
+        </div>
+
+        <div class="field field-full">
+          <label>Logo</label>
+          <div class="upload">
+            @if (form.preview) {
+              <img class="preview" [src]="form.preview" alt="Vista previa" />
+              <button type="button" class="btn btn-ghost btn-sm" (click)="quitarImagen()">Quitar logo</button>
+            }
+            <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
+            <span class="muted small">jpeg, png, webp o gif · máx. 4 MB</span>
+          </div>
+          @if (errorDe('logo')) {
+            <span class="field-error">{{ errorDe('logo') }}</span>
+          }
+        </div>
+      }
+
+      <div class="field">
+        <label>Orden</label>
+        <input class="input" type="number" min="0" [(ngModel)]="form.orden" name="orden" />
+        @if (errorDe('orden')) {
+          <span class="field-error">{{ errorDe('orden') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.activo" name="activo" />
+          <span>Disponible</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="actions end">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </app-modal>
+}
+
+<!-- Eliminar -->
+@if (eliminarObjetivo; as objetivo) {
+  <app-confirm-dialog
+    title="Eliminar elemento"
+    [message]="'¿Eliminar ' + objetivo.item.nombre + '? Solo es posible si no tiene prendas asociadas.'"
+    confirmLabel="Eliminar"
+    (confirm)="confirmarEliminar()"
+    (cancel)="eliminarObjetivo = null"
+  />
+}

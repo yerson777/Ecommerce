@@ -27,6 +27,10 @@ export class CuponesService extends ApiService {
     );
   }
 
+  detalle(id: number): Observable<ApiResponse<Cupon>> {
+    return this.get<ApiResponse<Cupon>>(`/v1/admin/cupones/${id}`);
+  }
+
   crear(datos: CuponDatos): Observable<ApiResponse<Cupon>> {
     return this.post<ApiResponse<Cupon>>('/v1/admin/cupones', datos);
   }

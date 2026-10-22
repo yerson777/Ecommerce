@@ -99,7 +99,49 @@
             <button type="button" class="btn btn-outline btn-sm" (click)="descargarQR()">Descargar QR</button>
             <div class="field qr-adjuntar">
               <label for="comprobante">Foto del comprobante *</label>
-              <input id="comprobante" class="input" type="file" accept="image/*" (change)="onComprobante($event)" />
+
+              <input
+                #comprobanteCamara
+                id="comprobante"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                (change)="onComprobante($event)"
+              />
+              <input
+                #comprobanteArchivo
+                type="file"
+                accept="image/*"
+                hidden
+                (change)="onComprobante($event)"
+              />
+
+              <div class="comprobante-botones">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="tomarFoto()"
+                >
+                  Tomar foto
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="comprobanteArchivo.click()"
+                >
+                  Elegir archivo
+                </button>
+                <button
+                  *ngIf="comprobante()"
+                  type="button"
+                  class="btn btn-outline btn-sm btn-quitar"
+                  (click)="eliminarComprobante()"
+                >
+                  Quitar foto
+                </button>
+              </div>
+
               <img class="comprobante-preview" *ngIf="comprobantePreview()" [src]="comprobantePreview()" alt="Vista previa del comprobante" />
               <span class="field-error" *ngIf="comprobanteError()">{{ comprobanteError() }}</span>
               <span class="muted" *ngIf="comprobante() && !comprobanteError()">Adjunto: {{ comprobante()?.name }}</span>
@@ -118,7 +160,12 @@
             {{ item.nombre }}<span class="muted" *ngIf="item.talla"> · {{ item.talla }}</span>
           </span>
           <span class="muted">{{ item.codigo }}</span>
-          <span>{{ formatearPrecio(item.precio) }}</span>
+          <span>
+            <span *ngIf="item.precio_original" class="precio-tachado">
+              {{ formatearPrecio(item.precio_original) }}
+            </span>
+            <span [class.precio-oferta]="item.precio_original">{{ formatearPrecio(item.precio) }}</span>
+          </span>
         </div>
         <div class="cupon">
           <label class="muted" for="campoCupon">¿Tenés un cupón?</label>
@@ -181,6 +228,35 @@
           WhatsApp para coordinar la entrega y el pago.
         </p>
       </aside>
+    </div>
+  </div>
+
+  <div class="camara-overlay" *ngIf="camaraAbierta()" (click)="cerrarCamara()">
+    <div class="camara-panel" (click)="$event.stopPropagation()">
+      <div class="camara-head">
+        <h2>Tomar foto del comprobante</h2>
+        <button type="button" class="camara-cerrar" (click)="cerrarCamara()" aria-label="Cerrar">
+          ✕
+        </button>
+      </div>
+
+      <div class="camara-video-wrap">
+        <video #videoCamara class="camara-video" playsinline autoplay muted></video>
+      </div>
+
+      <p class="field-error camara-error" *ngIf="camaraError()">{{ camaraError() }}</p>
+
+      <div class="camara-acciones">
+        <button
+          type="button"
+          class="btn btn-primary btn-lg"
+          (click)="capturarFoto()"
+          [disabled]="!!camaraError()"
+        >
+          Capturar
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="cerrarCamara()">Cancelar</button>
+      </div>
     </div>
   </div>
 </div>

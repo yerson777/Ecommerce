@@ -76,9 +76,39 @@
             <span class="nav-icon">▤</span>
             <span class="nav-label">Inventario</span>
           </a>
+          <a class="nav-link" routerLink="/categorias" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🗂</span>
+            <span class="nav-label">Categorías</span>
+          </a>
+          <a class="nav-link" routerLink="/tallas-marcas" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🏷</span>
+            <span class="nav-label">Tallas y marcas</span>
+          </a>
           <a class="nav-link" routerLink="/banners" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
             <span class="nav-icon">🖼</span>
             <span class="nav-label">Banners</span>
+          </a>
+          <a class="nav-link" routerLink="/ofertas" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">%</span>
+            <span class="nav-label">Ofertas</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-group" [class.nav-group--abierto]="gruposAbiertos()['compras']">
+        <button type="button" class="nav-group__toggle" (click)="toggleGrupo('compras')">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">Compras</span>
+          <span class="nav-group__chevron">▾</span>
+        </button>
+        <div class="nav-group__items">
+          <a class="nav-link" routerLink="/compras" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Compras</span>
+          </a>
+          <a class="nav-link" routerLink="/proveedores" routerLinkActive="nav-link--active" (click)="cerrarMenu()">
+            <span class="nav-icon">🏭</span>
+            <span class="nav-label">Proveedores</span>
           </a>
         </div>
       </div>

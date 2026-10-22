@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import {
   CategoriaRef,
+  CondicionRef,
   ETIQUETA_ESTADO,
   MarcaRef,
   Producto,
@@ -21,13 +22,15 @@ interface ImagenPendiente {
   preview: string;
 }
 
-export interface FormaProducto {
+interface FormaProducto {
   codigo: string;
   nombre: string;
   categoria_id: number | null;
   talla_id: number | null;
-  marca: string;
+  marca_id: number | null;
   color: string;
+  condicion_id: number | null;
+  medidas: string;
   descripcion: string;
   costo: number | null;
   precio: number | null;
@@ -47,9 +50,11 @@ export class ProductoFormModalComponent implements OnInit {
   readonly categorias = input<CategoriaRef[]>([]);
   readonly tallas = input<TallaRef[]>([]);
   readonly marcas = input<MarcaRef[]>([]);
+  readonly condiciones = input<CondicionRef[]>([]);
   readonly soloLectura = input(false);
 
   readonly guardado = output<Producto>();
+  readonly agregado = output<Producto>();
   readonly cerrado = output<void>();
 
   private readonly productosService = inject(ProductosService);
@@ -61,54 +66,59 @@ export class ProductoFormModalComponent implements OnInit {
     nombre: '',
     categoria_id: null,
     talla_id: null,
-    marca: '',
+    marca_id: null,
     color: '',
+    condicion_id: null,
+    medidas: '',
     descripcion: '',
     costo: null,
     precio: null,
-    publicado: true,
+    publicado: false,
     fecha_ingreso: '',
   };
 
   esEdicion = false;
   readonly = false;
+  precioBloqueado = false;
   readonly guardando = signal(false);
   readonly errorBanner = signal<string | null>(null);
   readonly errores = signal<Record<string, string[]> | null>(null);
-
   readonly imagenesPendientes = signal<ImagenPendiente[]>([]);
 
   ngOnInit(): void {
     const actual = this.producto();
-    this.esEdicion = actual != null;
-    this.readonly = this.soloLectura();
 
     if (actual) {
-      this.forma.codigo = actual.codigo;
-      this.forma.nombre = actual.nombre;
-      this.forma.categoria_id = actual.categoria?.id ?? null;
-      this.forma.talla_id = actual.talla?.id ?? null;
-      this.forma.marca = actual.marca?.nombre ?? '';
-      this.forma.color = actual.color ?? '';
-      this.forma.descripcion = actual.descripcion ?? '';
-      this.forma.costo = parseFloat(actual.costo);
-      this.forma.precio = parseFloat(actual.precio);
-      this.forma.publicado = actual.publicado;
-      this.forma.fecha_ingreso = actual.fecha_ingreso ?? '';
+      this.esEdicion = true;
+      const f = this.forma;
+      f.codigo = actual.codigo;
+      f.nombre = actual.nombre;
+      f.categoria_id = actual.categoria?.id ?? null;
+      f.talla_id = actual.talla?.id ?? null;
+      f.marca_id = actual.marca?.id ?? null;
+      f.color = actual.color ?? '';
+      f.condicion_id = actual.condicion_id ?? actual.condicion?.id ?? null;
+      f.medidas = actual.medidas ?? '';
+      f.descripcion = actual.descripcion ?? '';
+      f.costo = Number(actual.costo);
+      f.precio = Number(actual.precio);
+      f.publicado = actual.publicado;
+      f.fecha_ingreso = actual.fecha_ingreso ?? '';
+
+      this.precioBloqueado = actual.estado !== 'disponible';
     } else {
       this.forma.codigo = `EV-${Math.floor(1000 + Math.random() * 9000)}`;
-      const hoy = new Date();
-      const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-      const dia = String(hoy.getDate()).padStart(2, '0');
-      this.forma.fecha_ingreso = `${hoy.getFullYear()}-${mes}-${dia}`;
+      this.forma.fecha_ingreso = new Date().toISOString().slice(0, 10);
     }
+
+    this.readonly = this.soloLectura();
   }
 
   errorDe(campo: string): string | undefined {
     return this.errores()?.[campo]?.[0];
   }
 
-  guardar(): void {
+  guardar(otra = false): void {
     const f = this.forma;
     const categoriaId = f.categoria_id;
     const tallaId = f.talla_id;
@@ -130,33 +140,34 @@ export class ProductoFormModalComponent implements OnInit {
       nombre: f.nombre.trim(),
       categoria_id: categoriaId,
       talla_id: tallaId,
-      marca_nombre: f.marca.trim() || null,
-      color: f.color.trim() || null,
-      descripcion: f.descripcion.trim() || null,
+      marca_id: f.marca_id ?? null,
+      color: f.color || null,
+      condicion_id: f.condicion_id ?? null,
+      medidas: f.medidas || null,
+      descripcion: f.descripcion || null,
       costo: f.costo,
       precio: f.precio,
       publicado: f.publicado,
       fecha_ingreso: f.fecha_ingreso || null,
     };
 
-    if (!this.esEdicion) {
-      data.estado = 'disponible';
-    }
+    const peticion = this.esEdicion
+      ? this.productosService.actualizar(this.producto()!.id, data)
+      : this.productosService.crear(data);
 
     this.guardando.set(true);
     this.errorBanner.set(null);
     this.errores.set(null);
-
-    const peticion = this.esEdicion
-      ? this.productosService.actualizar(this.producto()!.id, data)
-      : this.productosService.crear(data);
 
     peticion.subscribe({
       next: (res) => {
         this.guardando.set(false);
         if (res.success && res.data) {
           this.toast.success(this.esEdicion ? 'Producto actualizado.' : 'Producto creado.');
-          if (this.imagenesPendientes().length > 0) {
+
+          if (otra && !this.esEdicion) {
+            this.trasAgregarOtra(res.data);
+          } else if (this.imagenesPendientes().length > 0) {
             this.subirImagenesPendientes(res.data);
           } else {
             this.limpiarPreviews();
@@ -170,6 +181,41 @@ export class ProductoFormModalComponent implements OnInit {
         this.errores.set(err.errors ?? null);
       },
     });
+  }
+
+  private trasAgregarOtra(producto: Producto): void {
+    const continuar = () => {
+      this.agregado.emit(producto);
+      this.reiniciarParaOtra();
+    };
+
+    if (this.imagenesPendientes().length > 0) {
+      this.imagenesService.subir(producto.id, this.imagenesPendientes().map((img) => img.archivo)).subscribe({
+        next: () => continuar(),
+        error: () => {
+          this.toast.error('La prenda se guardó, pero las fotos no se subieron.');
+          continuar();
+        },
+      });
+      return;
+    }
+
+    continuar();
+  }
+
+  private reiniciarParaOtra(): void {
+    const f = this.forma;
+    f.codigo = `EV-${Math.floor(1000 + Math.random() * 9000)}`;
+    f.nombre = '';
+    f.color = '';
+    f.medidas = '';
+    f.descripcion = '';
+    f.costo = null;
+    f.precio = null;
+
+    this.limpiarPreviews();
+    this.errorBanner.set(null);
+    this.errores.set(null);
   }
 
   private subirImagenesPendientes(producto: Producto): void {
@@ -234,6 +280,10 @@ export class ProductoFormModalComponent implements OnInit {
 
   etiquetaEstado(estado: string): string {
     return ETIQUETA_ESTADO[estado as keyof typeof ETIQUETA_ESTADO] ?? estado;
+  }
+
+  etiquetaCondicion(condicion: { nombre: string } | null | undefined): string {
+    return condicion?.nombre ?? '—';
   }
 
   tonoEstado(estado: string): string {

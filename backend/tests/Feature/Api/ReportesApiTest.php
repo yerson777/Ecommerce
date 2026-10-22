@@ -41,8 +41,8 @@ class ReportesApiTest extends TestCase
         $venta1 = Venta::create(['numero_venta' => 'V-0001', 'cliente_id' => $cliente->id, 'subtotal' => 100, 'costo_envio' => 0, 'total' => 100, 'fecha_venta' => '2026-09-18']);
         $venta2 = Venta::create(['numero_venta' => 'V-0002', 'cliente_id' => $cliente->id, 'subtotal' => 150, 'costo_envio' => 0, 'total' => 150, 'fecha_venta' => '2026-09-18']);
 
-        VentaItem::create(['venta_id' => $venta1->id, 'producto_id' => $productoA->id, 'precio_unitario' => 100]);
-        VentaItem::create(['venta_id' => $venta2->id, 'producto_id' => $productoB->id, 'precio_unitario' => 150]);
+        VentaItem::create(['venta_id' => $venta1->id, 'producto_id' => $productoA->id, 'precio_unitario' => 100, 'costo_unitario' => 40]);
+        VentaItem::create(['venta_id' => $venta2->id, 'producto_id' => $productoB->id, 'precio_unitario' => 150, 'costo_unitario' => 60]);
 
         $categoriaGasto = CategoriaGasto::create(['nombre' => 'Transporte', 'activo' => true, 'orden' => 0]);
         $metodo = MetodoPago::create(['nombre' => 'Efectivo', 'activo' => true, 'orden' => 0]);

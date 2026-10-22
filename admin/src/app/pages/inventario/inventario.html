@@ -2,14 +2,30 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Inventario</h1>
-      <p class="page-subtitle">Visión general de las prendas por estado, categoría, talla y precio</p>
+      <p class="page-subtitle">Visión general, control y revisión física de las prendas</p>
     </div>
     <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="abrirRevision()">Iniciar revisión</button>
+      <button type="button" class="btn btn-outline" (click)="exportar()" [disabled]="exportando">
+        {{ exportando ? 'Exportando…' : 'Exportar Excel' }}
+      </button>
       <button type="button" class="btn btn-ghost" (click)="cargar()" [disabled]="cargando()">
         {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
       </button>
       <app-notification-center />
     </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'resumen'" (click)="cambiarPestana('resumen')">
+      Resumen
+    </button>
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'prendas'" (click)="cambiarPestana('prendas')">
+      Prendas
+    </button>
+    <button type="button" class="tab" [class.tab--active]="pestana() === 'sin-rotacion'" (click)="cambiarPestana('sin-rotacion')">
+      Sin rotación
+    </button>
   </div>
 
   @if (error) {
@@ -22,14 +38,12 @@
     </div>
   }
 
-  @if (datos(); as d) {
+  @if (pestana() === 'resumen' && datos(); as d) {
     <div class="stats-grid">
       <app-stat-card label="Total de prendas" [value]="d.total" icon="◉" tone="primary" />
-      <app-stat-card label="Disponibles" [value]="totalPorEstado('disponible')" icon="✓" tone="success" />
-      <app-stat-card label="Reservadas" [value]="totalPorEstado('reservada')" icon="◷" tone="warning" />
-      <app-stat-card label="Vendidas" [value]="totalPorEstado('vendida')" icon="★" tone="danger" />
+      <app-stat-card label="Valor a venta" [value]="moneda(d.valor_total)" icon="₡" tone="success" hint="Suma de precios de venta" />
       <app-stat-card label="Publicadas" [value]="d.publicados" icon="👁" tone="info" />
-      <app-stat-card label="Sin publicar" [value]="d.no_publicados" icon="▦" tone="neutral" />
+      <app-stat-card label="Ocultas" [value]="d.ocultas.total" icon="🙈" tone="neutral" [hint]="moneda(d.ocultas.valor)" />
     </div>
 
     <div class="grid-2">
@@ -38,7 +52,7 @@
         <div class="stack">
           @for (item of d.por_estado; track item.estado) {
             <app-progress
-              [label]="etiquetaEstado(item.estado)"
+              [label]="etiquetaEstado(item.estado) + ' · ' + moneda(item.valor)"
               [value]="item.total"
               [total]="d.total"
               [tone]="tonoEstado(item.estado)"
@@ -51,16 +65,13 @@
       </section>
 
       <section class="card">
-        <h2 class="card-title">Por talla</h2>
-        <div class="chips">
-          @for (item of d.por_talla; track item.nombre) {
-            <span class="chip">
-              <span class="chip-label">{{ item.nombre }}</span>
-              <app-badge tone="primary">{{ item.total }}</app-badge>
-            </span>
-          }
-          @if (d.por_talla.length === 0) {
-            <span class="muted">Sin datos</span>
+        <h2 class="card-title">Sin rotación</h2>
+        <div class="cards-mini">
+          @for (dias of [30, 60, 90]; track dias) {
+            <button type="button" class="mini" (click)="irASinRotacion(dias)">
+              <span class="mini-num">{{ d.sin_rotacion[dias] ?? 0 }}</span>
+              <span class="mini-label">Más de {{ dias }} días</span>
+            </button>
           }
         </div>
       </section>
@@ -80,21 +91,343 @@
       </section>
 
       <section class="card">
-        <h2 class="card-title">Por rango de precio</h2>
-        <div class="stack">
-          @for (item of d.por_rango_precio; track item.nombre) {
-            <app-progress
-              [label]="etiquetaRango(item.nombre)"
-              [value]="item.total"
-              [total]="suma(d.por_rango_precio)"
-              tone="success"
-            />
+        <h2 class="card-title">Por talla</h2>
+        <div class="chips">
+          @for (item of d.por_talla; track item.nombre) {
+            <span class="chip">
+              <span class="chip-label">{{ item.nombre }}</span>
+              <app-badge tone="primary">{{ item.total }}</app-badge>
+            </span>
           }
-          @if (d.por_rango_precio.length === 0) {
+          @if (d.por_talla.length === 0) {
             <span class="muted">Sin datos</span>
           }
         </div>
       </section>
     </div>
   }
+
+  @if (pestana() === 'prendas') {
+    <section class="card">
+      <div class="toolbar">
+        <div class="field grow">
+          <label>Buscar</label>
+          <input class="input" type="text" placeholder="Código o nombre…" [(ngModel)]="filtros().busqueda" (keyup.enter)="onBuscar()" />
+        </div>
+
+        <div class="field">
+          <label>Estado</label>
+          <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+            <option value="">Todos</option>
+            <option value="disponible">Disponible</option>
+            <option value="reservada">Reservada</option>
+            <option value="vendida">Vendida</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Categoría</label>
+          <select class="select" [(ngModel)]="filtros().categoria" (change)="onBuscar()">
+            <option [ngValue]="null">Todas</option>
+            @for (categoria of categorias(); track categoria.id) {
+              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Talla</label>
+          <select class="select" [(ngModel)]="filtros().talla" (change)="onBuscar()">
+            <option [ngValue]="null">Todas</option>
+            @for (talla of tallas(); track talla.id) {
+              <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Condición</label>
+          <select class="select" [(ngModel)]="filtros().condicion" (change)="onBuscar()">
+            <option [ngValue]="null">Todas</option>
+            @for (condicion of condiciones(); track condicion.id) {
+              <option [ngValue]="condicion.id">{{ condicion.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Publicado</label>
+          <select class="select" [(ngModel)]="filtros().publicado" (change)="onBuscar()">
+            <option value="">Todos</option>
+            <option value="1">Publicados</option>
+            <option value="0">Ocultos</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Verificada</label>
+          <select class="select" [(ngModel)]="filtros().verificada" (change)="onBuscar()">
+            <option value="">Todas</option>
+            <option value="1">Verificadas</option>
+            <option value="0">Sin verificar</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Días mín.</label>
+          <input class="input" type="number" min="0" [(ngModel)]="filtros().dias_min" (change)="onBuscar()" />
+        </div>
+
+        <div class="field">
+          <label>Días máx.</label>
+          <input class="input" type="number" min="0" [(ngModel)]="filtros().dias_max" (change)="onBuscar()" />
+        </div>
+
+        <div class="field">
+          <label>Ordenar por</label>
+          <select class="select" [(ngModel)]="filtros().orden" (change)="onBuscar()">
+            <option value="antiguedad">Más antiguas</option>
+            <option value="recientes">Más recientes</option>
+            <option value="precio_asc">Precio: menor a mayor</option>
+            <option value="precio_desc">Precio: mayor a menor</option>
+            <option value="codigo">Código</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Por página</label>
+          <select class="select" [ngModel]="perPage()" (ngModelChange)="onPerPage($event)">
+            <option [ngValue]="20">20</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      @if (cargandoListado() && !resultados()) {
+        <div class="center"><app-spinner [size]="28" /></div>
+      }
+
+      @if (resultados(); as page) {
+        @if (page.data.length === 0) {
+          <app-empty-state icon="📦" title="Sin prendas" message="No hay prendas que coincidan con los filtros." />
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría · Talla</th>
+                  <th>Precio</th>
+                  <th>Días</th>
+                  <th>Estado</th>
+                  <th>Verificada</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (producto of page.data; track producto.id) {
+                  <tr>
+                    <td class="mono">{{ producto.codigo }}</td>
+                    <td>
+                      <strong>{{ producto.nombre }}</strong>
+                      @if (!producto.publicado) {
+                        <app-badge tone="neutral">Oculta</app-badge>
+                      }
+                    </td>
+                    <td>{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
+                    <td>{{ moneda(producto.precio) }}</td>
+                    <td>{{ producto.dias_en_inventario ?? '—' }}</td>
+                    <td><app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge></td>
+                    <td>
+                      @if (producto.verificada) {
+                        <app-badge tone="success">Verificada</app-badge>
+                      } @else {
+                        <app-badge tone="warning">Pendiente</app-badge>
+                      }
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="solicitarVerificar(producto)">
+                          {{ producto.verificada ? 'Quitar verificación' : 'Verificar' }}
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPrecio(producto)">Precio</button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="cambiarPublicado(producto)">
+                          {{ producto.publicado ? 'Ocultar' : 'Publicar' }}
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirHistorial(producto)">Historial</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <app-paginator
+              [page]="pagina()"
+              [lastPage]="page.last_page"
+              [total]="page.total"
+              [perPage]="perPage()"
+              (pageChange)="onPagina($event)"
+            />
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (pestana() === 'sin-rotacion') {
+    <section class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label>Umbral</label>
+          <select class="select" [ngModel]="umbral()" (ngModelChange)="verUmbral($event)">
+            <option [ngValue]="30">Más de 30 días</option>
+            <option [ngValue]="60">Más de 60 días</option>
+            <option [ngValue]="90">Más de 90 días</option>
+          </select>
+        </div>
+        <div class="field grow"></div>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="crearOferta()"
+          title="Crear una oferta con las prendas listadas"
+        >
+          Crear oferta con estas prendas
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="cargarSinRotacion()" [disabled]="cargandoSinRotacion()">
+          {{ cargandoSinRotacion() ? 'Actualizando…' : 'Actualizar' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      @if (cargandoSinRotacion() && !resultadosSinRotacion()) {
+        <div class="center"><app-spinner [size]="28" /></div>
+      }
+
+      @if (resultadosSinRotacion(); as page) {
+        @if (page.data.length === 0) {
+          <app-empty-state icon="🎉" title="Sin prendas sin rotación" message="Ninguna prenda disponible supera el umbral seleccionado." />
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría · Talla</th>
+                  <th>Precio</th>
+                  <th>Días</th>
+                  <th>Publicado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (producto of page.data; track producto.id) {
+                  <tr>
+                    <td class="mono">{{ producto.codigo }}</td>
+                    <td><strong>{{ producto.nombre }}</strong></td>
+                    <td>{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
+                    <td>{{ moneda(producto.precio) }}</td>
+                    <td>{{ producto.dias_en_inventario ?? '—' }}</td>
+                    <td>
+                      <app-badge [tone]="producto.publicado ? 'info' : 'neutral'">
+                        {{ producto.publicado ? 'Publicada' : 'Oculta' }}
+                      </app-badge>
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPrecio(producto)">Editar precio</button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="cambiarPublicado(producto)">
+                          {{ producto.publicado ? 'Ocultar' : 'Publicar' }}
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirHistorial(producto)">Historial</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <app-paginator
+              [page]="paginaSinRotacion()"
+              [lastPage]="page.last_page"
+              [total]="page.total"
+              [perPage]="perPage()"
+              (pageChange)="onPaginaSinRotacion($event)"
+            />
+          </div>
+        }
+      }
+    </section>
+  }
 </div>
+
+<!-- Editar precio -->
+@if (modalPrecio(); as producto) {
+  <app-modal title="Editar precio" width="420px" (closed)="cerrarPrecio()">
+    <p class="muted">{{ producto.nombre }} ({{ producto.codigo }})</p>
+    <div class="field">
+      <label>Precio de venta (Bs)</label>
+      <input class="input" type="number" min="0" step="0.01" [(ngModel)]="precioNuevo" name="precio" />
+    </div>
+    <div class="actions end">
+      <button type="button" class="btn btn-ghost" (click)="cerrarPrecio()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardarPrecio()" [disabled]="guardandoPrecio">
+        {{ guardandoPrecio ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </app-modal>
+}
+
+<!-- Iniciar revisión física -->
+@if (revisionAbierta) {
+  <app-modal title="Iniciar revisión física" width="460px" (closed)="revisionAbierta = false">
+    <p class="muted">
+      Se reiniciará la marca de verificación de las prendas para volver a revisarlas. Podés limitar la revisión a una categoría.
+    </p>
+    <div class="field">
+      <label>Categoría (opcional)</label>
+      <select class="select" [(ngModel)]="categoriaRevision" name="categoria_revision">
+        <option [ngValue]="null">Todas las categorías</option>
+        @for (categoria of categorias(); track categoria.id) {
+          <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="actions end">
+      <button type="button" class="btn btn-ghost" (click)="revisionAbierta = false">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="ejecutarRevision()" [disabled]="ejecutandoRevision">
+        {{ ejecutandoRevision ? 'Iniciando…' : 'Iniciar revisión' }}
+      </button>
+    </div>
+  </app-modal>
+}
+
+<!-- Confirmar verificación -->
+@if (verificarObjetivo(); as objetivo) {
+  <app-confirm-dialog
+    [title]="objetivo.valor ? 'Marcar como verificada' : 'Quitar verificación'"
+    [message]="(objetivo.valor ? '¿Marcar ' : '¿Quitar la verificación de ') + objetivo.producto.nombre + ' (' + objetivo.producto.codigo + ')?'"
+    [confirmLabel]="objetivo.valor ? 'Verificar' : 'Quitar'"
+    [tone]="objetivo.valor ? 'primary' : 'danger'"
+    (confirm)="confirmarVerificar()"
+    (cancel)="verificarObjetivo.set(null)"
+  />
+}
+
+<!-- Historial -->
+@if (modalHistorial(); as producto) {
+  <app-historial-modal [producto]="producto" (cerrado)="cerrarHistorial()" />
+}

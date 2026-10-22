@@ -13,6 +13,8 @@ class ProductoPublicoResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $oferta = app(\App\Services\OfertaService::class)->preciosDe($this->resource);
+
         return [
             'id' => $this->id,
             'codigo' => $this->codigo,
@@ -20,6 +22,8 @@ class ProductoPublicoResource extends JsonResource
             'color' => $this->color,
             'descripcion' => $this->descripcion,
             'precio' => $this->precio,
+            'precio_oferta' => $oferta ? number_format($oferta['precio_final'], 2, '.', '') : null,
+            'descuento_porcentaje' => $oferta['porcentaje'] ?? null,
             'estado' => $this->estado,
             'es_nuevo' => $this->esNuevo(),
             'categoria' => $this->whenLoaded('categoria', fn () => new CategoriaResource($this->categoria)),

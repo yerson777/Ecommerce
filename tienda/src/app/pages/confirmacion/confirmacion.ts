@@ -5,6 +5,7 @@ import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const STORAGE_KEY = 'everly_ultimo_pedido';
+const STORAGE_AVISOS_KEY = 'everly_ultimo_pedido_avisos';
 const WHATSAPP_TIENDA = '59162640247';
 
 const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
@@ -22,17 +23,33 @@ const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
 })
 export class ConfirmacionComponent implements OnInit {
   order: PedidoPublico | null = null;
+  avisos: string[] = [];
 
   constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
-    const delEstado = this.router.getCurrentNavigation()?.extras.state?.['order'] as
-      PedidoPublico | undefined;
+    const navegacion = this.router.getCurrentNavigation();
+    const delEstado = navegacion?.extras.state?.['order'] as PedidoPublico | undefined;
+    const avisosEstado = navegacion?.extras.state?.['avisos'] as string[] | undefined;
 
     this.order = delEstado ?? this.leerAlmacenado();
+    this.avisos = avisosEstado ?? this.leerAvisos();
 
     if (!this.order) {
       this.router.navigate(['/']);
+    }
+  }
+
+  private leerAvisos(): string[] {
+    try {
+      const crudo = sessionStorage.getItem(STORAGE_AVISOS_KEY);
+      if (!crudo) {
+        return [];
+      }
+      const datos: unknown = JSON.parse(crudo);
+      return Array.isArray(datos) ? (datos as string[]) : [];
+    } catch {
+      return [];
     }
   }
 

@@ -9,6 +9,20 @@
     <p class="numero-pedido">{{ pedido.numero_pedido }}</p>
     <span class="badge badge-warning">{{ estadoEtiqueta(pedido.estado) }}</span>
 
+    <div class="card bloque avisos" *ngIf="avisos.length > 0">
+      <h2>Revisá estos detalles</h2>
+      <ul class="avisos-lista">
+        <li *ngFor="let aviso of avisos">{{ aviso }}</li>
+      </ul>
+    </div>
+
+    <div class="card bloque avisos" *ngIf="avisos.length > 0">
+      <h2>Revisá estos detalles</h2>
+      <ul class="avisos-lista">
+        <li *ngFor="let aviso of avisos">{{ aviso }}</li>
+      </ul>
+    </div>
+
     <div class="card bloque">
       <h2>Tu pedido</h2>
       <div class="linea" *ngFor="let item of pedido.items">
@@ -27,7 +41,14 @@
             <span *ngIf="item.producto_color"> · {{ item.producto_color }}</span>
           </div>
         </div>
-        <div class="linea-precio">{{ formatearPrecio(item.precio_unitario) }}</div>
+        <div class="linea-precio">
+          <span *ngIf="item.precio_original && item.precio_original !== item.precio_unitario" class="precio-tachado">
+            {{ formatearPrecio(item.precio_original) }}
+          </span>
+          <span [class.precio-oferta]="item.precio_original && item.precio_original !== item.precio_unitario">
+            {{ formatearPrecio(item.precio_unitario) }}
+          </span>
+        </div>
       </div>
 
       <div class="resumen-fila" style="margin-top: 0.8rem">

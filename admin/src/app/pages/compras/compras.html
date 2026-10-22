@@ -1,0 +1,490 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Compras</h1>
+      <p class="page-subtitle">Lotes de prendas: costo repartido por prenda y ganancia esperada</p>
+    </div>
+
+    <div class="page-actions">
+      <app-notification-center />
+      <button type="button" class="btn btn-ghost" (click)="exportar()">Exportar CSV</button>
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nueva compra</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="field">
+        <label>Desde</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_desde" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Hasta</label>
+        <input class="input" type="date" [(ngModel)]="filtros().fecha_hasta" (change)="onBuscar()" />
+      </div>
+
+      <div class="field">
+        <label>Proveedor</label>
+        <select class="select" [(ngModel)]="filtros().proveedor_id" (change)="onBuscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (proveedor of proveedores(); track proveedor.id) {
+            <option [ngValue]="proveedor.id">{{ proveedor.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
+          <option [ngValue]="''">Todas</option>
+          <option [ngValue]="'activa'">Activas</option>
+          <option [ngValue]="'anulada'">Anuladas</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (cargando()) {
+      <div class="center">
+        <app-spinner [size]="34" />
+      </div>
+    } @else if (compras().length === 0) {
+      <app-empty-state
+        icon="🛒"
+        title="Sin compras"
+        message="No hay compras registradas todavía."
+      >
+        <button type="button" class="btn btn-ghost" (click)="abrirCrear()">Registrar la primera</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Prendas</th>
+              <th>Costo total</th>
+              <th>Gastos</th>
+              <th>Costo repartible</th>
+              <th>Recuperado</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (compra of compras(); track compra.id) {
+              <tr>
+                <td class="muted nowrap">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                <td>
+                  <button type="button" class="link" (click)="verDetalle(compra)">
+                    <strong>{{ proveedorNombre(compra) }}</strong>
+                  </button>
+                </td>
+                <td class="muted">
+                  {{ compra.prendas_count ?? 0 }}
+                  @if ((compra.vendidas_count ?? 0) > 0) {
+                    <span class="nowrap"> · {{ compra.vendidas_count }} vendidas</span>
+                  }
+                </td>
+                <td class="muted">$ {{ compra.costo_total }}</td>
+                <td class="muted">$ {{ compra.gastos_extra }}</td>
+                <td class="muted">$ {{ compra.costo_repartible }}</td>
+                <td class="muted">$ {{ compra.recuperado ?? '0.00' }}</td>
+                <td>
+                  <app-badge [tone]="tonosEstado[compra.estado]">
+                    {{ etiquetasEstado[compra.estado] }}
+                  </app-badge>
+                </td>
+                <td class="align-right">
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="verDetalle(compra)">Ver</button>
+                    @if (compra.estado === 'activa') {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(compra)">
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        (click)="pedirAnular(compra)"
+                        [disabled]="procesandoId === compra.id"
+                      >
+                        Anular
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm danger"
+                      (click)="pedirEliminar(compra)"
+                      [disabled]="procesandoId === compra.id || !puedeEliminar(compra)"
+                      [title]="puedeEliminar(compra) ? 'Eliminar' : 'Tiene prendas vendidas: anúlala en lugar de eliminarla'"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginator
+        [page]="pagina()"
+        [lastPage]="ultimaPagina()"
+        [total]="total()"
+        [perPage]="porPagina()"
+        (pageChange)="irAPagina($event)"
+      />
+    }
+  </section>
+</div>
+
+@if (modalAbierto()) {
+  <app-modal
+    [title]="editando() ? 'Editar compra' : 'Nueva compra'"
+    width="820px"
+    (closed)="cerrarModal()"
+  >
+    <div class="modal-body">
+      @if (errorFormulario()) {
+        <div class="alert alert-error">{{ errorFormulario() }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Proveedor</label>
+          <select class="select" [(ngModel)]="form.proveedor_id">
+            <option [ngValue]="null">Seleccionar…</option>
+            @for (proveedor of proveedores(); track proveedor.id) {
+              <option [ngValue]="proveedor.id">{{ proveedor.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Fecha</label>
+          <input class="input" type="date" [(ngModel)]="form.fecha" />
+        </div>
+
+        <div class="field">
+          <label>Costo total del lote ($)</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="form.costo_total"
+            (ngModelChange)="repartirIgual()"
+          />
+        </div>
+
+        <div class="field">
+          <label>Gastos extra ($)</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="form.gastos_extra"
+            (ngModelChange)="repartirIgual()"
+          />
+        </div>
+
+        <div class="field">
+          <label>Total de prendas del fardo</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="Ej. 100"
+            [(ngModel)]="form.prendas_total"
+            (ngModelChange)="repartirIgual()"
+          />
+        </div>
+
+        <div class="field">
+          <label>Prendas descartadas (no vendibles)</label>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="Ej. 15"
+            [(ngModel)]="form.prendas_descartadas"
+            (ngModelChange)="repartirIgual()"
+          />
+        </div>
+
+        <div class="field field-full">
+          <label>Nota</label>
+          <textarea class="input" rows="2" [(ngModel)]="form.nota"></textarea>
+        </div>
+
+        <div class="field field-full">
+          <label>Buscar prendas</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Código o nombre…"
+            [(ngModel)]="busquedaPrendas"
+            (input)="buscarPrendas()"
+          />
+          @if (buscandoPrendas()) {
+            <span class="hint muted">Buscando…</span>
+          }
+
+          @if (resultadosBusqueda().length > 0) {
+            <div class="cat-grid">
+              @for (producto of resultadosBusqueda(); track producto.id) {
+                <label class="cat-item">
+                  <input
+                    type="checkbox"
+                    [checked]="estaSeleccionado(producto.id)"
+                    (change)="alternarProducto(producto)"
+                  />
+                  <span>{{ producto.nombre }} · {{ producto.codigo }}</span>
+                </label>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (prendasSeleccionadas().length > 0) {
+        <div class="field field-full">
+          <label>Prendas del lote ({{ prendasSeleccionadas().length }})</label>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Prenda</th>
+                  <th>Precio</th>
+                  <th>Costo asignado</th>
+                  <th>Ganancia esperada</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (producto of prendasSeleccionadas(); track producto.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ producto.nombre }}</strong>
+                      <span class="muted nowrap"> · {{ producto.codigo }}</span>
+                    </td>
+                    <td class="muted">$ {{ producto.precio }}</td>
+                    <td>
+                      <input
+                        class="input input-sm"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        [ngModel]="costosManuales()[producto.id]"
+                        (ngModelChange)="setCostoManual(producto.id, $event)"
+                      />
+                    </td>
+                    <td [class.negative]="gananciaPotencial(producto) < 0">
+                      $ {{ gananciaPotencial(producto).toFixed(2) }}
+                    </td>
+                    <td class="align-right">
+                      <button type="button" class="btn btn-ghost btn-sm danger" (click)="quitarProducto(producto.id)">
+                        Quitar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <span class="hint muted">
+            El costo repartible ($ {{ costoRepartible().toFixed(2) }}) se reparte en partes iguales entre
+            {{ prendasVendibles() }} prendas vendibles (fardo − descartadas).
+            Podés ajustar el costo de una prenda manualmente.
+          </span>
+
+          <div class="reparto-preview">
+            <div class="reparto-item">
+              <span class="reparto-label">Total del fardo</span>
+              <strong>{{ form.prendas_total ?? 0 }}</strong>
+            </div>
+            <div class="reparto-item">
+              <span class="reparto-label">Descartadas</span>
+              <strong>{{ form.prendas_descartadas ?? 0 }}</strong>
+            </div>
+            <div class="reparto-item">
+              <span class="reparto-label">Vendibles</span>
+              <strong>{{ prendasVendibles() }}</strong>
+            </div>
+            <div class="reparto-item">
+              <span class="reparto-label">Costo por prenda</span>
+              <strong class="tone-success">$ {{ costoPorPrenda().toFixed(2) }}</strong>
+            </div>
+            <div class="reparto-item">
+              <span class="reparto-label">Cargadas en el lote</span>
+              <strong>{{ prendasSeleccionadas().length }}</strong>
+            </div>
+          </div>
+
+          @if (avisosFardo().length > 0) {
+            <div class="reparto-avisos">
+              @for (aviso of avisosFardo(); track aviso) {
+                <div class="alert alert-warning">{{ aviso }}</div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        @if (guardando()) {
+          <app-spinner [size]="16" />
+        } @else {
+          Guardar
+        }
+      </button>
+    </div>
+  </app-modal>
+}
+
+@if (detalleAbierto()) {
+  <app-modal title="Detalle de la compra" width="780px" (closed)="cerrarDetalle()">
+    @if (cargandoDetalle()) {
+      <div class="center">
+        <app-spinner [size]="30" />
+      </div>
+    } @else if (detalle(); as c) {
+      <div class="modal-body">
+        <div class="ficha">
+          <div>
+            <span class="ficha-label">Proveedor</span>
+            <strong>{{ proveedorNombre(c) }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Fecha</span>
+            <strong>{{ c.fecha | date: 'dd/MM/yyyy' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Estado</span>
+            <strong>{{ etiquetasEstado[c.estado] }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Costo total</span>
+            <strong>$ {{ c.costo_total }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Gastos extra</span>
+            <strong>$ {{ c.gastos_extra }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Costo repartible</span>
+            <strong>$ {{ c.costo_repartible }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Total del fardo</span>
+            <strong>{{ c.prendas_total ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Descartadas</span>
+            <strong>{{ c.prendas_descartadas ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Vendibles</span>
+            <strong>{{ vendiblesCompra(c) }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Cargadas en el lote</span>
+            <strong>{{ c.prendas_count ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Vendidas</span>
+            <strong>{{ c.vendidas_count ?? 0 }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Recuperado</span>
+            <strong>$ {{ c.recuperado ?? '0.00' }}</strong>
+          </div>
+          <div>
+            <span class="ficha-label">Falta recuperar</span>
+            <strong>$ {{ c.falta_recuperar ?? '0.00' }}</strong>
+          </div>
+        </div>
+
+        @if (c.nota) {
+          <p class="muted">{{ c.nota }}</p>
+        }
+
+        <h3 class="section-title">Prendas del lote</h3>
+
+        @if (detalleProductos(c).length === 0) {
+          <p class="muted">Esta compra no tiene prendas asociadas.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Prenda</th>
+                  <th>Talla</th>
+                  <th>Costo asignado</th>
+                  <th>Precio lista</th>
+                  <th>Ganancia potencial</th>
+                  <th>Estado prenda</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of detalleProductos(c); track item.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ item.producto?.nombre ?? '—' }}</strong>
+                      @if (item.producto?.codigo) {
+                        <span class="muted nowrap"> · {{ item.producto?.codigo }}</span>
+                      }
+                    </td>
+                    <td class="muted">{{ item.producto?.talla ?? '—' }}</td>
+                    <td class="muted">$ {{ item.costo_asignado }}</td>
+                    <td class="muted">$ {{ item.producto?.precio ?? '0.00' }}</td>
+                    <td class="muted">$ {{ item.ganancia_potencial }}</td>
+                    <td class="muted">{{ item.producto?.estado ?? '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+  </app-modal>
+}
+
+@if (anularObjetivo) {
+  <app-confirm-dialog
+    title="Anular compra"
+    message="La compra quedará anulada y sus prendas se desvincularán del lote. No se puede anular si tiene prendas vendidas."
+    confirmLabel="Anular"
+    tone="danger"
+    (confirm)="confirmarAnular()"
+    (cancel)="cancelarAnular()"
+  />
+}
+
+@if (eliminarObjetivo) {
+  <app-confirm-dialog
+    title="Eliminar compra"
+    message="¿Seguro que querés eliminar esta compra? Solo se puede eliminar si no tiene prendas vendidas."
+    confirmLabel="Eliminar"
+    tone="danger"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cancelarEliminar()"
+  />
+}

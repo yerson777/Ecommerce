@@ -29,7 +29,14 @@
                 <span *ngIf="item.color"> · {{ item.color }}</span>
               </div>
             </div>
-            <div class="linea-precio">{{ formatearPrecio(item.precio) }}</div>
+            <div class="linea-precio">
+              <span *ngIf="item.precio_original" class="precio-tachado">
+                {{ formatearPrecio(item.precio_original) }}
+              </span>
+              <span [class.precio-oferta]="item.precio_original">
+                {{ formatearPrecio(item.precio) }}
+              </span>
+            </div>
             <button class="btn btn-ghost btn-sm" title="Quitar" (click)="quitar(item.producto_id)">
               ✕
             </button>

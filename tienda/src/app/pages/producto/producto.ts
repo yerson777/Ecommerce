@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { ProductoPublico } from '../../core/models/producto';
-import { formatearPrecio } from '../../core/utils/precio';
+import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { imagenPrincipal } from '../../core/utils/producto';
 
 @Component({
@@ -54,6 +54,8 @@ export class ProductoComponent implements OnInit {
   }
 
   readonly formatearPrecio = formatearPrecio;
+  readonly precioEfectivo = precioEfectivo;
+  readonly tieneOferta = tieneOferta;
 
   enCarrito(): boolean {
     return this.carrito.contiene(this.productoId);
@@ -173,7 +175,9 @@ export class ProductoComponent implements OnInit {
       nombre: producto.nombre,
       color: producto.color,
       talla: producto.talla?.nombre ?? null,
-      precio: producto.precio,
+      precio: this.precioEfectivo(producto),
+      precio_original: this.tieneOferta(producto) ? producto.precio : null,
+      descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen: this.fotoActiva(),
     });
   }

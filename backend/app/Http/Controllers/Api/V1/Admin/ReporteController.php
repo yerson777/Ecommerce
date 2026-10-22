@@ -104,6 +104,26 @@ class ReporteController extends Controller
         );
     }
 
+    public function gananciaPorLote(ReporteRequest $request)
+    {
+        $data = $request->validated();
+
+        return Api::success(
+            $this->reporteService->gananciaPorLote($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null),
+            'Ganancia por lote.'
+        );
+    }
+
+    public function gananciaPorOrigen(ReporteRequest $request)
+    {
+        $data = $request->validated();
+
+        return Api::success(
+            $this->reporteService->gananciaPorOrigen($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null),
+            'Ganancia por origen.'
+        );
+    }
+
     public function clientes(ReporteRequest $request)
     {
         $data = $request->validated();

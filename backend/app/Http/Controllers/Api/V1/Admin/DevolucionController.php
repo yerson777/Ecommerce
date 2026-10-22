@@ -20,8 +20,11 @@ class DevolucionController extends Controller
     public function index(Request $request)
     {
         $devoluciones = Devolucion::query()
-            ->with(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla'])
+            ->with(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))
+            ->when($request->filled('tipo'), fn ($q) => $q->where('tipo', $request->input('tipo')))
+            ->when($request->filled('fecha_desde'), fn ($q) => $q->whereDate('created_at', '>=', $request->input('fecha_desde')))
+            ->when($request->filled('fecha_hasta'), fn ($q) => $q->whereDate('created_at', '<=', $request->input('fecha_hasta')))
             ->when($request->filled('busqueda'), function ($q) use ($request) {
                 $busqueda = $request->input('busqueda');
 
@@ -92,10 +95,17 @@ class DevolucionController extends Controller
             $venta->pedido_id,
             trim($request->input('motivo')),
             $request->filled('monto_reembolso') ? (float) $request->input('monto_reembolso') : null,
+            [
+                'tipo' => $request->input('tipo'),
+                'motivo_categoria' => $request->input('motivo_categoria'),
+                'nota' => $request->input('nota'),
+                'reembolso_metodo_id' => $request->filled('reembolso_metodo_id') ? (int) $request->input('reembolso_metodo_id') : null,
+                'items' => $request->input('items'),
+            ],
         );
 
         return Api::resource(
-            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla'])),
+            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])),
             'Devolución registrada. Queda pendiente de aprobación.',
             201
         );
@@ -103,7 +113,7 @@ class DevolucionController extends Controller
 
     public function show(int $id)
     {
-        $devolucion = Devolucion::with(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla'])
+        $devolucion = Devolucion::with(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])
             ->findOrFail($id);
 
         return Api::resource(new DevolucionResource($devolucion), 'Detalle de la devolución.');
@@ -114,8 +124,36 @@ class DevolucionController extends Controller
         $devolucion = $this->pedidos->aprobarDevolucion($id);
 
         return Api::resource(
-            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla'])),
-            'Devolución aprobada: las prendas volvieron al catálogo y la caja registró el egreso.'
+            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])),
+            'Devolución aprobada.'
+        );
+    }
+
+    public function rechazar(Request $request, int $id)
+    {
+        $datos = $request->validate([
+            'motivo' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $devolucion = $this->pedidos->rechazarDevolucion($id, $datos['motivo'] ?? null);
+
+        return Api::resource(
+            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])),
+            'Devolución rechazada.'
+        );
+    }
+
+    public function reembolsar(Request $request, int $id)
+    {
+        $datos = $request->validate([
+            'reembolso_metodo_id' => ['nullable', 'integer', 'exists:metodos_pago,id'],
+        ]);
+
+        $devolucion = $this->pedidos->reembolsarDevolucion($id, $datos['reembolso_metodo_id'] ?? null);
+
+        return Api::resource(
+            new DevolucionResource($devolucion->load(['pedido.cliente', 'pedido.venta', 'pedido.items.producto.talla', 'items.producto.talla', 'reembolsoMetodo'])),
+            'Devolución reembolsada.'
         );
     }
 }

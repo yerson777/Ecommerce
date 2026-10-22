@@ -61,12 +61,18 @@
                   [disabled]="!banner.enlace"
                   (click)="carrusel.abrir(banner)"
                 >
-                  <img
-                    class="carrusel-img"
-                    [src]="banner.url"
-                    [alt]="banner.titulo ?? 'Banner'"
-                    fetchpriority="high"
-                  />
+                  <picture>
+                    <source
+                      media="(max-width: 640px)"
+                      [srcset]="banner.url_movil ?? banner.url"
+                    />
+                    <img
+                      class="carrusel-img"
+                      [src]="banner.url"
+                      [alt]="banner.titulo ?? 'Banner'"
+                      fetchpriority="high"
+                    />
+                  </picture>
                   @if (banner.titulo || banner.subtitulo) {
                     <span class="carrusel-texto">
                       @if (banner.titulo) {
@@ -313,6 +319,9 @@
                 <span class="prenda-estado" [class.prenda-estado--libre]="esDisponible(prenda)">
                   {{ estadoTexto(prenda.estado) }}
                 </span>
+                @if (tieneOferta(prenda)) {
+                  <span class="prenda-descuento">-{{ prenda.descuento_porcentaje }}%</span>
+                }
               </button>
 
               <div class="prenda-body">
@@ -326,7 +335,14 @@
                     <span> · Talle {{ prenda.talla?.nombre }}</span>
                   }
                 </p>
-                <p class="prenda-precio">{{ formatearPrecio(prenda.precio) }}</p>
+                @if (tieneOferta(prenda)) {
+                  <p class="prenda-precio">
+                    <span class="precio-tachado">{{ formatearPrecio(prenda.precio) }}</span>
+                    <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(prenda)) }}</span>
+                  </p>
+                } @else {
+                  <p class="prenda-precio">{{ formatearPrecio(prenda.precio) }}</p>
+                }
                 <button
                   type="button"
                   class="btn btn-primary btn-block"

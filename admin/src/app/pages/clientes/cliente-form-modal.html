@@ -1,0 +1,104 @@
+<app-modal
+  [title]="esEdicion ? 'Editar cliente' : 'Nuevo cliente'"
+  width="620px"
+  (closed)="cerrar()"
+>
+  <div class="form">
+    @if (errorBanner()) {
+      <div class="error-banner">{{ errorBanner() }}</div>
+    }
+
+    @if (avisoDuplicado(); as aviso) {
+      <div class="aviso-duplicado">
+        <div class="aviso-texto">
+          <strong>Posible cliente duplicado.</strong>
+          <span>{{ aviso }}</span>
+        </div>
+        <div class="aviso-acciones">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="descartarAviso()">Revisar</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="confirmarDuplicado()" [disabled]="guardando()">
+            Guardar de todos modos
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Nombre *</label>
+        <input class="input" type="text" [(ngModel)]="forma.nombre" name="nombre" maxlength="255" />
+        @if (errorDe('nombre')) {
+          <span class="field-error">{{ errorDe('nombre') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Teléfono</label>
+        <input class="input" type="tel" [(ngModel)]="forma.telefono" name="telefono" maxlength="30" />
+        @if (errorDe('telefono')) {
+          <span class="field-error">{{ errorDe('telefono') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Correo</label>
+        <input class="input" type="email" [(ngModel)]="forma.email" name="email" maxlength="255" />
+        @if (errorDe('email')) {
+          <span class="field-error">{{ errorDe('email') }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Ciudad</label>
+        <input class="input" type="text" [(ngModel)]="forma.ciudad" name="ciudad" maxlength="150" />
+      </div>
+
+      <div class="field">
+        <label>Dirección</label>
+        <input class="input" type="text" [(ngModel)]="forma.direccion" name="direccion" />
+      </div>
+
+      <div class="field field-full">
+        <label>Notas</label>
+        <textarea class="textarea" [(ngModel)]="forma.notas" name="notas"></textarea>
+      </div>
+
+      <label class="check field-full">
+        <input type="checkbox" [(ngModel)]="forma.bloqueado" name="bloqueado" />
+        <span>Cliente bloqueado (no podrá realizar pedidos desde la tienda)</span>
+      </label>
+
+      @if (forma.bloqueado) {
+        <div class="field field-full">
+          <label>Motivo del bloqueo</label>
+          <input
+            class="input"
+            type="text"
+            [(ngModel)]="forma.motivo_bloqueo"
+            name="motivo_bloqueo"
+            maxlength="255"
+            placeholder="Por qué se bloquea (solo visible para administrador)"
+          />
+        </div>
+      }
+
+      <label class="check field-full">
+        <input type="checkbox" [(ngModel)]="forma.es_prueba" name="es_prueba" />
+        <span>Marcar como cliente de prueba (se oculta del listado)</span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      @if (esEdicion) {
+        <button type="button" class="btn btn-ghost btn-danger-text" (click)="eliminar()" [disabled]="guardando()">
+          Eliminar
+        </button>
+      }
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear cliente' }}
+      </button>
+    </div>
+  </div>
+</app-modal>

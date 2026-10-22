@@ -25,6 +25,8 @@ export interface ProductoPublico {
   color: string | null;
   descripcion: string | null;
   precio: string;
+  precio_oferta: string | null;
+  descuento_porcentaje: number | null;
   estado: EstadoProducto;
   es_nuevo: boolean;
   categoria: CategoriaRef | null;

@@ -39,9 +39,18 @@ class BannerController extends Controller
      */
     public function store(BannerStoreRequest $request)
     {
-        $datos = $request->safe()->except('imagen');
+        $datos = $request->safe()->except(['imagen', 'imagen_movil', 'enlace_url']);
+        $datos['enlace'] = $this->banners->resolverEnlace(
+            $request->input('enlace_tipo') ?? Banner::ENLACE_NINGUNO,
+            $request->filled('enlace_id') ? (int) $request->input('enlace_id') : null,
+            $request->input('enlace_url'),
+        );
 
-        $banner = $this->banners->crear($datos, $request->file('imagen'));
+        $banner = $this->banners->crear(
+            $datos,
+            $request->file('imagen'),
+            $request->file('imagen_movil'),
+        );
 
         return Api::resource(
             new BannerResource($banner),
@@ -57,10 +66,20 @@ class BannerController extends Controller
     {
         $banner = Banner::findOrFail($id);
 
-        $datos = $request->safe()->except('imagen');
-        $archivo = $request->hasFile('imagen') ? $request->file('imagen') : null;
+        $datos = $request->safe()->except(['imagen', 'imagen_movil', 'enlace_url']);
 
-        $actualizado = $this->banners->actualizar($banner, $datos, $archivo);
+        if ($request->has('enlace_tipo') || $request->has('enlace_url') || $request->has('enlace')) {
+            $datos['enlace'] = $this->banners->resolverEnlace(
+                $request->input('enlace_tipo') ?? Banner::ENLACE_NINGUNO,
+                $request->filled('enlace_id') ? (int) $request->input('enlace_id') : null,
+                $request->input('enlace_url'),
+            );
+        }
+
+        $archivo = $request->hasFile('imagen') ? $request->file('imagen') : null;
+        $archivoMovil = $request->hasFile('imagen_movil') ? $request->file('imagen_movil') : null;
+
+        $actualizado = $this->banners->actualizar($banner, $datos, $archivo, $archivoMovil);
 
         return Api::resource(
             new BannerResource($actualizado),

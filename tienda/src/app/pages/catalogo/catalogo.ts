@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../../core/models/producto';
-import { formatearPrecio } from '../../core/utils/precio';
+import { OfertaPublica } from '../../core/models/oferta';
+import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { imagenPrincipal } from '../../core/utils/producto';
 
 @Component({
@@ -25,11 +26,15 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly carrusel = inject(BannerCarouselService);
 
   readonly formatearPrecio = formatearPrecio;
+  readonly precioEfectivo = precioEfectivo;
+  readonly tieneOferta = tieneOferta;
   readonly imagenPrincipal = imagenPrincipal;
 
   readonly busqueda = signal('');
   readonly categoriaActiva = signal<number | null>(null);
   readonly tallaActiva = signal<number | null>(null);
+  readonly ofertaActiva = signal<number | null>(null);
+  readonly ofertaEncabezado = signal<OfertaPublica | null>(null);
 
   readonly pagina = signal(1);
   readonly total = signal(0);
@@ -40,12 +45,31 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     private readonly catalogo: CatalogoService,
     private readonly carrito: CartService,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.leerParametros();
     this.cargarFiltros();
     this.carrusel.cargar();
     this.cargar();
+  }
+
+  /** Lee ?categoria= y ?oferta= (llegan desde los enlaces de los banners). */
+  private leerParametros(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const categoria = Number(params.get('categoria'));
+    const oferta = Number(params.get('oferta'));
+
+    if (Number.isFinite(categoria) && categoria > 0) {
+      this.categoriaActiva.set(categoria);
+    }
+    if (Number.isFinite(oferta) && oferta > 0) {
+      this.ofertaActiva.set(oferta);
+      this.catalogo.oferta(oferta).subscribe({
+        next: (res) => this.ofertaEncabezado.set(res.data ?? null),
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -73,6 +97,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
         categoria: this.categoriaActiva(),
         talla: this.tallaActiva(),
         busqueda: this.busqueda(),
+        oferta: this.ofertaActiva(),
         page: this.pagina(),
         per_page: this.porPagina(),
       })
@@ -119,6 +144,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.busqueda.set('');
     this.categoriaActiva.set(null);
     this.tallaActiva.set(null);
+    this.ofertaActiva.set(null);
+    this.ofertaEncabezado.set(null);
     this.pagina.set(1);
     this.cargar();
   }
@@ -144,7 +171,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       nombre: producto.nombre,
       color: producto.color,
       talla: producto.talla?.nombre ?? null,
-      precio: producto.precio,
+      precio: this.precioEfectivo(producto),
+      precio_original: this.tieneOferta(producto) ? producto.precio : null,
+      descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen,
     });
   }

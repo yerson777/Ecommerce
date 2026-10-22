@@ -1,11 +1,14 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiResponse } from '../../core/models/api-response';
+import { ActivatedRoute } from '@angular/router';
 import { Paginated } from '../../core/models/paginated';
 import {
   Devolucion,
+  DevolucionItemPayload,
   ETIQUETA_ESTADO_DEVOLUCION,
+  MOTIVOS_DEVOLUCION,
   TONO_ESTADO_DEVOLUCION,
+  TipoDevolucion,
   VentaDisponible,
 } from '../../core/models/devolucion';
 import { DevolucionesService } from '../../core/services/devoluciones.service';
@@ -18,6 +21,15 @@ import { NotificationCenterComponent } from '../../shared/components/notificatio
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
+interface PrendaSeleccion {
+  producto_id: number;
+  codigo: string | null;
+  nombre: string | null;
+  precio_unitario: string;
+  seleccionada: boolean;
+  reingresa: boolean;
+}
+
 interface RegistrarEstado {
   abierto: boolean;
   guardando: boolean;
@@ -28,6 +40,12 @@ interface RegistrarEstado {
   ventaId: number | null;
   motivo: string;
   monto: number | null;
+  tipo: TipoDevolucion;
+  motivoCategoria: string;
+  nota: string;
+  reembolsoMetodoId: number | null;
+  prendas: PrendaSeleccion[];
+  cargandoPrendas: boolean;
 }
 
 @Component({
@@ -47,34 +65,86 @@ interface RegistrarEstado {
   templateUrl: './devoluciones.html',
 })
 export class DevolucionesComponent implements OnInit {
-  private readonly devolucionesService = inject(DevolucionesService);
+  private readonly devoluciones = inject(DevolucionesService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
 
-  readonly filtros = signal({ busqueda: '', estado: '' as string });
+  readonly filtros = signal({
+    busqueda: '',
+    estado: '' as Devolucion['estado'] | '',
+    tipo: '' as TipoDevolucion | '',
+    fechaDesde: '',
+    fechaHasta: '',
+  });
 
   readonly resultados = signal<Paginated<Devolucion> | null>(null);
   readonly cargando = signal(true);
-  readonly pagina = signal(1);
 
-  readonly registrar = signal<RegistrarEstado>({
-    abierto: false,
-    guardando: false,
-    error: null,
-    busqueda: '',
-    ventas: [],
-    cargandoVentas: false,
-    ventaId: null,
-    motivo: '',
-    monto: null,
-  });
+  readonly metodosPago = signal<{ id: number; nombre: string }[]>([]);
+
+  readonly motivos = MOTIVOS_DEVOLUCION;
+
+  readonly registrar = signal<RegistrarEstado>(this.registrarInicial());
 
   readonly aprobarObjetivo = signal<Devolucion | null>(null);
   readonly aprobando = signal(false);
 
+  readonly rechazarObjetivo = signal<Devolucion | null>(null);
+  readonly rechazando = signal(false);
+  readonly rechazoMotivo = signal('');
+
+  readonly reembolsarObjetivo = signal<Devolucion | null>(null);
+  readonly reembolsando = signal(false);
+  readonly reembolsoMetodoId = signal<number | null>(null);
+
+  readonly imprimiendo = signal<Devolucion | null>(null);
+  readonly detalle = signal<Devolucion | null>(null);
+
+  readonly pagina = signal(1);
   readonly perPage = 15;
 
+  private ventaInicial: number | null = null;
+
   ngOnInit(): void {
+    this.cargarMetodosPago();
+
+    const venta = Number(this.route.snapshot.queryParamMap.get('venta'));
+    if (Number.isFinite(venta) && venta > 0) {
+      this.ventaInicial = venta;
+      this.abrirRegistrar();
+    }
+
     this.cargar();
+  }
+
+  private registrarInicial(): RegistrarEstado {
+    return {
+      abierto: false,
+      guardando: false,
+      error: null,
+      busqueda: '',
+      ventas: [],
+      cargandoVentas: false,
+      ventaId: null,
+      motivo: '',
+      monto: null,
+      tipo: 'total',
+      motivoCategoria: '',
+      nota: '',
+      reembolsoMetodoId: null,
+      prendas: [],
+      cargandoPrendas: false,
+    };
+  }
+
+  private cargarMetodosPago(): void {
+    this.devoluciones.metodosPago().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.metodosPago.set(res.data);
+        }
+      },
+    });
   }
 
   onBuscar(): void {
@@ -83,7 +153,7 @@ export class DevolucionesComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filtros.set({ busqueda: '', estado: '' });
+    this.filtros.set({ busqueda: '', estado: '', tipo: '', fechaDesde: '', fechaHasta: '' });
     this.onBuscar();
   }
 
@@ -97,10 +167,13 @@ export class DevolucionesComponent implements OnInit {
 
     this.cargando.set(true);
 
-    this.devolucionesService
+    this.devoluciones
       .listar({
         busqueda: f.busqueda || undefined,
-        estado: (f.estado as 'pendiente' | 'aprobada' | '') || undefined,
+        estado: f.estado || undefined,
+        tipo: f.tipo || undefined,
+        fecha_desde: f.fechaDesde || undefined,
+        fecha_hasta: f.fechaHasta || undefined,
         page: this.pagina(),
         per_page: this.perPage,
       })
@@ -119,17 +192,7 @@ export class DevolucionesComponent implements OnInit {
   }
 
   abrirRegistrar(): void {
-    this.registrar.set({
-      abierto: true,
-      guardando: false,
-      error: null,
-      busqueda: '',
-      ventas: [],
-      cargandoVentas: false,
-      ventaId: null,
-      motivo: '',
-      monto: null,
-    });
+    this.registrar.set({ ...this.registrarInicial(), abierto: true });
     this.cargarVentas();
   }
 
@@ -145,20 +208,24 @@ export class DevolucionesComponent implements OnInit {
   }
 
   private cargarVentas(): void {
-    const estado = this.registrar();
-    this.registrar.set({ ...estado, cargandoVentas: true });
+    this.registrar.set({ ...this.registrar(), cargandoVentas: true });
 
-    this.devolucionesService.ventasDisponibles(estado.busqueda.trim() || undefined).subscribe({
+    this.devoluciones.ventasDisponibles(this.registrar().busqueda.trim() || undefined).subscribe({
       next: (res) => {
         const ventas = res.success && res.data?.data ? res.data.data : [];
-        const sigueEnLista = ventas.some((v) => v.id === estado.ventaId);
+        const objetivo = this.ventaInicial;
+        const preselegida = objetivo ? ventas.find((v) => v.id === objetivo) : undefined;
         this.registrar.set({
           ...this.registrar(),
           ventas,
           cargandoVentas: false,
-          ventaId: sigueEnLista ? estado.ventaId : null,
-          monto: sigueEnLista ? estado.monto : null,
+          ventaId: preselegida ? preselegida.id : null,
+          monto: preselegida ? parseFloat(String(preselegida.total)) || 0 : null,
         });
+        this.ventaInicial = null;
+        if (preselegida) {
+          this.cargarPrendas();
+        }
       },
       error: (err) => {
         this.registrar.set({ ...this.registrar(), cargandoVentas: false, error: err.message ?? 'No se pudieron cargar las ventas.' });
@@ -169,7 +236,59 @@ export class DevolucionesComponent implements OnInit {
   onSeleccionarVenta(): void {
     const venta = this.registrar().ventas.find((v) => v.id === this.registrar().ventaId);
     const monto = venta ? parseFloat(String(venta.total)) || 0 : null;
-    this.registrar.set({ ...this.registrar(), monto });
+    this.registrar.set({ ...this.registrar(), monto, prendas: [] });
+
+    if (venta) {
+      this.cargarPrendas();
+    }
+  }
+
+  private cargarPrendas(): void {
+    const ventaId = this.registrar().ventaId;
+    if (!ventaId) {
+      return;
+    }
+
+    this.registrar.set({ ...this.registrar(), cargandoPrendas: true, prendas: [] });
+
+    this.devoluciones.prendasDeVenta(ventaId).subscribe({
+      next: (res) => {
+        const prendas: PrendaSeleccion[] = (res.data ?? []).map((prenda) => ({
+          producto_id: prenda.producto_id,
+          codigo: prenda.codigo ?? null,
+          nombre: prenda.nombre ?? null,
+          precio_unitario: prenda.precio_unitario,
+          seleccionada: true,
+          reingresa: true,
+        }));
+        this.registrar.set({ ...this.registrar(), prendas, cargandoPrendas: false });
+      },
+      error: () => {
+        this.registrar.set({ ...this.registrar(), cargandoPrendas: false });
+      },
+    });
+  }
+
+  onCambiarTipo(tipo: TipoDevolucion): void {
+    this.registrar.set({ ...this.registrar(), tipo });
+  }
+
+  togglePrenda(indice: number): void {
+    const prendas = this.registrar().prendas.map((prenda, i) =>
+      i === indice ? { ...prenda, seleccionada: !prenda.seleccionada } : prenda,
+    );
+    this.registrar.set({ ...this.registrar(), prendas });
+  }
+
+  toggleReingresa(indice: number): void {
+    const prendas = this.registrar().prendas.map((prenda, i) =>
+      i === indice ? { ...prenda, reingresa: !prenda.reingresa } : prenda,
+    );
+    this.registrar.set({ ...this.registrar(), prendas });
+  }
+
+  prendasSeleccionadas(): PrendaSeleccion[] {
+    return this.registrar().prendas.filter((prenda) => prenda.seleccionada);
   }
 
   cambiarMonto(valor: string): void {
@@ -196,13 +315,31 @@ export class DevolucionesComponent implements OnInit {
       return;
     }
 
+    let items: DevolucionItemPayload[] | null = null;
+    if (estado.tipo === 'parcial') {
+      const seleccionadas = this.prendasSeleccionadas();
+      if (seleccionadas.length === 0) {
+        this.registrar.set({ ...estado, error: 'Selecciona al menos una prenda para la devolución parcial.' });
+        return;
+      }
+      items = seleccionadas.map((prenda) => ({
+        producto_id: prenda.producto_id,
+        reingresa: prenda.reingresa,
+      }));
+    }
+
     this.registrar.set({ ...estado, guardando: true, error: null });
 
-    this.devolucionesService
+    this.devoluciones
       .crear({
         venta_id: estado.ventaId,
         motivo: estado.motivo.trim(),
         monto_reembolso: estado.monto ? Number(estado.monto) : null,
+        tipo: estado.tipo,
+        motivo_categoria: estado.motivoCategoria || null,
+        nota: estado.nota.trim() || null,
+        reembolso_metodo_id: estado.reembolsoMetodoId,
+        items,
       })
       .subscribe({
         next: (res) => {
@@ -238,7 +375,7 @@ export class DevolucionesComponent implements OnInit {
 
     this.aprobando.set(true);
 
-    this.devolucionesService.aprobar(devolucion.id).subscribe({
+    this.devoluciones.aprobar(devolucion.id).subscribe({
       next: (res) => {
         this.aprobando.set(false);
         this.aprobarObjetivo.set(null);
@@ -255,8 +392,96 @@ export class DevolucionesComponent implements OnInit {
     });
   }
 
-  esPendiente(devolucion: Devolucion): boolean {
+  solicitarRechazar(devolucion: Devolucion): void {
+    this.rechazoMotivo.set('');
+    this.rechazarObjetivo.set(devolucion);
+  }
+
+  cancelarRechazar(): void {
+    this.rechazarObjetivo.set(null);
+  }
+
+  confirmarRechazar(): void {
+    const devolucion = this.rechazarObjetivo();
+    if (!devolucion || this.rechazando()) {
+      return;
+    }
+
+    this.rechazando.set(true);
+
+    this.devoluciones.rechazar(devolucion.id, this.rechazoMotivo().trim() || null).subscribe({
+      next: (res) => {
+        this.rechazando.set(false);
+        this.rechazarObjetivo.set(null);
+        if (res.success) {
+          this.toast.success(res.message ?? 'Devolución rechazada.');
+          this.cargar();
+        }
+      },
+      error: (err) => {
+        this.rechazando.set(false);
+        this.toast.error(err.message ?? 'No se pudo rechazar la devolución.');
+      },
+    });
+  }
+
+  solicitarReembolsar(devolucion: Devolucion): void {
+    this.reembolsoMetodoId.set(devolucion.reembolso_metodo_id ?? null);
+    this.reembolsarObjetivo.set(devolucion);
+  }
+
+  cancelarReembolsar(): void {
+    this.reembolsarObjetivo.set(null);
+  }
+
+  confirmarReembolsar(): void {
+    const devolucion = this.reembolsarObjetivo();
+    if (!devolucion || this.reembolsando()) {
+      return;
+    }
+
+    this.reembolsando.set(true);
+
+    this.devoluciones.reembolsar(devolucion.id, this.reembolsoMetodoId()).subscribe({
+      next: (res) => {
+        this.reembolsando.set(false);
+        this.reembolsarObjetivo.set(null);
+        if (res.success) {
+          this.toast.success(res.message ?? 'Devolución reembolsada.');
+          this.cargar();
+        }
+      },
+      error: (err) => {
+        this.reembolsando.set(false);
+        this.toast.error(err.message ?? 'No se pudo reembolsar la devolución.');
+      },
+    });
+  }
+
+  verDetalle(devolucion: Devolucion): void {
+    this.detalle.set(devolucion);
+  }
+
+  cerrarDetalle(): void {
+    this.detalle.set(null);
+  }
+
+  imprimir(devolucion: Devolucion): void {
+    this.imprimiendo.set(devolucion);
+    setTimeout(() => {
+      document.body.classList.add('printeando-comprobante');
+      window.print();
+      document.body.classList.remove('printeando-comprobante');
+      this.imprimiendo.set(null);
+    }, 60);
+  }
+
+  puedeAprobar(devolucion: Devolucion): boolean {
     return devolucion.estado === 'pendiente';
+  }
+
+  puedeReembolsar(devolucion: Devolucion): boolean {
+    return devolucion.estado === 'aprobada';
   }
 
   etiquetaEstado(devolucion: Devolucion): string {
@@ -265,6 +490,17 @@ export class DevolucionesComponent implements OnInit {
 
   tonoEstado(devolucion: Devolucion): string {
     return TONO_ESTADO_DEVOLUCION[devolucion.estado] ?? 'neutral';
+  }
+
+  etiquetaTipo(devolucion: Devolucion): string {
+    return devolucion.tipo === 'parcial' ? 'Parcial' : 'Total';
+  }
+
+  etiquetaMotivo(categoria: string | null | undefined): string {
+    if (!categoria) {
+      return '—';
+    }
+    return this.motivos.find((m) => m.valor === categoria)?.etiqueta ?? categoria;
   }
 
   nombreCliente(devolucion: Devolucion): string {
@@ -281,6 +517,22 @@ export class DevolucionesComponent implements OnInit {
 
   numeroPedido(devolucion: Devolucion): string {
     return devolucion.pedido?.numero_pedido ?? '—';
+  }
+
+  resumenPrendas(devolucion: Devolucion): string {
+    const prendas = devolucion.prendas ?? [];
+    if (prendas.length === 0) {
+      return '—';
+    }
+    if (prendas.length === 1) {
+      const prenda = prendas[0];
+      return prenda.nombre ?? prenda.codigo ?? `#${prenda.producto_id}`;
+    }
+    return `${prendas.length} prendas`;
+  }
+
+  nombrePrenda(prenda: { nombre?: string | null; codigo?: string | null; producto_id: number }): string {
+    return prenda.nombre ?? prenda.codigo ?? `#${prenda.producto_id}`;
   }
 
   moneda(valor: string | number | null | undefined): string {

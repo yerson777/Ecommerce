@@ -9,7 +9,6 @@ use App\Models\Talla;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaItem;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -40,7 +39,7 @@ class ProductoInventarioTest extends TestCase
     private function crearProducto(array $sobreescribir = []): Producto
     {
         return Producto::create(array_merge([
-            'codigo' => 'EV-' . substr(Str::uuid(), 0, 8),
+            'codigo' => 'EV-'.substr(Str::uuid(), 0, 8),
             'nombre' => 'Vestido Roma',
             'categoria_id' => $this->categoria->id,
             'talla_id' => $this->talla->id,
@@ -361,14 +360,17 @@ class ProductoInventarioTest extends TestCase
         $this->assertArrayNotHasKey('margen', $item);
     }
 
-    public function test_restriccion_unica_impide_doble_venta_a_nivel_de_base_de_datos(): void
+    public function test_una_prenda_puede_revenderse_en_otra_venta(): void
     {
+        // Tras una anulación o devolución, la misma prenda física puede volver
+        // a venderse en una nueva venta. La protección contra la doble venta
+        // la da el estado de la prenda, no un índice único en venta_items.
         $producto = $this->crearProducto();
         $clienteA = $this->crearCliente();
         $clienteB = Cliente::create(['nombre' => 'Cliente B']);
 
         $venta1 = Venta::create([
-            'numero_venta' => 'V-DOUBLE-1',
+            'numero_venta' => 'V-REUSE-1',
             'cliente_id' => $clienteA->id,
             'subtotal' => 60,
             'total' => 60,
@@ -381,20 +383,20 @@ class ProductoInventarioTest extends TestCase
         ]);
 
         $venta2 = Venta::create([
-            'numero_venta' => 'V-DOUBLE-2',
+            'numero_venta' => 'V-REUSE-2',
             'cliente_id' => $clienteB->id,
             'subtotal' => 60,
             'total' => 60,
             'fecha_venta' => now()->toDateString(),
         ]);
 
-        $this->expectException(UniqueConstraintViolationException::class);
-
         VentaItem::create([
             'venta_id' => $venta2->id,
             'producto_id' => $producto->id,
             'precio_unitario' => 60,
         ]);
+
+        $this->assertSame(2, VentaItem::query()->where('producto_id', $producto->id)->count());
     }
 
     public function test_tras_vender_no_se_puede_reservar_ni_vender_de_nuevo(): void

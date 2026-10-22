@@ -7,15 +7,19 @@ use App\Http\Requests\V1\Admin\Marca\MarcaStoreRequest;
 use App\Http\Requests\V1\Admin\Marca\MarcaUpdateRequest;
 use App\Http\Resources\V1\MarcaResource;
 use App\Models\Marca;
+use App\Services\CatalogoImagenService;
 use App\Support\Api;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class MarcaController extends Controller
 {
+    public function __construct(private readonly CatalogoImagenService $imagenes) {}
+
     public function index(Request $request)
     {
         $marcas = Marca::query()
+            ->withCount('productos')
             ->when($request->filled('activo'), fn ($q) => $q->where('activo', $request->boolean('activo')))
             ->orderBy('orden')
             ->orderBy('nombre')
@@ -29,6 +33,12 @@ class MarcaController extends Controller
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['nombre']);
 
+        if ($request->hasFile('logo')) {
+            $data['logo'] = $this->imagenes->guardar($request->file('logo'), 'marcas');
+        } else {
+            unset($data['logo']);
+        }
+
         $marca = Marca::create($data);
 
         return Api::resource(new MarcaResource($marca), 'Marca creada correctamente.', 201);
@@ -36,7 +46,7 @@ class MarcaController extends Controller
 
     public function show(int $id)
     {
-        $marca = Marca::findOrFail($id);
+        $marca = Marca::withCount('productos')->findOrFail($id);
 
         return Api::resource(new MarcaResource($marca), 'Detalle de la marca.');
     }
@@ -44,13 +54,22 @@ class MarcaController extends Controller
     public function update(MarcaUpdateRequest $request, int $id)
     {
         $marca = Marca::findOrFail($id);
-
         $data = $request->validated();
-        $data['slug'] = $data['slug'] ?? Str::slug($request->input('nombre', $marca->nombre));
+
+        if ($request->hasFile('logo')) {
+            $anterior = $marca->logo;
+            $data['logo'] = $this->imagenes->guardar($request->file('logo'), 'marcas');
+        } else {
+            unset($data['logo']);
+        }
 
         $marca->update($data);
 
-        return Api::resource(new MarcaResource($marca), 'Marca actualizada correctamente.');
+        if (isset($data['logo']) && ! empty($anterior)) {
+            $this->imagenes->eliminar($anterior);
+        }
+
+        return Api::resource(new MarcaResource($marca->fresh()), 'Marca actualizada correctamente.');
     }
 
     public function destroy(int $id)
@@ -61,7 +80,9 @@ class MarcaController extends Controller
             return Api::error('No se puede eliminar la marca porque tiene productos asociados.', 409);
         }
 
+        $anterior = $marca->logo;
         $marca->delete();
+        $this->imagenes->eliminar($anterior);
 
         return Api::noContent('Marca eliminada correctamente.');
     }

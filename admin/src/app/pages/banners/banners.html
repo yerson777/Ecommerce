@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Banners</h1>
-      <p class="page-subtitle">Imágenes del carrusel que se muestra en la portada de la tienda</p>
+      <p class="page-subtitle">Imágenes del carrusel de la portada. Tamaño recomendado: 1600×480 (escritorio) y 800×400 (celular)</p>
     </div>
     <div class="header-actions">
       <button type="button" class="btn btn-primary" (click)="abrirCrear()">Agregar banner</button>
@@ -28,23 +28,39 @@
     }
 
     @if (!cargando() && bannersOrdenados().length > 0) {
+      <p class="muted-hint drag-hint">Arrastrá las filas para reordenar, o usá las flechas ↑ ↓.</p>
+
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
+              <th></th>
               <th>Imagen</th>
               <th>Texto</th>
               <th>Enlace</th>
+              <th>Vigencia</th>
               <th>Estado</th>
-              <th>Orden</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (banner of bannersOrdenados(); track banner.id; let i = $index) {
-              <tr>
+              <tr
+                draggable="true"
+                [class.dragging]="dragIndex === i"
+                (dragstart)="onDragStart(i)"
+                (dragover)="onDragOver($event)"
+                (drop)="onDrop($event, i)"
+                (dragend)="dragIndex = null"
+              >
+                <td class="drag-cell" title="Arrastrar para reordenar">⠿</td>
                 <td>
-                  <img class="banner-thumb" [src]="banner.url" [alt]="banner.titulo ?? ''" />
+                  <div class="thumb-wrap">
+                    <img class="banner-thumb" [src]="banner.url" [alt]="banner.titulo ?? ''" />
+                    @if (banner.url_movil) {
+                      <img class="banner-thumb thumb-movil" [src]="banner.url_movil" [alt]="(banner.titulo ?? '') + ' celular'" title="Versión celular" />
+                    }
+                  </div>
                 </td>
                 <td>
                   <div class="banner-titulo">{{ banner.titulo ?? 'Sin título' }}</div>
@@ -53,18 +69,44 @@
                   }
                 </td>
                 <td>
-                  @if (banner.enlace) {
-                    <span class="mono small">{{ banner.enlace }}</span>
-                  } @else {
+                  @if (banner.enlace_tipo === 'ninguno') {
                     <span class="muted">—</span>
+                  } @else {
+                    <div class="destino">
+                      <span class="badge-inline">{{ etiquetasEnlace[banner.enlace_tipo] }}</span>
+                      <span class="mono small">{{ banner.enlace }}</span>
+                    </div>
+                  }
+                  @if (banner.aviso_destino) {
+                    <div class="aviso-destino">⚠ {{ banner.aviso_destino }}</div>
                   }
                 </td>
-                <td>
-                  <app-badge [tone]="banner.activo ? 'success' : 'neutral'">
-                    {{ banner.activo ? 'Activo' : 'Oculto' }}
-                  </app-badge>
+                <td class="muted small-cell">
+                  <div>
+                    @if (banner.fecha_inicio) {
+                      {{ banner.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
+                    } @else {
+                      Sin inicio
+                    }
+                  </div>
+                  <div>
+                    @if (banner.fecha_fin) {
+                      {{ banner.fecha_fin | date: 'dd/MM/yy HH:mm' }}
+                    } @else {
+                      Sin fin
+                    }
+                  </div>
                 </td>
-                <td class="mono">nº {{ banner.orden }}</td>
+                <td>
+                  <div class="estado-stack">
+                    <app-badge [tone]="banner.activo ? 'success' : 'neutral'">
+                      {{ banner.activo ? 'Activo' : 'Oculto' }}
+                    </app-badge>
+                    @if (banner.activo && !banner.vigente) {
+                      <app-badge tone="warning">Fuera de vigencia</app-badge>
+                    }
+                  </div>
+                </td>
                 <td>
                   <div class="actions">
                     <button
@@ -105,7 +147,7 @@
 @if (modalAbierto()) {
   <app-modal
     [title]="editando() ? 'Editar banner' : 'Nuevo banner'"
-    [width]="'560px'"
+    [width]="'640px'"
     (closed)="cerrarModal()"
   >
     <div class="stack">
@@ -116,19 +158,45 @@
       @if (editando(); as editado) {
         <div class="preview">
           <img class="banner-thumb preview-img" [src]="editado.url" [alt]="editado.titulo ?? 'Banner'" />
+          @if (editado.url_movil && !form.quitarMovil && !form.archivoMovil) {
+            <img class="banner-thumb preview-img preview-movil" [src]="editado.url_movil" alt="Versión celular" />
+          }
           <span class="muted">Imagen actual · </span>
           <label class="link file-label">
             {{ form.archivo ? form.archivo.name : 'Reemplazar imagen…' }}
             <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
           </label>
         </div>
+        <p class="muted-hint">Escritorio: 1600×480 · Celular: 800×400 · JPG, PNG, WEBP o GIF · máx. 4 MB</p>
       } @else {
         <label class="btn btn-primary file-btn">
           {{ form.archivo ? form.archivo.name : 'Elegir imagen…' }}
           <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
         </label>
-        <p class="muted-hint">JPG, PNG, WEBP o GIF · máx. 4 MB</p>
+        <p class="muted-hint">Escritorio: 1600×480 · Celular: 800×400 · JPG, PNG, WEBP o GIF · máx. 4 MB</p>
       }
+
+      <div class="field">
+        <label>Imagen para celular (opcional)</label>
+        @if (form.quitarMovil) {
+          <p class="muted-hint">Se quitará la imagen de celular al guardar.</p>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="form.quitarMovil = false">
+            Cancelar
+          </button>
+        } @else {
+          <div class="movil-row">
+            <label class="link file-label">
+              {{ form.archivoMovil ? form.archivoMovil.name : 'Elegir imagen de celular…' }}
+              <input type="file" accept="image/*" (change)="onArchivoMovilSeleccionado($event)" />
+            </label>
+            @if (editando()?.url_movil && !form.archivoMovil) {
+              <button type="button" class="btn btn-ghost btn-sm" (click)="quitarImagenMovil()">
+                Quitar
+              </button>
+            }
+          </div>
+        }
+      </div>
 
       <div class="form-grid">
         <div class="field">
@@ -142,11 +210,84 @@
         </div>
 
         <div class="field field-full">
-          <label>Enlace (opcional)</label>
-          <input class="input" type="url" maxlength="255" placeholder="https://…" [(ngModel)]="form.enlace" />
+          <label>Enlace</label>
+          <select class="select" [(ngModel)]="form.enlace_tipo" (ngModelChange)="onTipoEnlaceCambiado()">
+            @for (tipo of tiposEnlace; track tipo) {
+              <option [ngValue]="tipo">{{ etiquetasEnlace[tipo] }}</option>
+            }
+          </select>
+
+          @if (form.enlace_tipo === 'url') {
+            <input
+              class="input"
+              type="url"
+              maxlength="255"
+              placeholder="https://…"
+              [(ngModel)]="form.enlace_url"
+            />
+            <span class="muted-hint">URL externa que se abre en la misma pestaña.</span>
+          }
+
+          @if (form.enlace_tipo === 'categoria') {
+            <select class="select" [(ngModel)]="form.enlace_id">
+              <option [ngValue]="null">Elegir categoría…</option>
+              @for (cat of categorias(); track cat.id) {
+                <option [ngValue]="cat.id">{{ cat.nombre }}</option>
+              }
+            </select>
+          }
+
+          @if (form.enlace_tipo === 'oferta') {
+            <select class="select" [(ngModel)]="form.enlace_id">
+              <option [ngValue]="null">Elegir oferta…</option>
+              @for (oferta of ofertas(); track oferta.id) {
+                <option [ngValue]="oferta.id">{{ oferta.nombre }}</option>
+              }
+            </select>
+          }
+
+          @if (form.enlace_tipo === 'producto') {
+            @if (productoDestino(); as producto) {
+              <div class="destino-elegido">
+                <span class="mono">{{ producto.codigo ? producto.codigo + ' · ' : '' }}{{ producto.nombre }}</span>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="limpiarDestino()">Cambiar</button>
+              </div>
+            } @else {
+              <input
+                class="input"
+                type="text"
+                placeholder="Buscar prenda por código o nombre…"
+                [(ngModel)]="busquedaProducto"
+                (input)="buscarProductoDestino()"
+              />
+              @if (buscandoProducto()) {
+                <span class="muted-hint">Buscando…</span>
+              }
+              @if (resultadosBusqueda().length > 0) {
+                <div class="resultados">
+                  @for (producto of resultadosBusqueda(); track producto.id) {
+                    <button type="button" class="resultado-item" (click)="elegirProductoDestino(producto)">
+                      <strong>{{ producto.nombre }}</strong>
+                      <span class="muted mono">{{ producto.codigo }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            }
+          }
         </div>
 
-        <label class="switch">
+        <div class="field">
+          <label>Disponible desde (opcional)</label>
+          <input class="input" type="datetime-local" [(ngModel)]="form.fecha_inicio" />
+        </div>
+
+        <div class="field">
+          <label>Disponible hasta (opcional)</label>
+          <input class="input" type="datetime-local" [(ngModel)]="form.fecha_fin" />
+        </div>
+
+        <label class="switch field-full">
           <input type="checkbox" [(ngModel)]="form.activo" />
           <span>Mostrar en el carrusel</span>
         </label>

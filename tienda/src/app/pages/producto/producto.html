@@ -48,7 +48,14 @@
             <span *ngIf="producto.color"> · {{ producto.color }}</span>
             <span *ngIf="producto.categoria?.nombre"> · {{ producto.categoria?.nombre }}</span>
           </p>
-          <div class="detalle-precio">{{ formatearPrecio(producto.precio) }}</div>
+          <div class="detalle-precio" *ngIf="tieneOferta(producto)">
+            <span class="precio-tachado">{{ formatearPrecio(producto.precio) }}</span>
+            <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(producto)) }}</span>
+            <span class="precio-descuento-badge">-{{ producto.descuento_porcentaje }}%</span>
+          </div>
+          <div class="detalle-precio" *ngIf="!tieneOferta(producto)">
+            {{ formatearPrecio(producto.precio) }}
+          </div>
           <p class="descripcion" *ngIf="producto.descripcion">
             {{ producto.descripcion }}
           </p>
@@ -103,11 +110,20 @@
                   Sin foto
                 </div>
                 <span class="badge badge-success rel-nuevo" *ngIf="item.es_nuevo">Nuevo ingreso</span>
+                <span class="badge rel-descuento" *ngIf="tieneOferta(item)">
+                  -{{ item.descuento_porcentaje }}%
+                </span>
               </div>
               <div class="rel-body">
                 <div class="rel-meta">{{ item.codigo }}</div>
                 <div class="rel-nombre">{{ item.nombre }}</div>
-                <div class="rel-precio">{{ formatearPrecio(item.precio) }}</div>
+                <div class="rel-precio" *ngIf="tieneOferta(item)">
+                  <span class="precio-tachado">{{ formatearPrecio(item.precio) }}</span>
+                  <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(item)) }}</span>
+                </div>
+                <div class="rel-precio" *ngIf="!tieneOferta(item)">
+                  {{ formatearPrecio(item.precio) }}
+                </div>
               </div>
             </article>
           </div>

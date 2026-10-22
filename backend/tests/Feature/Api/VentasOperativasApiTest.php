@@ -15,6 +15,7 @@ use App\Models\Producto;
 use App\Models\Talla;
 use App\Models\User;
 use App\Models\Venta;
+use App\Models\VentaItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -282,6 +283,79 @@ class VentasOperativasApiTest extends TestCase
             ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
             ->assertStatus(422)
             ->assertJsonPath('success', false);
+    }
+
+    public function test_se_puede_completar_pedido_con_prenda_revendida_tras_anulacion(): void
+    {
+        $producto = $this->crearProducto(200.0);
+
+        $venta = $this->registrarVenta([
+            'productos' => [$producto->id],
+            'monto_pagado' => 200.00,
+        ])->json('data');
+
+        $this->withToken($this->token)
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->assertStatus(200);
+
+        $this->assertSame('disponible', $producto->fresh()->estado);
+
+        // La misma prenda vuelve a comprarse (tienda) y se completa el pedido.
+        $this->postJson('/api/v1/store/pedidos', [
+            'productos' => [$producto->id],
+            'nombre' => 'Lucía Fernández',
+            'telefono' => '70123456',
+            'ciudad' => 'Santa Cruz',
+            'direccion' => 'Las Palmas, calle 3 #45',
+            'metodo_entrega_id' => $this->retiro->id,
+            'metodo_pago_id' => $this->efectivo->id,
+        ])->assertStatus(201);
+
+        $pedido = Pedido::where('estado', Pedido::ESTADO_PENDIENTE)->firstOrFail();
+
+        $this->withToken($this->token)
+            ->putJson("/api/v1/admin/pedidos/{$pedido->id}/estado", ['estado' => 'confirmado'])
+            ->assertStatus(200);
+        $this->withToken($this->token)
+            ->putJson("/api/v1/admin/pedidos/{$pedido->id}/estado", ['estado' => 'completado'])
+            ->assertStatus(200);
+
+        $this->assertSame('completado', $pedido->fresh()->estado);
+        $this->assertSame('vendida', $producto->fresh()->estado);
+        $this->assertSame($pedido->id, Venta::orderByDesc('id')->value('pedido_id'));
+        $this->assertSame(
+            2,
+            VentaItem::query()->where('producto_id', $producto->id)->count(),
+            'La prenda puede aparecer en la venta anulada y en la nueva venta.'
+        );
+    }
+
+    public function test_se_puede_revender_presencial_la_misma_prenda_tras_anulacion(): void
+    {
+        $producto = $this->crearProducto(200.0);
+
+        $venta = $this->registrarVenta([
+            'productos' => [$producto->id],
+            'monto_pagado' => 200.00,
+        ])->json('data');
+
+        $this->withToken($this->token)
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->assertStatus(200);
+
+        $this->registrarVenta([
+            'productos' => [$producto->id],
+            'monto_pagado' => 200.00,
+        ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.estado', 'pagada');
+
+        $this->assertSame('vendida', $producto->fresh()->estado);
+        $this->assertSame(2, Venta::count());
+        $this->assertSame(
+            2,
+            VentaItem::query()->where('producto_id', $producto->id)->count()
+        );
     }
 
     /* ===================== Historial y auto-avance ===================== */

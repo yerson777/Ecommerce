@@ -223,4 +223,149 @@ class BannerTest extends TestCase
         $this->assertArrayNotHasKey('created_at', $item);
         $this->assertArrayNotHasKey('updated_at', $item);
     }
+
+    // ─── Enlaces de destino ───────────────────────────────────────────
+
+    public function test_crear_banner_con_enlace_a_categoria_y_imagen_movil(): void
+    {
+        $categoria = \App\Models\Categoria::create(['nombre' => 'Vestidos', 'slug' => 'vestidos']);
+
+        $response = $this->withHeaders($this->headers())->post('/api/v1/admin/banners', [
+            'imagen' => $this->imagenValida('escritorio.png'),
+            'imagen_movil' => $this->imagenValida('celular.png'),
+            'titulo' => 'Colección verano',
+            'enlace_tipo' => 'categoria',
+            'enlace_id' => $categoria->id,
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.enlace', '/catalogo?categoria=' . $categoria->id);
+        $response->assertJsonPath('data.enlace_tipo', 'categoria');
+
+        $banner = Banner::first();
+        $this->assertNotNull($banner->ruta_movil);
+        $this->assertNotSame($banner->ruta, $banner->ruta_movil);
+        Storage::disk('public')->assertExists($banner->ruta_movil);
+        $this->assertNotNull($response->json('data.url_movil'));
+    }
+
+    public function test_rechaza_enlace_a_categoria_inexistente(): void
+    {
+        $this->withHeaders($this->headers())
+            ->post('/api/v1/admin/banners', [
+                'imagen' => $this->imagenValida(),
+                'enlace_tipo' => 'categoria',
+                'enlace_id' => 999,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('errors.enlace_id.0', 'La categoría seleccionada ya no existe.');
+
+        $this->assertDatabaseCount('banners', 0);
+    }
+
+    public function test_enlace_interno_resuelve_ruta_de_producto(): void
+    {
+        $producto = \App\Models\Producto::factory()->create();
+
+        $response = $this->withHeaders($this->headers())->post('/api/v1/admin/banners', [
+            'imagen' => $this->imagenValida(),
+            'enlace_tipo' => 'producto',
+            'enlace_id' => $producto->id,
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.enlace', '/producto/' . $producto->id);
+    }
+
+    public function test_url_externa_se_conserva(): void
+    {
+        $response = $this->withHeaders($this->headers())->post('/api/v1/admin/banners', [
+            'imagen' => $this->imagenValida(),
+            'enlace_tipo' => 'url',
+            'enlace_url' => 'https://example.com/verano',
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.enlace', 'https://example.com/verano');
+    }
+
+    public function test_aviso_de_destino_inexistente_en_listado_admin(): void
+    {
+        $categoria = \App\Models\Categoria::create(['nombre' => 'Temporada', 'slug' => 'temporada']);
+        $banner = $this->crearBanner([
+            'enlace_tipo' => 'categoria',
+            'enlace_id' => $categoria->id,
+            'enlace' => '/catalogo?categoria=' . $categoria->id,
+        ]);
+
+        $item = $this->withHeaders($this->headers())
+            ->getJson('/api/v1/admin/banners')
+            ->json('data.0');
+
+        $this->assertNull($item['aviso_destino']);
+
+        $categoria->delete();
+
+        $item = $this->withHeaders($this->headers())
+            ->getJson('/api/v1/admin/banners')
+            ->json('data.0');
+
+        $this->assertSame('El enlace apunta a una categoría que ya no existe.', $item['aviso_destino']);
+        $this->assertSame($banner->id, $item['id']);
+    }
+
+    // ─── Vigencia ─────────────────────────────────────────────────────
+
+    public function test_api_publica_filtra_por_vigencia(): void
+    {
+        $this->crearBanner(['titulo' => 'Vigente', 'activo' => true, 'orden' => 1]);
+        $this->crearBanner([
+            'titulo' => 'No empezó',
+            'activo' => true,
+            'orden' => 2,
+            'fecha_inicio' => now()->addDay(),
+        ]);
+        $this->crearBanner([
+            'titulo' => 'Vencido',
+            'activo' => true,
+            'orden' => 3,
+            'fecha_fin' => now()->subDay(),
+        ]);
+        $this->crearBanner([
+            'titulo' => 'Rango cerrado',
+            'activo' => true,
+            'orden' => 4,
+            'fecha_inicio' => now()->subDays(10),
+            'fecha_fin' => now()->subDay(),
+        ]);
+
+        $titulos = array_column($this->getJson('/api/v1/store/banners')->json('data'), 'titulo');
+
+        $this->assertSame(['Vigente'], $titulos);
+    }
+
+    public function test_imagen_movil_se_puede_quitar(): void
+    {
+        $banner = $this->crearBanner(['ruta_movil' => 'banners/movil-antes.png']);
+        Storage::disk('public')->put('banners/movil-antes.png', base64_decode(self::PNG_BYTES));
+
+        $this->withHeaders($this->headers())
+            ->postJson("/api/v1/admin/banners/{$banner->id}", ['sin_imagen_movil' => true])
+            ->assertOk()
+            ->assertJsonPath('data.url_movil', null);
+
+        $banner->refresh();
+        $this->assertNull($banner->ruta_movil);
+        Storage::disk('public')->assertMissing('banners/movil-antes.png');
+    }
+
+    public function test_fin_posterior_a_inicio_validado(): void
+    {
+        $this->withHeaders($this->headers())
+            ->post('/api/v1/admin/banners', [
+                'imagen' => $this->imagenValida(),
+                'fecha_inicio' => '2026-12-01 10:00:00',
+                'fecha_fin' => '2026-11-30 10:00:00',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+    }
 }

@@ -449,6 +449,37 @@ img {
   margin-top: 0.1rem;
 }
 
+/* ---------- Precios con oferta ---------- */
+.precio-tachado {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-size: 0.85em;
+  margin-right: 0.4rem;
+}
+
+.precio-oferta {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.badge-descuento,
+.precio-descuento-badge,
+.prenda-descuento,
+.rel-descuento,
+.producto-descuento {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+}
+
+.avisos-lista {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 /* ---------- Utilidades ---------- */
 .muted {
   color: var(--text-muted);
