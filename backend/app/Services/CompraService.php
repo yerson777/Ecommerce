@@ -33,6 +33,20 @@ class CompraService
 
             $this->sincronizarPrendas($compra, $datos['productos'] ?? []);
 
+            $montoEgreso = round((float) $compra->costo_total + (float) $compra->gastos_extra, 2);
+            if ($montoEgreso > 0) {
+                \App\Models\Movimiento::firstOrCreate(
+                    ['compra_id' => $compra->id],
+                    [
+                        'tipo' => 'egreso',
+                        'monto' => $montoEgreso,
+                        'fuente' => 'ajuste',
+                        'descripcion' => 'Compra #'.$compra->id,
+                        'fecha' => $compra->fecha ? $compra->fecha->toDateString() : now()->toDateString(),
+                    ]
+                );
+            }
+
             return $compra->fresh(['proveedor', 'compraProductos.producto.talla', 'compraProductos.producto.imagenes']);
         });
     }

@@ -19,7 +19,7 @@ class PedidoController extends Controller
     public function index(Request $request)
     {
         $pedidos = Pedido::query()
-            ->with(['cliente', 'items.producto.talla', 'items.producto.imagenes', 'metodoPago', 'metodoEntrega', 'venta'])
+            ->with(['cliente', 'items.producto.talla', 'items.producto.imagenes', 'metodoPago', 'metodoEntrega', 'zonaEnvio', 'envio', 'venta'])
             ->withSum(['pagos as pagos_completados_total' => fn ($q) => $q->where('estado', Pago::ESTADO_COMPLETADO)], 'monto')
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))
             ->when($request->filled('fecha_desde'), fn ($q) => $q->whereDate('fecha_pedido', '>=', $request->input('fecha_desde')))
@@ -46,6 +46,8 @@ class PedidoController extends Controller
             'items.producto.imagenes',
             'metodoPago',
             'metodoEntrega',
+            'zonaEnvio',
+            'envio',
             'venta',
             'devolucion',
             'cupon',

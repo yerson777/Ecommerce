@@ -18,7 +18,7 @@ class PagoStoreRequest extends ApiFormRequest
             'referencia' => ['nullable', 'string', 'max:191'],
             'nota' => ['nullable', 'string', 'max:1000'],
             'estado' => ['sometimes', Rule::in([Pago::ESTADO_PENDIENTE, Pago::ESTADO_COMPLETADO])],
-            'permitir_excedente' => ['sometimes', 'boolean'],
+            'permitir_excedente' => ['prohibited'],
             'comprobante' => ['nullable', 'file', 'max:5120', 'mimes:jpeg,jpg,png,webp,gif,pdf'],
         ];
     }

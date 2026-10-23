@@ -107,13 +107,13 @@ class PagoService
             $monto = (float) $datos['monto'];
             $pagado = $this->pagadoDePedido($pedido);
             $saldo = max(0.0, (float) $pedido->total - $pagado);
-            $permitirExcedente = ! empty($datos['permitir_excedente']);
 
-            if ($monto > $saldo + 0.01 && ! $permitirExcedente) {
+            if ($monto > $saldo + 0.01) {
                 throw ValidationException::withMessages([
-                    'monto' => 'El monto supera el saldo pendiente (Bs '.number_format($saldo, 2).').',
+                    'monto' => 'El monto supera el saldo pendiente (Bs '.number_format($saldo, 2).'). No se permiten pagos mayores al saldo.',
                 ]);
             }
+            unset($datos['permitir_excedente']);
 
             $estado = $datos['estado'] ?? Pago::ESTADO_PENDIENTE;
             $pagadoEn = null;
@@ -134,7 +134,7 @@ class PagoService
                 'estado' => $estado,
                 'pagado_en' => $pagadoEn,
                 'nota' => $datos['nota'] ?? null,
-                'excedente' => $permitirExcedente,
+                'excedente' => false,
             ]);
 
             if ($comprobante) {
@@ -219,9 +219,9 @@ class PagoService
             $pagado = $this->pagadoDePedido($pedido);
             $monto = (float) $pago->monto;
 
-            if (($pagado + $monto) > (float) $pedido->total + 0.01 && ! (bool) $pago->excedente) {
+            if (($pagado + $monto) > (float) $pedido->total + 0.01) {
                 throw ValidationException::withMessages([
-                    'monto' => 'Al confirmar, el pago supera el total del pedido.',
+                    'monto' => 'Al confirmar, el pago supera el total del pedido. No se permiten pagos mayores al saldo.',
                 ]);
             }
 
@@ -244,9 +244,9 @@ class PagoService
      * Anula/rechaza un pago (comprobante rechazado o cobro anulado).
      * Retira el ingreso de caja vinculado para no inflar la caja.
      */
-    public function anular(int $pagoId): Pago
+    public function anular(int $pagoId, ?string $motivo = null): Pago
     {
-        return DB::transaction(function () use ($pagoId) {
+        return DB::transaction(function () use ($pagoId, $motivo) {
             /** @var Pago|null $pago */
             $pago = Pago::query()->whereKey($pagoId)->lockForUpdate()->first();
 
@@ -260,7 +260,15 @@ class PagoService
 
             Movimiento::where('pago_id', $pago->id)->delete();
 
-            $pago->forceFill(['estado' => Pago::ESTADO_ANULADO])->save();
+            $nota = $pago->nota;
+            if ($motivo) {
+                $nota = $nota ? ($nota.' | Motivo anulación: '.$motivo) : ('Motivo anulación: '.$motivo);
+            }
+
+            $pago->forceFill([
+                'estado' => Pago::ESTADO_ANULADO,
+                'nota' => $nota,
+            ])->save();
 
             event(new PagoAnulado($pago));
 

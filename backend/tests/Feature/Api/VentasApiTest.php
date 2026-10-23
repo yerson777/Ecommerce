@@ -122,8 +122,10 @@ class VentasApiTest extends TestCase
 
         $response
             ->assertStatus(200)
-            ->assertJsonFragment(['id' => $pagada->id])
-            ->assertJsonMissing(['id' => $pendiente->id]);
+            ->assertJsonFragment(['id' => $pagada->id]);
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertNotContains($pendiente->id, $ids);
     }
 
     public function test_filtro_estado_pendiente(): void

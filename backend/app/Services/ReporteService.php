@@ -94,21 +94,91 @@ class ReporteService
     }
 
     /**
-     * Suma de los saldos pendientes de los pedidos no cancelados.
-     *
-     * "vendido" (ventas.total) y "cobrado" (pagos.monto) viven en tablas
-     * distintas y NO se restan entre sí: una venta sólo existe cuando el pedido
-     * se cierra, así que esa resta daba 0 en cuanto lo cobrado superaba lo
-     * vendido y ocultaba la deuda real. El saldo se deriva pedido por pedido.
+     * Suma de los saldos pendientes de los pedidos no cancelados ni devueltos,
+     * sin clientes de prueba. saldo = max(0, total - pagado).
      */
     private function saldoPendienteTotal(): float
     {
         $saldo = $this->exprSaldoPedido();
 
         return (float) DB::table('pedidos')
-            ->where('estado', '!=', Pedido::ESTADO_CANCELADO)
+            ->join('clientes', 'clientes.id', '=', 'pedidos.cliente_id')
+            ->where('clientes.es_prueba', false)
+            ->whereNotIn('pedidos.estado', [Pedido::ESTADO_CANCELADO, Pedido::ESTADO_DEVUELTO])
             ->selectRaw('COALESCE(SUM(CASE WHEN '.$saldo.' > 0.01 THEN '.$saldo.' ELSE 0 END), 0) as total')
             ->value('total');
+    }
+
+    private function anticiposPedidosEnCurso(?Carbon $inicio, ?Carbon $fin): float
+    {
+        $saldo = $this->exprSaldoPedido();
+
+        $query = DB::table('pedidos')
+            ->join('clientes', 'clientes.id', '=', 'pedidos.cliente_id')
+            ->where('clientes.es_prueba', false)
+            ->whereNotIn('pedidos.estado', [Pedido::ESTADO_CANCELADO, Pedido::ESTADO_DEVUELTO, Pedido::ESTADO_COMPLETADO])
+            ->whereRaw("({$saldo}) <= 0.01")
+            ->whereRaw("COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.pedido_id = pedidos.id AND p.estado = '".Pago::ESTADO_COMPLETADO."'), 0) > 0.01");
+
+        if ($inicio && $fin) {
+            $query->whereBetween('pedidos.fecha_pedido', [$inicio, $fin]);
+        }
+
+        $anticipos = $query->selectRaw("COALESCE(SUM(COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.pedido_id = pedidos.id AND p.estado = '".Pago::ESTADO_COMPLETADO."'), 0)), 0) as total")
+            ->value('total');
+
+        return (float) $anticipos;
+    }
+
+    private function conciliacionCuadre(?Carbon $inicio, ?Carbon $fin, float $vendidoVigente, float $totalCobrado, float $totalPendiente, float $anticipos): array
+    {
+        $anuladasMonto = (float) Venta::query()
+            ->whereNotNull('anulada_en')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('fecha_venta', [$inicio, $fin]))
+            ->sum('total');
+
+        $pagosSinDestino = (float) Pago::where('estado', Pago::ESTADO_COMPLETADO)
+            ->whereNull('pedido_id')
+            ->whereNull('venta_id')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('pagado_en', [$inicio, $fin]))
+            ->sum('monto');
+
+        $pagosAnuladosMonto = (float) Pago::where('estado', Pago::ESTADO_ANULADO)
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('updated_at', [$inicio, $fin]))
+            ->sum('monto');
+
+        $pagosVentaAnulada = (float) Pago::query()
+            ->where('estado', Pago::ESTADO_COMPLETADO)
+            ->whereHas('venta', fn ($q) => $q->whereNotNull('anulada_en'))
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('pagado_en', [$inicio, $fin]))
+            ->sum('monto');
+
+        $excedenteX5UX = (float) DB::table('pedidos')
+            ->where('numero_pedido', 'PED-20260916-X5UX')
+            ->selectRaw("GREATEST(0, COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.pedido_id = pedidos.id AND p.estado = '".Pago::ESTADO_COMPLETADO."'), 0) - pedidos.total) as excedente")
+            ->value('excedente');
+
+        $lineas = [];
+        $lineas[] = ['concepto' => 'Vendido (ventas vigentes)', 'monto' => number_format($vendidoVigente, 2, '.', ''), 'tipo' => 'mas'];
+        $lineas[] = ['concepto' => 'Cobrado (pagos completados)', 'monto' => number_format($totalCobrado, 2, '.', ''), 'tipo' => 'mas'];
+        $lineas[] = ['concepto' => 'Anticipos de pedidos en curso (pagados sin venta)', 'monto' => number_format($anticipos, 2, '.', ''), 'tipo' => 'mas'];
+        $lineas[] = ['concepto' => 'Por cobrar (pedidos sin cliente de prueba, cancelados/devueltos excluidos)', 'monto' => number_format($totalPendiente, 2, '.', ''), 'tipo' => 'mas'];
+        $lineas[] = ['concepto' => 'Ventas anuladas (fuera de "vendido vigentes")', 'monto' => number_format($anuladasMonto, 2, '.', ''), 'tipo' => 'info'];
+        $lineas[] = ['concepto' => 'Pagos de ventas anuladas (pendiente de reembolso/saldo a favor)', 'monto' => number_format($pagosVentaAnulada, 2, '.', ''), 'tipo' => 'info'];
+        $lineas[] = ['concepto' => 'Pagos sin pedido ni venta (ANOMALÍA)', 'monto' => number_format($pagosSinDestino, 2, '.', ''), 'tipo' => 'alerta'];
+        $lineas[] = ['concepto' => 'Pagos anulados', 'monto' => number_format($pagosAnuladosMonto, 2, '.', ''), 'tipo' => 'info'];
+        if ($excedenteX5UX > 0.01) {
+            $lineas[] = ['concepto' => 'Excedente PED-20260916-X5UX (sobre-cobrado)', 'monto' => number_format($excedenteX5UX, 2, '.', ''), 'tipo' => 'alerta'];
+        }
+
+        $diferencia = $totalCobrado - $vendidoVigente;
+        $explicacion = 'Cobrado y Vendido (vigentes) son conceptos distintos. La diferencia se explica por: anticipos a pedidos en curso, pagos de ventas anuladas, pagos sin destino/anomalías, pagos anulados y excedentes.';
+
+        return [
+            'lineas' => $lineas,
+            'diferencia_cobrado_vendido_vigente' => number_format($diferencia, 2, '.', ''),
+            'explicacion' => $explicacion,
+        ];
     }
 
     private function estadisticasVentas(?Carbon $inicio, ?Carbon $fin): array
@@ -122,6 +192,11 @@ class ReporteService
         $totalVentas = (clone $query)->count();
         $totalMonto = (float) (clone $query)->sum('total');
 
+        $vendidoVigente = (float) Venta::query()
+            ->whereNull('anulada_en')
+            ->when($inicio && $fin, fn ($q) => $q->whereBetween('fecha_venta', [$inicio, $fin]))
+            ->sum('total');
+
         $totalCobrado = (float) Pago::where('estado', Pago::ESTADO_COMPLETADO)
             ->when($inicio && $fin, fn ($q) => $q->whereBetween('pagado_en', [$inicio, $fin]))
             ->sum('monto');
@@ -130,13 +205,20 @@ class ReporteService
 
         $totalDevoluciones = $this->devolucionesReembolsadas($inicio, $fin);
 
+        $anticiposPedidosEnCurso = $this->anticiposPedidosEnCurso($inicio, $fin);
+
+        $conciliacion = $this->conciliacionCuadre($inicio, $fin, $vendidoVigente, $totalCobrado, $totalPendiente, $anticiposPedidosEnCurso);
+
         return [
             'total' => $totalVentas,
             'monto' => number_format($totalMonto, 2, '.', ''),
+            'vendido_vigente' => number_format($vendidoVigente, 2, '.', ''),
             'cobrado' => number_format($totalCobrado, 2, '.', ''),
+            'anticipos_pedidos_en_curso' => number_format($anticiposPedidosEnCurso, 2, '.', ''),
             'pendiente' => number_format($totalPendiente, 2, '.', ''),
             'devoluciones' => number_format($totalDevoluciones, 2, '.', ''),
             'monto_neto' => number_format(max(0.0, $totalMonto - $totalDevoluciones), 2, '.', ''),
+            'conciliacion' => $conciliacion,
         ];
     }
 
@@ -245,7 +327,10 @@ class ReporteService
 
         $totalCobrado = (clone $query)->sum('monto');
 
-        $pedidosQuery = Pedido::query()->where('estado', '!=', 'cancelado');
+        $pedidosQuery = Pedido::query()
+            ->join('clientes', 'clientes.id', '=', 'pedidos.cliente_id')
+            ->where('clientes.es_prueba', false)
+            ->whereNotIn('pedidos.estado', [Pedido::ESTADO_CANCELADO, Pedido::ESTADO_DEVUELTO]);
         if ($inicio && $fin) {
             $pedidosQuery->whereBetween('fecha_pedido', [$inicio, $fin]);
         }
@@ -253,8 +338,7 @@ class ReporteService
         $saldo = $this->exprSaldoPedido();
 
         // Las tres categorías son mutuamente excluyentes y cubren todos los
-        // pedidos no cancelados. "Pendiente" se define por el saldo y no por
-        // "no pagó nada", para que un pago parcial no desaparezca del conteo.
+        // pedidos no cancelados/devueltos, sin clientes de prueba. "Pendiente" se define por el saldo.
         $pagados = (clone $pedidosQuery)->whereRaw("{$saldo} <= 0.01")->count();
         $parciales = (clone $pedidosQuery)->whereRaw("{$saldo} > 0.01 AND {$saldo} < pedidos.total - 0.01")->count();
         $pendientesPago = (clone $pedidosQuery)->whereRaw("{$saldo} > 0.01")->count();

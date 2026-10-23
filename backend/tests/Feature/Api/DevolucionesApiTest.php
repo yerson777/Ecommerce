@@ -172,6 +172,7 @@ class DevolucionesApiTest extends TestCase
         $this->assertSame(Pago::ESTADO_COMPLETADO, $this->pedido->pagos()->firstOrFail()->estado);
 
         $movimiento = Movimiento::where('tipo', 'egreso')->firstOrFail();
+        $this->assertSame($devolucion->id, $movimiento->devolucion_id);
         $this->assertSame('100.00', $movimiento->monto);
     }
 

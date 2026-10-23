@@ -85,9 +85,30 @@ class PagoController extends Controller
 
     public function store(PagoStoreRequest $request)
     {
+        $datos = $request->validated();
+        $pedidoId = $request->integer('pedido_id');
+        $monto = isset($datos['monto']) ? (float) $datos['monto'] : null;
+        $referencia = $datos['referencia'] ?? null;
+
+        if ($monto && $referencia) {
+            $existe = Pago::query()
+                ->where('pedido_id', $pedidoId)
+                ->where('monto', $monto)
+                ->where('referencia', $referencia)
+                ->where('estado', '!=', Pago::ESTADO_ANULADO)
+                ->exists();
+
+            if ($existe) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya existe un pago con la misma referencia y monto para este pedido.',
+                ], 422);
+            }
+        }
+
         $pago = $this->pagos->registrar(
-            $request->integer('pedido_id'),
-            $request->validated(),
+            $pedidoId,
+            $datos,
             $request->file('comprobante')
         );
 
@@ -101,9 +122,19 @@ class PagoController extends Controller
         return Api::resource(new PagoResource($pago), 'Pago confirmado correctamente.');
     }
 
-    public function anular(int $id)
+    public function anular(Request $request, int $id)
     {
-        $pago = $this->pagos->anular($id);
+        $motivo = $request->input('motivo');
+        if (is_string($motivo)) {
+            $motivo = trim($motivo);
+            if ($motivo === '') {
+                $motivo = null;
+            }
+        } else {
+            $motivo = null;
+        }
+
+        $pago = $this->pagos->anular($id, $motivo);
 
         return Api::resource(new PagoResource($pago), 'Pago anulado correctamente.');
     }
@@ -128,6 +159,48 @@ class PagoController extends Controller
             ]);
 
         return Api::success($metodos, 'Métodos de pago.');
+    }
+
+    public function porCobrar(Request $request)
+    {
+        $hoy = now()->startOfDay();
+
+        $pedidos = Pedido::query()
+            ->with(['cliente', 'pagos' => fn ($q) => $q->where('estado', Pago::ESTADO_COMPLETADO)])
+            ->whereHas('cliente')
+            ->whereHas('cliente', fn ($q) => $q->where('es_prueba', false))
+            ->whereNotIn('estado', [Pedido::ESTADO_CANCELADO, Pedido::ESTADO_DEVUELTO])
+            ->get()
+            ->map(function (Pedido $pedido) use ($hoy) {
+                $pagado = (float) $pedido->pagos->sum('monto');
+                $total = (float) $pedido->total;
+                $saldo = max(0.0, $total - $pagado);
+                if ($saldo <= 0.01) {
+                    return null;
+                }
+                $fecha = $pedido->fecha_pedido ? $pedido->fecha_pedido->copy()->startOfDay() : $hoy;
+                $dias = $fecha->diffInDays($hoy);
+                return [
+                    'pedido_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cliente_id' => $pedido->cliente_id,
+                    'cliente' => $pedido->cliente?->nombre,
+                    'telefono' => $pedido->cliente?->telefono,
+                    'total' => number_format($total, 2, '.', ''),
+                    'pagado' => number_format($pagado, 2, '.', ''),
+                    'saldo' => number_format($saldo, 2, '.', ''),
+                    'estado' => $pedido->estado,
+                    'fecha_pedido' => $pedido->fecha_pedido?->format('Y-m-d'),
+                    'dias_antiguedad' => $dias,
+                    'whatsapp' => $pedido->cliente?->telefono ? 'https://wa.me/'.preg_replace('/[^0-9]/', '', $pedido->cliente->telefono) : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->sortByDesc('dias_antiguedad')
+            ->values();
+
+        return Api::success($pedidos, 'Pedidos por cobrar.');
     }
 
     public function descargarComprobante(int $id): StreamedResponse

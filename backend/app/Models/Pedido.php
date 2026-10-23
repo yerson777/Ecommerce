@@ -53,6 +53,7 @@ class Pedido extends Model
         'cliente_id',
         'metodo_pago_id',
         'metodo_entrega_id',
+        'zona_envio_id',
         'cupon_id',
         'estado',
         'subtotal',
@@ -88,6 +89,16 @@ class Pedido extends Model
     public function metodoEntrega(): BelongsTo
     {
         return $this->belongsTo(MetodoEntrega::class);
+    }
+
+    public function zonaEnvio(): BelongsTo
+    {
+        return $this->belongsTo(ZonaEnvio::class);
+    }
+
+    public function envio(): HasOne
+    {
+        return $this->hasOne(Envio::class);
     }
 
     public function items(): HasMany

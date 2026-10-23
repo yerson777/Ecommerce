@@ -18,6 +18,9 @@ class Movimiento extends Model
         'fuente',
         'pago_id',
         'gasto_id',
+        'compra_id',
+        'venta_id',
+        'devolucion_id',
         'descripcion',
         'fecha',
     ];
@@ -38,5 +41,20 @@ class Movimiento extends Model
     public function gasto(): BelongsTo
     {
         return $this->belongsTo(Gasto::class);
+    }
+
+    public function compra(): BelongsTo
+    {
+        return $this->belongsTo(Compra::class);
+    }
+
+    public function venta(): BelongsTo
+    {
+        return $this->belongsTo(Venta::class);
+    }
+
+    public function devolucion(): BelongsTo
+    {
+        return $this->belongsTo(Devolucion::class);
     }
 }

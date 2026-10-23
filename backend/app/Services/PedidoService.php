@@ -19,6 +19,7 @@ use App\Models\Reserva;
 use App\Models\Setting;
 use App\Models\Venta;
 use App\Models\VentaItem;
+use App\Models\ZonaEnvio;
 use App\Support\Contacto;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -50,7 +51,10 @@ class PedidoService
      */
     public array $avisos = [];
 
-    public function __construct(private readonly InventarioService $inventario) {}
+    public function __construct(
+        private readonly InventarioService $inventario,
+        private readonly EnvioService $envios,
+    ) {}
 
     /**
      * Crea un pedido desde la tienda.
@@ -110,7 +114,6 @@ class PedidoService
 
             $precios = $resolucion['precios'];
             $subtotal = $resolucion['subtotal'];
-            $costoEnvio = (float) $metodoEntrega->costo;
             $descuento = $resolucion['descuento'];
             $cupon = $resolucion['cupon'];
             $usoCupon = $resolucion['uso'];
@@ -120,7 +123,23 @@ class PedidoService
                 $this->avisosDePreciosEsperados($unidades, $precios, $datos),
             );
 
-            $total = max(0.0, $subtotal - $descuento) + $costoEnvio;
+            $zonaEnvio = null;
+            if (! empty($datos['zona_envio_id'])) {
+                $zonaEnvio = ZonaEnvio::query()
+                    ->whereKey((int) $datos['zona_envio_id'])
+                    ->where('activo', true)
+                    ->first();
+
+                if (! $zonaEnvio) {
+                    throw new InventarioException('La zona de envío elegida ya no está disponible.');
+                }
+            }
+
+            $baseGravable = max(0.0, $subtotal - $descuento);
+            $cotizacion = $this->envios->cotizar($metodoEntrega, $zonaEnvio, $baseGravable);
+            $costoEnvio = (float) $cotizacion['costo'];
+
+            $total = $baseGravable + $costoEnvio;
 
             // Bloqueo de clientes: se valida en el servidor comparando el
             // teléfono y el correo normalizados. El mensaje es neutro para no
@@ -163,6 +182,7 @@ class PedidoService
                 'cliente_id' => $cliente->id,
                 'metodo_pago_id' => $metodoPago->id,
                 'metodo_entrega_id' => $metodoEntrega->id,
+                'zona_envio_id' => $zonaEnvio?->id,
                 'estado' => Pedido::ESTADO_PENDIENTE,
                 'subtotal' => $subtotal,
                 'costo_envio' => $costoEnvio,
@@ -177,6 +197,8 @@ class PedidoService
             foreach ($unidades as $producto) {
                 $this->crearItemPedido($pedido, $producto, $precios[$producto->id]);
             }
+
+            $this->envios->crearParaPedido($pedido, (bool) $cotizacion['por_confirmar']);
 
             $venceEn = now()->addHours($this->horasReserva());
 
@@ -197,6 +219,8 @@ class PedidoService
                 'cliente',
                 'metodoPago',
                 'metodoEntrega',
+                'zonaEnvio',
+                'envio',
                 'items.producto.talla',
                 'items.producto.imagenes',
                 'items.oferta',
@@ -301,6 +325,8 @@ class PedidoService
                 $this->crearItemPedido($pedido, $producto, $precios[$producto->id]);
             }
 
+            $this->envios->crearParaPedido($pedido);
+
             $venceEn = now()->addHours($this->horasReserva());
 
             foreach ($unidades as $producto) {
@@ -319,6 +345,8 @@ class PedidoService
                 'cliente',
                 'metodoPago',
                 'metodoEntrega',
+                'zonaEnvio',
+                'envio',
                 'items.producto.talla',
                 'items.producto.imagenes',
                 'items.oferta',
@@ -362,7 +390,7 @@ class PedidoService
 
             event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
 
-            return $pedido->fresh(['cliente', 'metodoPago', 'metodoEntrega', 'items.producto.talla', 'items.producto.imagenes', 'venta']);
+            return $pedido->fresh(['cliente', 'metodoPago', 'metodoEntrega', 'zonaEnvio', 'envio', 'items.producto.talla', 'items.producto.imagenes', 'venta']);
         });
     }
 
@@ -650,6 +678,7 @@ class PedidoService
                     'tipo' => 'egreso',
                     'monto' => round($aReembolsar, 2),
                     'fuente' => 'ajuste',
+                    'devolucion_id' => $devolucion->id,
                     'descripcion' => 'Reembolso del pedido '.$pedido->numero_pedido.' · '.($devolucion->motivo ?: 'Devolución'),
                     'fecha' => now()->toDateString(),
                 ]);

@@ -232,7 +232,7 @@ class VentasOperativasApiTest extends TestCase
         $this->assertSame(0, Pedido::count());
     }
 
-    /* ===================== Anulación ===================== */
+    /* ===================== AnulaciÃ³n ===================== */
 
     public function test_anular_venta_libera_prenda_reembolsa_y_registra_egreso(): void
     {
@@ -244,7 +244,7 @@ class VentasOperativasApiTest extends TestCase
         ])->json('data');
 
         $this->withToken($this->token)
-            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular", ['accion_pagos' => 'reembolsar'])
             ->assertStatus(200)
             ->assertJsonPath('data.id', $venta['id'])
             ->assertJsonPath('data.estado', 'anulada');
@@ -263,6 +263,7 @@ class VentasOperativasApiTest extends TestCase
 
         $egreso = Movimiento::where('tipo', 'egreso')->firstOrFail();
         $this->assertSame('ajuste', $egreso->fuente);
+        $this->assertSame($venta['id'], $egreso->venta_id);
         $this->assertSame('200.00', $egreso->monto);
     }
 
@@ -276,11 +277,11 @@ class VentasOperativasApiTest extends TestCase
         ])->json('data');
 
         $this->withToken($this->token)
-            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular", ['accion_pagos' => 'reembolsar'])
             ->assertStatus(200);
 
         $this->withToken($this->token)
-            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular", ['accion_pagos' => 'reembolsar'])
             ->assertStatus(422)
             ->assertJsonPath('success', false);
     }
@@ -295,7 +296,7 @@ class VentasOperativasApiTest extends TestCase
         ])->json('data');
 
         $this->withToken($this->token)
-            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular", ['accion_pagos' => 'reembolsar'])
             ->assertStatus(200);
 
         $this->assertSame('disponible', $producto->fresh()->estado);
@@ -303,7 +304,7 @@ class VentasOperativasApiTest extends TestCase
         // La misma prenda vuelve a comprarse (tienda) y se completa el pedido.
         $this->postJson('/api/v1/store/pedidos', [
             'productos' => [$producto->id],
-            'nombre' => 'Lucía Fernández',
+            'nombre' => 'LucÃ­a FernÃ¡ndez',
             'telefono' => '70123456',
             'ciudad' => 'Santa Cruz',
             'direccion' => 'Las Palmas, calle 3 #45',
@@ -340,7 +341,7 @@ class VentasOperativasApiTest extends TestCase
         ])->json('data');
 
         $this->withToken($this->token)
-            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular")
+            ->postJson("/api/v1/admin/ventas/{$venta['id']}/anular", ['accion_pagos' => 'reembolsar'])
             ->assertStatus(200);
 
         $this->registrarVenta([
@@ -366,7 +367,7 @@ class VentasOperativasApiTest extends TestCase
 
         $this->postJson('/api/v1/store/pedidos', [
             'productos' => [$producto->id],
-            'nombre' => 'Lucía Fernández',
+            'nombre' => 'LucÃ­a FernÃ¡ndez',
             'telefono' => '70123456',
             'ciudad' => 'Santa Cruz',
             'direccion' => 'Las Palmas, calle 3 #45',
@@ -389,7 +390,7 @@ class VentasOperativasApiTest extends TestCase
 
         $historial = $response->json('data.historial');
 
-        // El historial se expone de más reciente a más antigua.
+        // El historial se expone de mÃ¡s reciente a mÃ¡s antigua.
         $this->assertCount(3, $historial);
         $this->assertSame('confirmado', $historial[0]['estado_anterior']);
         $this->assertSame('completado', $historial[0]['estado_nuevo']);
@@ -405,7 +406,7 @@ class VentasOperativasApiTest extends TestCase
 
         $this->postJson('/api/v1/store/pedidos', [
             'productos' => [$producto->id],
-            'nombre' => 'Lucía Fernández',
+            'nombre' => 'LucÃ­a FernÃ¡ndez',
             'telefono' => '70123456',
             'ciudad' => 'Santa Cruz',
             'direccion' => 'Las Palmas, calle 3 #45',

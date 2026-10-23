@@ -45,7 +45,9 @@ class CheckoutController extends Controller
     {
         $metodo = MetodoPago::query()->find($metodoPagoId);
 
-        return $metodo !== null && mb_strtolower($metodo->nombre) === 'qr';
+        return $metodo !== null
+            && (mb_strtolower((string) $metodo->codigo) === 'qr'
+                || mb_strtolower($metodo->nombre) === 'qr');
     }
 
     public function metodosEntrega()
@@ -85,7 +87,7 @@ class CheckoutController extends Controller
                     ->where('numero_pedido', $referencia)
                     ->orWhereHas('items.producto', fn ($producto) => $producto->where('codigo', $referencia));
             })
-            ->with(['cliente', 'metodoPago', 'metodoEntrega', 'items.producto.talla', 'items.producto.imagenes'])
+            ->with(['cliente', 'metodoPago', 'metodoEntrega', 'zonaEnvio', 'envio', 'items.producto.talla', 'items.producto.imagenes'])
             ->first();
 
         if (! $pedido) {

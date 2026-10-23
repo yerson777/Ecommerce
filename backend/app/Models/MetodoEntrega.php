@@ -14,6 +14,7 @@ class MetodoEntrega extends Model
 
     protected $fillable = [
         'nombre',
+        'modalidad',
         'costo',
         'activo',
         'orden',

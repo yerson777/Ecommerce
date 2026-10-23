@@ -122,9 +122,9 @@ class VentaController extends Controller
      * Anula una venta: las prendas vuelven a Disponible, los pagos quedan
      * reembolsados, la caja registra el egreso y el pedido pasa a "devuelto".
      */
-    public function anular(int $id)
+    public function anular(Request $request, int $id)
     {
-        $venta = DB::transaction(function () use ($id) {
+        $venta = DB::transaction(function () use ($request, $id) {
             /** @var Venta|null $venta */
             $venta = Venta::with(['items', 'pagos', 'pedido'])
                 ->whereKey($id)
@@ -141,10 +141,26 @@ class VentaController extends Controller
                 ]);
             }
 
+            $pagosCompletados = $venta->pagos->where('estado', Pago::ESTADO_COMPLETADO);
+            if ($pagosCompletados->count() > 0) {
+                $accion = $request->input('accion_pagos');
+                if (! in_array($accion, ['reembolsar', 'saldo_a_favor'], true)) {
+                    throw ValidationException::withMessages([
+                        'accion_pagos' => 'La venta tiene pagos completados. Debes indicar qué hacer con ellos: reembolsar o dejar como saldo a favor.',
+                    ]);
+                }
+            }
+
             $reembolsado = 0.0;
 
             foreach ($venta->pagos as $pago) {
                 if ($pago->estado === Pago::ESTADO_COMPLETADO) {
+                    if ($request->input('accion_pagos') === 'saldo_a_favor') {
+                        $pago->forceFill([
+                            'nota' => ($pago->nota ? $pago->nota . ' | ' : '') . 'Venta '.$venta->numero_venta.' anulada - dejado como saldo a favor',
+                        ])->save();
+                        continue;
+                    }
                     $reembolsado += (float) $pago->monto;
                     $pago->forceFill(['estado' => Pago::ESTADO_REEMBOLSADO])->save();
                 }
@@ -182,6 +198,7 @@ class VentaController extends Controller
                     'tipo' => 'egreso',
                     'monto' => round($reembolsado, 2),
                     'fuente' => 'ajuste',
+                    'venta_id' => $venta->id,
                     'descripcion' => 'Reembolso por anulación de la venta '.$venta->numero_venta,
                     'fecha' => now()->toDateString(),
                 ]);

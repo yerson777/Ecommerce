@@ -27,6 +27,14 @@ class PedidoPublicoResource extends JsonResource
             'comprobante_url' => $this->comprobante_path ? Storage::disk('public')->url($this->comprobante_path) : null,
             'metodo_pago' => $this->whenLoaded('metodoPago', fn () => $this->metodoPago->nombre),
             'metodo_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega->nombre),
+            'zona_envio' => $this->whenLoaded('zonaEnvio', fn () => $this->zonaEnvio?->nombre),
+            'envio' => $this->whenLoaded('envio', fn () => $this->envio ? [
+                'estado' => $this->envio->estado,
+                'paqueteria' => $this->envio->paqueteria,
+                'numero_guia' => $this->envio->numero_guia,
+                'enviado_en' => $this->envio->enviado_en?->toISOString(),
+                'entregado_en' => $this->envio->entregado_en?->toISOString(),
+            ] : null),
             'cliente' => $this->whenLoaded('cliente', fn () => [
                 'nombre' => $this->cliente->nombre,
                 'telefono' => $this->cliente->telefono,

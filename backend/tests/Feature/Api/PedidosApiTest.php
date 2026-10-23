@@ -246,6 +246,26 @@ class PedidosApiTest extends TestCase
         $this->assertSame('disponible', $producto->fresh()->estado);
     }
 
+    public function test_checkout_reconoce_qr_por_codigo_aunque_cambie_el_nombre(): void
+    {
+        $producto = $this->crearProducto();
+        $qr = MetodoPago::create([
+            'nombre' => 'Pago con QR',
+            'codigo' => 'qr',
+            'activo' => true,
+            'orden' => 1,
+        ]);
+
+        $this->postJson('/api/v1/store/pedidos', $this->datosCheckout([$producto], ['metodo_pago_id' => $qr->id]))
+            ->assertStatus(422)
+            ->assertJsonPath(
+                'errors.comprobante.0',
+                'Debes adjuntar el comprobante de pago para confirmar tu pedido.'
+            );
+
+        $this->assertSame(0, Pedido::count());
+    }
+
     public function test_checkout_pago_qr_guarda_el_comprobante(): void
     {
         $producto = $this->crearProducto();

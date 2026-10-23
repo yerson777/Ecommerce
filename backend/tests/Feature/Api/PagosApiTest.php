@@ -205,19 +205,17 @@ class PagosApiTest extends TestCase
         $this->assertSame(0, Pago::count());
     }
 
-    public function test_pago_excedente_requiere_confirmacion_explicita(): void
+    public function test_pago_excedente_se_rechaza_aunque_se_intente_confirmar(): void
     {
         $pedido = $this->crearPedido($this->crearProducto());
 
         $this->withToken($this->token)
-            ->postJson('/api/v1/admin/pagos', $this->datosPago($pedido->id, [
-                'monto' => 200.00,
-                'permitir_excedente' => true,
-            ]))
-            ->assertStatus(201)
-            ->assertJsonPath('data.pedido.estado_pago', 'pagado')
-            ->assertJsonPath('data.excedente', true)
-            ->assertJsonPath('data.pedido.saldo_pendiente', '0.00');
+            ->postJson('/api/v1/admin/pagos', $this->datosPago($pedido->id, ['monto' => 200.00]))
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonStructure(['errors' => ['monto']]);
+
+        $this->assertSame(0, Pago::count());
     }
 
     public function test_no_se_puede_pagar_un_pedido_cancelado(): void

@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Compra;
+use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\Talla;
@@ -142,6 +143,10 @@ class ProveedoresComprasApiTest extends TestCase
         $this->assertEquals(60.0, (float) $b->fresh()->costo);
         $this->assertEquals($compraId, $a->fresh()->compra_id);
         $this->assertEquals($proveedor->id, $a->fresh()->proveedor_id);
+
+        $movimiento = Movimiento::where('compra_id', $compraId)->firstOrFail();
+        $this->assertSame('egreso', $movimiento->tipo);
+        $this->assertEquals(120.0, (float) $movimiento->monto);
     }
 
     public function test_reparte_el_costo_solo_entre_prendas_vendibles(): void

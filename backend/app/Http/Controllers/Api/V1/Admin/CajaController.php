@@ -15,7 +15,7 @@ class CajaController extends Controller
     public function movimientos(Request $request)
     {
         $movimientos = Movimiento::query()
-            ->with(['pago.pedido.cliente', 'gasto.categoriaGasto'])
+            ->with(['pago.pedido.cliente', 'pago.venta', 'gasto.categoriaGasto'])
             ->when($request->filled('tipo'), fn ($q) => $q->where('tipo', $request->input('tipo')))
             ->when($request->filled('fuente'), fn ($q) => $q->where('fuente', $request->input('fuente')))
             ->when($request->filled('busqueda'), fn ($q) => $q->where('descripcion', 'like', '%' . $request->input('busqueda') . '%'))
@@ -30,8 +30,18 @@ class CajaController extends Controller
 
     public function saldo(Request $request)
     {
-        $ingresos = (float) Movimiento::where('tipo', 'ingreso')->sum('monto');
-        $egresos = (float) Movimiento::where('tipo', 'egreso')->sum('monto');
+        $queryIng = Movimiento::where('tipo', 'ingreso');
+        $queryEg = Movimiento::where('tipo', 'egreso');
+        if ($request->filled('fecha_desde')) {
+            $queryIng->whereDate('fecha', '>=', $request->input('fecha_desde'));
+            $queryEg->whereDate('fecha', '>=', $request->input('fecha_desde'));
+        }
+        if ($request->filled('fecha_hasta')) {
+            $queryIng->whereDate('fecha', '<=', $request->input('fecha_hasta'));
+            $queryEg->whereDate('fecha', '<=', $request->input('fecha_hasta'));
+        }
+        $ingresos = (float) $queryIng->sum('monto');
+        $egresos = (float) $queryEg->sum('monto');
 
         return Api::success([
             'ingresos' => number_format($ingresos, 2, '.', ''),
@@ -121,5 +131,45 @@ class CajaController extends Controller
         $movimiento->delete();
 
         return Api::noContent('Movimiento eliminado.');
+    }
+
+    public function resumenPorMetodo(Request $request)
+    {
+        [$inicio, $fin] = $this->rangoFlujo($request);
+
+        $pagos = \App\Models\Pago::query()
+            ->join('metodos_pago', 'metodos_pago.id', '=', 'pagos.metodo_pago_id')
+            ->where('pagos.estado', \App\Models\Pago::ESTADO_COMPLETADO)
+            ->whereBetween('pagos.pagado_en', [$inicio, $fin])
+            ->selectRaw('metodos_pago.nombre as metodo, COUNT(pagos.id) as cantidad, SUM(pagos.monto) as total')
+            ->groupBy('metodos_pago.nombre')
+            ->get()
+            ->map(fn ($r) => [
+                'metodo' => $r->metodo,
+                'cantidad' => (int) $r->cantidad,
+                'total' => number_format((float) $r->total, 2, '.', ''),
+            ]);
+
+        return Api::success($pagos, 'Resumen por método de pago.');
+    }
+
+    public function cierreDiario(Request $request)
+    {
+        $fecha = $request->input('fecha', now()->toDateString());
+
+        $ingresos = (float) Movimiento::where('tipo', 'ingreso')->whereDate('fecha', $fecha)->sum('monto');
+        $egresos = (float) Movimiento::where('tipo', 'egreso')->whereDate('fecha', $fecha)->sum('monto');
+        $esperado = $ingresos - $egresos;
+
+        return Api::success([
+            'fecha' => $fecha,
+            'ingresos' => number_format($ingresos, 2, '.', ''),
+            'egresos' => number_format($egresos, 2, '.', ''),
+            'esperado' => number_format($esperado, 2, '.', ''),
+            'contado' => null,
+            'diferencia' => null,
+            'cerrado' => false,
+            'nota' => null,
+        ], 'Cierre de caja diario.');
     }
 }

@@ -29,7 +29,33 @@ class PedidoResource extends JsonResource
             'saldo_pendiente' => $this->saldoPendiente(),
             'cliente' => $this->whenLoaded('cliente', fn () => new ClienteResource($this->cliente)),
             'metodo_pago' => $this->whenLoaded('metodoPago', fn () => $this->metodoPago->nombre),
+            'modalidad_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega->modalidad),
             'metodo_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega->nombre),
+            'zona_envio' => $this->whenLoaded('zonaEnvio', fn () => $this->zonaEnvio ? [
+                'id' => $this->zonaEnvio->id,
+                'nombre' => $this->zonaEnvio->nombre,
+                'departamento' => $this->zonaEnvio->departamento,
+                'costo' => $this->zonaEnvio->costo,
+                'tiempo_estimado' => $this->zonaEnvio->tiempo_estimado,
+                'costo_por_confirmar' => (bool) $this->zonaEnvio->costo_por_confirmar,
+            ] : null),
+            'envio' => $this->whenLoaded('envio', fn () => $this->envio ? [
+                'id' => $this->envio->id,
+                'estado' => $this->envio->estado,
+                'transiciones' => \App\Models\Envio::TRANSICIONES[$this->envio->estado] ?? [],
+                'costo_por_confirmar' => (bool) $this->envio->costo_por_confirmar,
+                'preparado_en' => $this->envio->preparado_en?->toISOString(),
+                'enviado_en' => $this->envio->enviado_en?->toISOString(),
+                'entregado_en' => $this->envio->entregado_en?->toISOString(),
+                'paqueteria' => $this->envio->paqueteria,
+                'numero_guia' => $this->envio->numero_guia,
+                'nota' => $this->envio->nota,
+                'costo_real' => $this->envio->costo_real,
+                'gasto_id' => $this->envio->gasto_id,
+                'diferencia' => $this->envio->costo_real !== null
+                    ? number_format((float) $this->envio->costo_real - (float) $this->costo_envio, 2, '.', '')
+                    : null,
+            ] : null),
             'items' => PedidoItemResource::collection($this->whenLoaded('items')),
             'pagos' => PagoResource::collection($this->whenLoaded('pagos')),
             'historial' => $this->whenLoaded('historial', fn () => $this->historial->map(

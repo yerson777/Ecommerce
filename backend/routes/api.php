@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\V1\Admin\CondicionController;
 use App\Http\Controllers\Api\V1\Admin\ConfiguracionController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DevolucionController;
+use App\Http\Controllers\Api\V1\Admin\EnvioController;
+use App\Http\Controllers\Api\V1\Admin\ZonaEnvioController;
 use App\Http\Controllers\Api\V1\Admin\GastoController;
 use App\Http\Controllers\Api\V1\Admin\InventarioController;
 use App\Http\Controllers\Api\V1\Admin\MarcaController;
@@ -25,7 +27,10 @@ use App\Http\Controllers\Api\V1\Admin\VentaController;
 use App\Http\Controllers\Api\V1\Store\BannerController;
 use App\Http\Controllers\Api\V1\Store\CategoriaController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
+use App\Http\Controllers\Api\V1\Store\ConfiguracionController as StoreConfiguracionController;
 use App\Http\Controllers\Api\V1\Store\CuponController;
+use App\Http\Controllers\Api\V1\Store\EnvioController as StoreEnvioController;
+use App\Http\Controllers\Api\V1\Store\MetodoPagoController as StoreMetodoPagoController;
 use App\Http\Controllers\Api\V1\Store\OfertaController;
 use App\Http\Controllers\Api\V1\Store\ProductoController;
 use App\Http\Controllers\Api\V1\Store\TallaController;
@@ -63,6 +68,9 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('/sizes', [TallaController::class, 'index'])->name('tallas.index');
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
 
+        // Datos públicos de la tienda (nombre, contacto, textos y moneda)
+        Route::get('/configuracion', [StoreConfiguracionController::class, 'index'])->name('configuracion.index');
+
         // Oferta vigente (encabezado del catálogo al llegar desde un banner)
         Route::get('/ofertas/{id}', [OfertaController::class, 'show'])->name('ofertas.show');
 
@@ -71,7 +79,11 @@ Route::group(['prefix' => 'v1'], function () {
 
         // Carrito / checkout de la tienda
         Route::get('/metodos-entrega', [CheckoutController::class, 'metodosEntrega'])->name('metodos-entrega.index');
+        Route::get('/modalidades-entrega', [StoreEnvioController::class, 'modalidades'])->name('modalidades-entrega.index');
+        Route::get('/zonas-envio', [StoreEnvioController::class, 'zonas'])->name('zonas-envio.index');
+        Route::get('/cotizar-envio', [StoreEnvioController::class, 'cotizar'])->name('envios.cotizar');
         Route::get('/metodos-pago', [CheckoutController::class, 'metodosPago'])->name('metodos-pago.index');
+        Route::get('/metodos-pago/detalle', [StoreMetodoPagoController::class, 'index'])->name('metodos-pago.detalle');
         Route::post('/pedidos', [CheckoutController::class, 'crear'])->name('pedidos.store');
         Route::get('/pedidos/{numero_pedido}', [CheckoutController::class, 'seguimiento'])->name('pedidos.seguimiento');
     });
@@ -170,6 +182,15 @@ Route::group(['prefix' => 'v1'], function () {
             Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
             Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
 
+            // Envíos y entregas (operación)
+            Route::get('/envios', [EnvioController::class, 'index'])->name('envios.index');
+            Route::get('/envios/por-enviar', [EnvioController::class, 'porEnviar'])->name('envios.por-enviar');
+            Route::get('/envios/exportar', [EnvioController::class, 'exportar'])->name('envios.exportar');
+            Route::get('/envios/modalidades', [EnvioController::class, 'modalidades'])->name('envios.modalidades');
+            Route::get('/envios/{id}', [EnvioController::class, 'show'])->name('envios.show');
+            Route::post('/envios/{id}/estado', [EnvioController::class, 'cambiarEstado'])->name('envios.estado');
+            Route::put('/envios/{id}/datos', [EnvioController::class, 'actualizarDatos'])->name('envios.datos');
+
             Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
             Route::get('/pedidos/{id}', [PedidoController::class, 'show'])->name('pedidos.show');
             Route::put('/pedidos/{id}/estado', [PedidoController::class, 'cambiarEstado'])->name('pedidos.estado');
@@ -222,6 +243,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::delete('/cupones/{id}', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'destroy'])->name('cupones.destroy');
 
             Route::get('/pagos', [PagoController::class, 'index'])->name('pagos.index');
+            Route::get('/pagos/por-cobrar', [PagoController::class, 'porCobrar'])->name('pagos.por-cobrar');
             Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
             Route::get('/pagos/{id}', [PagoController::class, 'show'])->name('pagos.show');
             Route::post('/pagos/{id}/confirmar', [PagoController::class, 'confirmar'])->name('pagos.confirmar');
@@ -237,17 +259,33 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('/gastos/{id}', [GastoController::class, 'show'])->name('gastos.show');
             Route::delete('/gastos/{id}', [GastoController::class, 'destroy'])->name('gastos.destroy');
 
+            // Envíos: configuración y costo real (solo admin)
+            Route::get('/envios/config/zonas', [ZonaEnvioController::class, 'index'])->name('envios.config.zonas');
+            Route::post('/envios/config/zonas', [ZonaEnvioController::class, 'store'])->name('envios.config.zonas.store');
+            Route::put('/envios/config/zonas/{id}', [ZonaEnvioController::class, 'update'])->name('envios.config.zonas.update');
+            Route::post('/envios/config/zonas/{id}/estado', [ZonaEnvioController::class, 'cambiarEstado'])->name('envios.config.zonas.estado');
+            Route::get('/envios/config/modalidades', [ZonaEnvioController::class, 'modalidades'])->name('envios.config.modalidades');
+            Route::put('/envios/config/modalidades/{id}', [ZonaEnvioController::class, 'actualizarModalidad'])->name('envios.config.modalidades.update');
+            Route::post('/envios/{id}/costo-real', [EnvioController::class, 'costoReal'])->name('envios.costo-real');
+
             Route::get('/caja/movimientos', [CajaController::class, 'movimientos'])->name('caja.movimientos');
             Route::post('/caja/movimientos', [CajaController::class, 'store'])->name('caja.movimientos.store');
             Route::get('/caja/flujo', [CajaController::class, 'flujo'])->name('caja.flujo');
             Route::get('/caja/saldo', [CajaController::class, 'saldo'])->name('caja.saldo');
+            Route::get('/caja/resumen-por-metodo', [CajaController::class, 'resumenPorMetodo'])->name('caja.resumen-por-metodo');
+            Route::get('/caja/cierre-diario', [CajaController::class, 'cierreDiario'])->name('caja.cierre-diario');
             Route::delete('/caja/movimientos/{id}', [CajaController::class, 'destroy'])->name('caja.movimientos.destroy');
 
             // ==== Configuración ====
             Route::get('/config/metodos-pago', [ConfiguracionController::class, 'metodosPago'])->name('config.metodos-pago');
             Route::put('/config/metodos-pago/{id}', [ConfiguracionController::class, 'actualizarMetodoPago'])->name('config.metodos-pago.update');
+            Route::post('/config/metodos-pago/{id}', [ConfiguracionController::class, 'guardarMetodoPago'])->name('config.metodos-pago.guardar');
             Route::get('/config/metodos-entrega', [ConfiguracionController::class, 'metodosEntrega'])->name('config.metodos-entrega');
             Route::put('/config/metodos-entrega/{id}', [ConfiguracionController::class, 'actualizarMetodoEntrega'])->name('config.metodos-entrega.update');
+
+            Route::get('/config/tienda', [ConfiguracionController::class, 'tienda'])->name('config.tienda');
+            Route::post('/config/tienda', [ConfiguracionController::class, 'actualizarTienda'])->name('config.tienda.update');
+            Route::get('/config/tienda/historial', [ConfiguracionController::class, 'historialTienda'])->name('config.tienda.historial');
 
             // ==== Compras y proveedores ====
             Route::get('/proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
