@@ -65,7 +65,7 @@ class ClientesApiTest extends TestCase
             'nombre' => 'Lucía Fernández',
             'telefono' => '70123456',
             'email' => 'lucia@example.com',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
             'direccion' => 'Barrio Las Palmas, calle 3 #45',
             'notas' => 'Tocar el timbre dos veces',
             'metodo_entrega_id' => $this->entrega->id,
@@ -272,7 +272,7 @@ class ClientesApiTest extends TestCase
         $this->withToken($this->token)->putJson("/api/v1/admin/clientes/{$cliente->id}", [
             'email' => 'lucia@example.com',
             'nombre' => 'Lucía Fernández Gómez',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
         ])
             ->assertStatus(200)
             ->assertJsonPath('success', true)

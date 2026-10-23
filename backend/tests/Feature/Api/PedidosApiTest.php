@@ -69,7 +69,7 @@ class PedidosApiTest extends TestCase
             'nombre' => 'Lucía Fernández',
             'telefono' => '70123456',
             'email' => 'lucia@example.com',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
             'direccion' => 'Barrio Las Palmas, calle 3 #45',
             'notas' => 'Tocar el timbre dos veces',
             'metodo_entrega_id' => $this->entrega->id,
@@ -94,7 +94,7 @@ class PedidosApiTest extends TestCase
             ->assertJsonPath('data.costo_envio', '15.00')
             ->assertJsonPath('data.total', '165.00')
             ->assertJsonPath('data.metodo_entrega', 'Entrega a domicilio')
-            ->assertJsonPath('data.cliente.ciudad', 'Santa Cruz')
+            ->assertJsonPath('data.cliente.ciudad', 'Cochabamba')
             ->assertJsonCount(2, 'data.items');
 
         $pedido = Pedido::with('items')->firstOrFail();
@@ -107,7 +107,7 @@ class PedidosApiTest extends TestCase
         $this->assertSame(2, Reserva::where('estado', 'activa')->count());
 
         $cliente = Cliente::where('telefono', '70123456')->firstOrFail();
-        $this->assertSame('Santa Cruz', $cliente->ciudad);
+        $this->assertSame('Cochabamba', $cliente->ciudad);
     }
 
     public function test_checkout_recalcula_precios_y_costo_de_envio_en_el_servidor(): void
@@ -353,7 +353,7 @@ class PedidosApiTest extends TestCase
             ->getJson("/api/v1/admin/pedidos/{$pedido->id}")
             ->assertStatus(200)
             ->assertJsonPath('data.cliente.telefono', '70123456')
-            ->assertJsonPath('data.cliente.ciudad', 'Santa Cruz')
+            ->assertJsonPath('data.cliente.ciudad', 'Cochabamba')
             ->assertJsonPath('data.items.0.producto_nombre', $producto->nombre)
             ->assertJsonPath('data.estado', 'pendiente');
     }

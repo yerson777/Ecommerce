@@ -74,7 +74,7 @@ class PagosApiTest extends TestCase
             'nombre' => 'Lucía Fernández',
             'telefono' => '70123456',
             'email' => 'lucia@example.com',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
             'direccion' => 'Barrio Las Palmas, calle 3 #45',
             'metodo_entrega_id' => $this->entrega->id,
             'metodo_pago_id' => $this->efectivo->id,

@@ -48,7 +48,7 @@ class ConfiguracionTiendaApiTest extends TestCase
                 'nombre' => 'Everly Boutique',
                 'whatsapp' => '59162640247',
                 'correo' => 'hola@everlyboutique.com',
-                'direccion' => 'Av. Las Flores 123, Santa Cruz',
+                'direccion' => 'Av. Las Flores 123, Cochabamba',
                 'horario' => 'Lun a Sáb 9:00 a 19:30',
                 'instagram' => '@everlyboutique',
                 'facebook' => 'https://facebook.com/everlyboutique',

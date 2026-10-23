@@ -211,7 +211,7 @@ class StoreApiTest extends TestCase
             'nombre' => 'Cliente Prueba',
             'telefono' => '+59162640247',
             'email' => 'cliente@test.com',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
             'direccion' => 'Av. Principal 123',
         ]);
         $pedido = Pedido::create([
@@ -252,7 +252,7 @@ class StoreApiTest extends TestCase
         $cliente = Cliente::create([
             'nombre' => 'Cliente Prueba',
             'telefono' => '+59162640247',
-            'ciudad' => 'Santa Cruz',
+            'ciudad' => 'Cochabamba',
             'direccion' => 'Av. Principal 123',
         ]);
         $pedido = Pedido::create([

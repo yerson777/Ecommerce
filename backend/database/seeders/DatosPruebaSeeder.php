@@ -41,7 +41,7 @@ class DatosPruebaSeeder extends Seeder
             'nombre' => 'María González',
             'telefono' => '71234567',
             'email' => 'maria@example.com',
-            'direccion' => 'Av. Principal 123, Santa Cruz',
+            'direccion' => 'Av. Principal 123, Cochabamba',
         ]);
 
         // ---- 1. Productos DISPONIBLES (publicados y no publicados) ----

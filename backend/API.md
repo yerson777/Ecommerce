@@ -144,7 +144,7 @@ Crea el pedido desde el carrito del cliente. **Público** (sin token).
   "nombre": "Lucía Fernández",
   "telefono": "70123456",
   "email": "lucia@example.com",
-  "ciudad": "Santa Cruz",
+  "ciudad": "Cochabamba",
   "direccion": "Calle 3 #45, Barrio Las Palmas",
   "notas": "Tocar el timbre dos veces",
   "metodo_pago_id": 1,
@@ -514,7 +514,7 @@ $checkout = @{
   productos = @(2, 3)
   nombre = 'Prueba'
   telefono = '70123456'
-  ciudad = 'Santa Cruz'
+  ciudad = 'Cochabamba'
   direccion = 'Calle 1 #2'
   metodo_pago_id = 1
   metodo_entrega_id = 1
