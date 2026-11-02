@@ -19,7 +19,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService, CartItem } from '../../core/services/cart.service';
-import { MetodoEntrega, MetodoPago, CheckoutPayload } from '../../core/models/pedido';
+import { CheckoutPayload, MetodoEntrega, MetodoPago } from '../../core/models/pedido';
 import { ApiError } from '../../core/models/api-response';
 import { formatearPrecio } from '../../core/utils/precio';
 
@@ -101,8 +101,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.catalogo.metodosEntrega().subscribe({
       next: (res) => this.metodosEntrega.set(res.data ?? []),
     });
+    this.cargarMetodosPago();
+  }
+
+  private cargarMetodosPago(): void {
+    this.catalogo.metodosPagoDetalle().subscribe({
+      next: (res) => {
+        if (res.data && res.data.length > 0) {
+          this.metodosPago.set(res.data);
+        } else {
+          this.cargarMetodosPagoSimple();
+        }
+      },
+      error: () => this.cargarMetodosPagoSimple(),
+    });
+  }
+
+  private cargarMetodosPagoSimple(): void {
     this.catalogo.metodosPago().subscribe({
       next: (res) => this.metodosPago.set(res.data ?? []),
+      error: () => this.metodosPago.set([]),
     });
   }
 
@@ -126,11 +144,54 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     );
   }
 
-  pagoEsQR(): boolean {
-    const seleccionado = this.metodosPago().find(
+  metodoPagoSeleccionado(): MetodoPago | undefined {
+    return this.metodosPago().find(
       (metodo) => metodo.id === this.form.value.metodoPagoId,
     );
-    return seleccionado !== undefined && seleccionado.nombre.toLowerCase() === 'qr';
+  }
+
+  pagoEsQR(): boolean {
+    const seleccionado = this.metodoPagoSeleccionado();
+    if (!seleccionado) {
+      return false;
+    }
+
+    return (
+      (seleccionado.codigo ?? '').toLowerCase() === 'qr' ||
+      seleccionado.nombre.toLowerCase() === 'qr'
+    );
+  }
+
+  qrImagenActual(): string {
+    return this.metodoPagoSeleccionado()?.qr_url ?? QR_IMAGEN;
+  }
+
+  titularPago(): string {
+    return this.metodoPagoSeleccionado()?.titular ?? 'Gutierrez Choque Yerson';
+  }
+
+  instruccionesPago(): string {
+    return (
+      this.metodoPagoSeleccionado()?.instrucciones ??
+      'Descarga el QR, págalo desde tu banco y adjunta la foto del comprobante.'
+    );
+  }
+
+  datosPago(): Array<{ etiqueta: string; valor: string }> {
+    const metodo = this.metodoPagoSeleccionado();
+    if (!metodo) {
+      return [];
+    }
+
+    const datos = [
+      { etiqueta: 'Titular', valor: metodo.titular },
+      { etiqueta: 'Banco', valor: metodo.banco },
+      { etiqueta: 'Número de cuenta', valor: metodo.numero_cuenta },
+    ];
+
+    return datos
+      .filter((dato): dato is { etiqueta: string; valor: string } => !!dato.valor)
+      .map((dato) => ({ etiqueta: dato.etiqueta, valor: String(dato.valor) }));
   }
 
   onComprobante(event: Event): void {
@@ -250,9 +311,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   descargarQR(): void {
+    const imagen = this.qrImagenActual();
     const enlace = document.createElement('a');
-    enlace.href = this.qrImagen;
-    enlace.download = 'qr-everly-pago.jpeg';
+    enlace.href = imagen;
+    enlace.download = imagen === QR_IMAGEN ? 'qr-everly-pago.jpeg' : 'qr-pago';
+    enlace.target = '_blank';
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();

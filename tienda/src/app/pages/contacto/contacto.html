@@ -16,8 +16,8 @@
           <div>
             <h3>WhatsApp</h3>
             <p>La vía más rápida. Respondemos de inmediato en horario comercial.</p>
-            <a class="canal-dato" href="https://wa.me/59162640247" target="_blank" rel="noopener">
-              +591 62640247
+            <a class="canal-dato" [href]="config.whatsappUrl()" target="_blank" rel="noopener">
+              +{{ config.whatsapp() }}
             </a>
           </div>
         </article>
@@ -27,7 +27,7 @@
           <div>
             <h3>Correo electrónico</h3>
             <p>Para consultas detalladas, pedidos especiales o facturación.</p>
-            <a class="canal-dato" href="mailto:hola@everlyboutique.com">gutierrezyerson041Qgmail.com</a>
+            <a class="canal-dato" [href]="'mailto:' + correo()">{{ correo() }}</a>
           </div>
         </article>
 
@@ -36,7 +36,7 @@
           <div>
             <h3>Teléfono</h3>
             <p>Atención personalizada de lunes a sábado.</p>
-            <a class="canal-dato" href="tel:+59162640247">+591 62640247</a>
+            <a class="canal-dato" [href]="'tel:' + telefono()">{{ telefono() }}</a>
           </div>
         </article>
 
@@ -44,10 +44,10 @@
           <span class="canal-icono" aria-hidden="true">📍</span>
           <div>
             <h3>Showroom</h3>
-            <p>Av. Las Flores 123, Santa Cruz de la Sierra, Bolivia.</p>
+            <p>{{ direccion() }}</p>
             <a
               class="canal-dato"
-              href="https://maps.google.com/?q=Av.+Las+Flores+123+Santa+Cruz"
+              href="https://maps.app.goo.gl/rfY3mBykLyddiGFB8"
               target="_blank"
               rel="noopener"
             >
@@ -60,7 +60,7 @@
           <span class="canal-icono" aria-hidden="true">🕘</span>
           <div>
             <h3>Horarios</h3>
-            <p>Lunes a viernes 9:00 – 19:30 · Sábados 9:30 – 14:00.</p>
+            <p>{{ horario() }}</p>
             <span class="canal-dato muted">Domingos y feriados cerrado</span>
           </div>
         </article>
@@ -72,11 +72,11 @@
             <p>Seguinos y enterate de los nuevos ingresos.</p>
             <a
               class="canal-dato"
-              href="https://www.tiktok.com/@everlyfashion"
+              [href]="tiktok()"
               target="_blank"
               rel="noopener"
             >
-              @everlyfashion
+              {{ tiktokVisible() }}
             </a>
           </div>
         </article>
@@ -90,7 +90,17 @@
           ¡Gracias por escribirnos! Te vamos a responder en menos de 24 horas. 💌
         </div>
 
+        <div class="error" *ngIf="error()">{{ error() }}</div>
+
         <form (ngSubmit)="enviarPorWhatsApp()">
+          <input
+            type="text"
+            name="sitio_web"
+            tabindex="-1"
+            autocomplete="off"
+            class="campo-oculto"
+          />
+
           <div class="field">
             <label for="c-nombre">Nombre y apellido *</label>
             <input id="c-nombre" class="input" name="nombre" type="text" [(ngModel)]="nombre" required />
@@ -113,7 +123,12 @@
 
           <div class="botones">
             <button class="btn btn-primary btn-block" type="submit">Enviar por WhatsApp</button>
-            <button class="btn btn-outline btn-block" type="button" (click)="enviarPorCorreo()">
+            <button
+              class="btn btn-outline btn-block"
+              type="button"
+              (click)="enviarPorCorreo()"
+              [disabled]="enviando()"
+            >
               Enviar por correo
             </button>
           </div>

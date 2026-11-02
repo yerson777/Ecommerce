@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 import { CartService } from '../../core/services/cart.service';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 
 @Component({
   imports: [CommonModule, RouterLink, RouterLinkActive],
@@ -13,6 +14,7 @@ import { CartService } from '../../core/services/cart.service';
 export class Header {
   readonly conteo: Signal<number>;
   readonly menuAbierto = signal(false);
+  readonly config = inject(ConfiguracionService);
 
   private readonly router = inject(Router);
 

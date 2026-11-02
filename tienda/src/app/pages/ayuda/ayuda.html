@@ -39,9 +39,15 @@
 
     <section class="bloque">
       <h2 class="seccion-titulo">Envíos y entregas</h2>
+      @if (config.datos().textos.envios; as textoEnvios) {
+        <article class="card info-card">
+          <h3>Envíos y entregas</h3>
+          <p class="politica-texto">{{ textoEnvios }}</p>
+        </article>
+      } @else {
       <div class="cards-dos">
         <article class="card info-card">
-          <h3>Entrega en Santa Cruz</h3>
+          <h3>Entrega en Cochabamba</h3>
           <p class="info-dato">24 a 48 horas</p>
           <ul>
             <li>Entrega a domicilio o punto de encuentro.</li>
@@ -59,7 +65,28 @@
           </ul>
         </article>
       </div>
+      }
     </section>
+
+    @if (config.datos().textos.cambios_devoluciones || config.datos().textos.terminos) {
+      <section class="bloque">
+        <h2 class="seccion-titulo">Políticas de la tienda</h2>
+        <div class="cards-dos">
+          @if (config.datos().textos.cambios_devoluciones; as textoCambios) {
+            <article class="card info-card">
+              <h3>Cambios y devoluciones</h3>
+              <p class="politica-texto">{{ textoCambios }}</p>
+            </article>
+          }
+          @if (config.datos().textos.terminos; as textoTerminos) {
+            <article class="card info-card">
+              <h3>Términos y condiciones</h3>
+              <p class="politica-texto">{{ textoTerminos }}</p>
+            </article>
+          }
+        </div>
+      </section>
+    }
 
     <section class="bloque">
       <h2 class="seccion-titulo">Preguntas frecuentes</h2>

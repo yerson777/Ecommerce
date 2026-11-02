@@ -1,4 +1,4 @@
-import { effect, Component, inject, input, signal } from '@angular/core';
+import { effect, Component, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ETIQUETA_ESTADO_PAGO, TONO_ESTADO_PAGO } from '../../../../core/models/pago';
 import {
@@ -13,11 +13,20 @@ import { BadgeComponent } from '../../../../shared/components/badge/badge';
 import { ChartDonutComponent } from '../../../../shared/components/chart-donut/chart-donut';
 import { ChartDato } from '../../../../shared/components/chart.models';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../../../shared/components/spinner/spinner';
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card';
 
 @Component({
-  imports: [FormsModule, BadgeComponent, ChartDonutComponent, EmptyStateComponent, SpinnerComponent, StatCardComponent],
+  imports: [
+    FormsModule,
+    BadgeComponent,
+    ChartDonutComponent,
+    EmptyStateComponent,
+    PaginatorComponent,
+    SpinnerComponent,
+    StatCardComponent,
+  ],
   selector: 'app-reportes-pagos',
   standalone: true,
   styleUrl: './reportes-pagos.scss',
@@ -34,12 +43,17 @@ export class ReportesPagosComponent {
   readonly metodos = signal<MetodoPagoRef[]>([]);
   readonly metodoSeleccionado = signal<number | null>(null);
   readonly cargando = signal(true);
+  readonly pagina = signal(1);
+  readonly perPage = signal(15);
   error: string | null = null;
 
   constructor() {
     effect(() => {
       void this.filtros();
-      this.cargar();
+      untracked(() => {
+        this.pagina.set(1);
+        this.cargar();
+      });
     });
   }
 
@@ -55,6 +69,8 @@ export class ReportesPagosComponent {
         fecha_desde: f.fecha_desde,
         fecha_hasta: f.fecha_hasta,
         metodo_pago_id: this.metodoSeleccionado() ?? undefined,
+        page: this.pagina(),
+        per_page: this.perPage(),
       })
       .subscribe({
         next: (res) => {
@@ -93,6 +109,12 @@ export class ReportesPagosComponent {
   }
 
   onMetodoChange(): void {
+    this.pagina.set(1);
+    this.cargar();
+  }
+
+  onPagina(nueva: number): void {
+    this.pagina.set(nueva);
     this.cargar();
   }
 

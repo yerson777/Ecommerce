@@ -3,6 +3,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import { Oferta, OfertaDatos } from '../models/oferta';
+import { Paginated } from '../models/paginated';
+import { toQueryString } from '../utils/query';
 import { ApiService } from './api.service';
 
 export interface OfertaFiltros {
@@ -26,6 +28,14 @@ export class OfertasService extends ApiService {
     }
     const qs = query.toString();
     return this.get<ApiResponse<Oferta[]>>(`/v1/admin/ofertas${qs ? `?${qs}` : ''}`);
+  }
+
+  listarPaginado(
+    filtros: OfertaFiltros & { page: number; per_page: number },
+  ): Observable<ApiResponse<Paginated<Oferta>>> {
+    return this.get<ApiResponse<Paginated<Oferta>>>(
+      `/v1/admin/ofertas${toQueryString({ ...filtros })}`,
+    );
   }
 
   detalle(id: number): Observable<ApiResponse<Oferta>> {

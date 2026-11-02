@@ -905,7 +905,81 @@ h3 {
   }
 
   .prendas {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .prendas::-webkit-scrollbar {
+    display: none;
+  }
+
+  .prenda {
+    flex: 0 0 46%;
+    scroll-snap-align: start;
+    max-width: 46%;
+  }
+
+  .prenda-foto,
+  .prenda-sin-foto {
+    aspect-ratio: 3 / 4;
+  }
+
+  .prenda-body {
+    gap: 0.2rem;
+    padding: 0.6rem 0.8rem 0.8rem;
+  }
+
+  .prenda-nombre {
+    font-size: 0.95rem;
+  }
+
+  .prenda-meta {
+    font-size: 0.78rem;
+  }
+
+  .prenda-precio {
+    margin: 0.1rem 0 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .prenda-body > .btn-block {
+    font-size: 0.9rem;
+    padding: 0.55rem 1rem;
+  }
+
+  .prendas-track {
+    position: relative;
+  }
+
+  .prendas-flechas {
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .carrusel-flecha {
+    width: 36px;
+    height: 36px;
+    pointer-events: auto;
+  }
+
+  .carrusel-flecha svg {
+    width: 18px;
+    height: 18px;
   }
 
   .carrusel-flechas {

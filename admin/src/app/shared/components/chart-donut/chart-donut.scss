@@ -1,6 +1,7 @@
 :host {
   display: block;
   width: 100%;
+  min-width: 0;
 }
 
 .donut-empty {
@@ -14,11 +15,24 @@
   display: flex;
   gap: 1rem;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .donut-wrap {
   flex: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+svg {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .donut-total {
@@ -37,7 +51,7 @@
   flex-direction: column;
   gap: 0.4rem;
   min-width: 0;
-  flex: 1;
+  width: 100%;
 }
 
 .legend-item {
@@ -46,6 +60,8 @@
   gap: 0.5rem;
   font-size: 13px;
   min-width: 0;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .legend-dot {
@@ -75,9 +91,34 @@
   text-align: right;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
   .donut-layout {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donut-wrap {
+    width: 100%;
+  }
+
+  .donut-legend {
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .donut-layout {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donut-wrap {
+    width: 100%;
+  }
+
+  .donut-legend {
+    align-items: center;
   }
 }

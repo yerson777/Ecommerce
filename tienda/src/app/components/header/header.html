@@ -1,6 +1,13 @@
 <header class="header">
   <div class="container header-inner">
-    <a routerLink="/" class="marca" (click)="cerrarMenu()">Everly<span>Boutique</span></a>
+    <a routerLink="/" class="marca" (click)="cerrarMenu()">
+      @if (config.logoUrl(); as logo) {
+        <img class="marca-logo" [src]="logo" [alt]="config.nombre()" />
+      } @else {
+        @let marca = config.marca();
+        {{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}
+      }
+    </a>
 
     <button
       type="button"

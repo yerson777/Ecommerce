@@ -5,7 +5,8 @@
       <p class="page-subtitle">Flujo de dinero: ingresos y egresos</p>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn btn-ghost" (click)="abrirIngreso()">Ingreso manual</button>
+      <button type="button" class="btn btn-outline" (click)="exportarExcel()">Exportar Excel</button>
+      <button type="button" class="btn btn-outline" (click)="abrirIngreso()">Ingreso manual</button>
       <button type="button" class="btn btn-primary" (click)="abrirGasto()">Registrar gasto</button>
       <app-notification-center />
     </div>
@@ -18,6 +19,63 @@
       <app-stat-card label="Egresos" [value]="moneda(s.egresos)" icon="↘" tone="danger" hint="Gastos y salidas de dinero" />
     </div>
   }
+
+  @if (saldoPeriodo(); as sp) {
+    <section class="card">
+      <header class="row-between">
+        <div>
+          <h2 class="card-title">Saldo del per&iacute;odo filtrado</h2>
+          <p class="report-note">Del {{ formatearFecha(filtros().fecha_desde) }} al {{ formatearFecha(filtros().fecha_hasta) }}</p>
+        </div>
+      </header>
+      <div class="stats-grid">
+        <app-stat-card label="Ingresos del per&iacute;odo" [value]="moneda(sp.ingresos)" icon="+" tone="success" />
+        <app-stat-card label="Egresos del per&iacute;odo" [value]="moneda(sp.egresos)" icon="-" tone="danger" />
+        <app-stat-card label="Saldo del per&iacute;odo" [value]="moneda(sp.saldo)" icon="=" tone="primary" />
+      </div>
+    </section>
+  }
+
+  <section class="card">
+    <header class="row-between">
+      <div>
+        <h2 class="card-title">Resumen por m&eacute;todo de pago</h2>
+        <p class="report-note">Cobros completados en el per&iacute;odo seleccionado</p>
+      </div>
+      <select class="select" [value]="periodoFlujo()" (change)="periodoFlujo.set($any($event.target).value); cambiarPeriodoFlujo()">
+        <option value="ultimos_7_dias">&Uacute;ltimos 7 d&iacute;as</option>
+        <option value="ultimos_15_dias">&Uacute;ltimos 15 d&iacute;as</option>
+        <option value="ultimos_30_dias">&Uacute;ltimos 30 d&iacute;as</option>
+        <option value="ultimos_90_dias">&Uacute;ltimos 90 d&iacute;as</option>
+        <option value="este_mes">Este mes</option>
+      </select>
+    </header>
+
+    @if (resumenMetodo().length === 0) {
+      <app-empty-state icon="$" title="Sin cobros" message="No hay pagos completados en este per&iacute;odo." />
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>M&eacute;todo de pago</th>
+              <th>Cantidad</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of resumenMetodo(); track item.metodo) {
+              <tr>
+                <td>{{ item.metodo }}</td>
+                <td class="mono">{{ item.cantidad }}</td>
+                <td class="mono pos-total">{{ moneda(item.total) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 
   <section class="card flujo-card">
     <header class="row-between">
@@ -61,6 +119,27 @@
           </div>
         </div>
       }
+    }
+  </section>
+
+  <section class="card">
+    <header class="row-between">
+      <div>
+        <h2 class="card-title">Cierre de caja diario</h2>
+        <p class="report-note">Compar&aacute; el saldo esperado del d&iacute;a con el dinero contado</p>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input class="input" type="date" [(ngModel)]="fechaCierre" (change)="cargarCierre()" />
+      </div>
+    </header>
+
+    @if (cierre(); as c) {
+      <div class="stats-grid">
+        <app-stat-card label="Ingresos del d&iacute;a" [value]="moneda(c.ingresos)" icon="+" tone="success" />
+        <app-stat-card label="Egresos del d&iacute;a" [value]="moneda(c.egresos)" icon="-" tone="danger" />
+        <app-stat-card label="Efectivo esperado" [value]="moneda(c.esperado)" icon="=" tone="primary" />
+      </div>
     }
   </section>
 

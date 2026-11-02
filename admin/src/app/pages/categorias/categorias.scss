@@ -8,6 +8,12 @@
   padding: 2.5rem 0;
 }
 
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 .mono {
   font-family: 'Cascadia Code', Consolas, monospace;
   font-size: 13px;

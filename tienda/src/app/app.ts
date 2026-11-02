@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Header } from './components/header/header';
 import { Footer } from './components/footer/footer';
+import { ConfiguracionService } from './core/services/configuracion.service';
 
 @Component({
   imports: [RouterOutlet, Header, Footer],
@@ -9,4 +10,6 @@ import { Footer } from './components/footer/footer';
   styleUrl: './app.scss',
   templateUrl: './app.html',
 })
-export class App {}
+export class App {
+  readonly config = inject(ConfiguracionService);
+}

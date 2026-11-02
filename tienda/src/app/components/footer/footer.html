@@ -27,7 +27,12 @@
 
     <div class="columnas">
       <div class="col col-marca">
-        <span class="marca">Everly<span>Boutique</span></span>
+        @if (config.logoUrl(); as logo) {
+          <img class="marca-logo" [src]="logo" [alt]="config.nombre()" />
+        } @else {
+          @let marca = config.marca();
+          <span class="marca">{{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}</span>
+        }
         <p class="muted">
           Prendas únicas seleccionadas a mano, con moda coreana y americana que
           no se repite.
@@ -37,7 +42,7 @@
           <span class="social-titulo">¡Seguinos!</span>
           <div class="social-links">
             <a
-              href="https://instagram.com/everlyboutique"
+              [href]="instagram()"
               target="_blank"
               rel="noopener"
               aria-label="Instagram"
@@ -50,7 +55,7 @@
               </svg>
             </a>
             <a
-              href="https://facebook.com/everlyboutique"
+              [href]="facebook()"
               target="_blank"
               rel="noopener"
               aria-label="Facebook"
@@ -64,7 +69,7 @@
               </svg>
             </a>
             <a
-              href="https://tiktok.com/@everlyboutique"
+              [href]="tiktok()"
               target="_blank"
               rel="noopener"
               aria-label="TikTok"
@@ -78,7 +83,7 @@
               </svg>
             </a>
             <a
-href="https://wa.me/59162640247"
+[href]="config.whatsappUrl()"
               target="_blank"
               rel="noopener"
               aria-label="WhatsApp"
@@ -109,14 +114,14 @@ href="https://wa.me/59162640247"
         <h4>Contacto</h4>
         <ul class="lista-contacto">
           <li>
-            <a href="https://wa.me/59162640247" target="_blank" rel="noopener">
-              WhatsApp: +591 62640247
+            <a [href]="config.whatsappUrl()" target="_blank" rel="noopener">
+              WhatsApp: {{ telefono() }}
             </a>
           </li>
-          <li><a href="mailto:hola@everlyboutique.com">gutierrezyerson041@gmail.com</a></li>
-          <li><a href="tel:+59162640247">+591 62640247</a></li>
-          <li>Av. Las Flores 123, Santa Cruz</li>
-          <li>Lun a Sáb · 9:00 a 19:30</li>
+          <li><a [href]="'mailto:' + correo()">{{ correo() }}</a></li>
+          <li><a [href]="'tel:' + telefono()">{{ telefono() }}</a></li>
+          <li>{{ direccion() }}</li>
+          <li>{{ horario() }}</li>
         </ul>
       </div>
 
@@ -132,7 +137,7 @@ href="https://wa.me/59162640247"
     </div>
 
     <div class="pie">
-      <span class="muted">© {{ anio }} Everly Boutique · Todos los derechos reservados.</span>
+      <span class="muted">© {{ anio }} {{ config.nombre() }} · Todos los derechos reservados.</span>
       <nav class="pie-links">
         <a routerLink="/nosotros">¿Quiénes somos?</a>
         <a routerLink="/ayuda">Atención al cliente</a>

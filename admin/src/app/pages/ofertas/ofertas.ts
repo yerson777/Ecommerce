@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { Paginated } from '../../core/models/paginated';
 import { CategoriaRef, Producto } from '../../core/models/producto';
 import {
   ESTADO_ETIQUETAS,
@@ -23,6 +24,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
+import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 interface Formulario {
@@ -73,6 +75,7 @@ function aLocalInput(iso: string | null | undefined): string {
     EmptyStateComponent,
     ModalComponent,
     NotificationCenterComponent,
+    PaginatorComponent,
     SpinnerComponent,
   ],
   selector: 'app-ofertas',
@@ -97,6 +100,9 @@ export class OfertasComponent implements OnInit {
 
   readonly filtros = signal({ busqueda: '', estado: '' });
   readonly ofertas = signal<Oferta[]>([]);
+  readonly resultados = signal<Paginated<Oferta> | null>(null);
+  readonly pagina = signal(1);
+  readonly perPage = signal(15);
   readonly cargando = signal(true);
 
   readonly categorias = signal<CategoriaRef[]>([]);
@@ -157,28 +163,42 @@ export class OfertasComponent implements OnInit {
   }
 
   onBuscar(): void {
+    this.pagina.set(1);
     this.cargar();
   }
 
   limpiarFiltros(): void {
     this.filtros.set({ busqueda: '', estado: '' });
+    this.onBuscar();
+  }
+
+  onPagina(nueva: number): void {
+    this.pagina.set(nueva);
     this.cargar();
   }
 
   cargar(): void {
     this.cargando.set(true);
-    this.ofertasService.listar(this.filtros()).subscribe({
-      next: (res) => {
-        this.cargando.set(false);
-        if (res.success && res.data) {
-          this.ofertas.set(res.data);
-        }
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.toast.error(err.message ?? 'No se pudieron cargar las ofertas.');
-      },
-    });
+    this.ofertasService
+      .listarPaginado({ ...this.filtros(), page: this.pagina(), per_page: this.perPage() })
+      .subscribe({
+        next: (res) => {
+          this.cargando.set(false);
+          if (res.success && res.data) {
+            this.resultados.set(res.data);
+            this.ofertas.set(res.data.data);
+
+            if (this.pagina() > res.data.last_page) {
+              this.pagina.set(res.data.last_page);
+              this.cargar();
+            }
+          }
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.toast.error(err.message ?? 'No se pudieron cargar las ofertas.');
+        },
+      });
   }
 
   abrirCrear(): void {

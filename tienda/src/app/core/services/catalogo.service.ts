@@ -4,7 +4,14 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response';
 import { Paginated } from '../models/paginated';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../models/producto';
-import { MetodoEntrega, MetodoPago, PedidoPublico, CheckoutPayload } from '../models/pedido';
+import {
+  CotizacionEnvio,
+  MetodoEntrega,
+  MetodoPago,
+  PedidoPublico,
+  CheckoutPayload,
+  ZonaEnvioPublica,
+} from '../models/pedido';
 import { BannerPublico } from '../models/banner';
 import { OfertaPublica } from '../models/oferta';
 import { ValidarCuponResultado } from '../models/cupon';
@@ -79,6 +86,33 @@ export class CatalogoService extends ApiService {
     return this.get<ApiResponse<MetodoPago[]>>('/v1/store/metodos-pago');
   }
 
+  metodosPagoDetalle(): Observable<ApiResponse<MetodoPago[]>> {
+    return this.get<ApiResponse<MetodoPago[]>>('/v1/store/metodos-pago/detalle');
+  }
+
+  modalidadesEntrega(): Observable<ApiResponse<MetodoEntrega[]>> {
+    return this.get<ApiResponse<MetodoEntrega[]>>('/v1/store/modalidades-entrega');
+  }
+
+  zonasEnvio(): Observable<ApiResponse<ZonaEnvioPublica[]>> {
+    return this.get<ApiResponse<ZonaEnvioPublica[]>>('/v1/store/zonas-envio');
+  }
+
+  cotizarEnvio(
+    metodoEntregaId: number,
+    zonaEnvioId: number | null,
+    subtotal: number,
+  ): Observable<ApiResponse<CotizacionEnvio>> {
+    const query = new URLSearchParams();
+    query.set('metodo_entrega_id', String(metodoEntregaId));
+    if (zonaEnvioId) {
+      query.set('zona_envio_id', String(zonaEnvioId));
+    }
+    query.set('subtotal', String(subtotal));
+
+    return this.get<ApiResponse<CotizacionEnvio>>(`/v1/store/cotizar-envio?${query.toString()}`);
+  }
+
   validarCupon(
     codigo: string,
     subtotal: number,
@@ -130,6 +164,9 @@ export class CatalogoService extends ApiService {
     }
     form.append('metodo_pago_id', String(payload.metodo_pago_id ?? ''));
     form.append('metodo_entrega_id', String(payload.metodo_entrega_id ?? ''));
+    if (payload.zona_envio_id) {
+      form.append('zona_envio_id', String(payload.zona_envio_id));
+    }
     if (payload.codigo_cupon) {
       form.append('codigo_cupon', payload.codigo_cupon);
     }

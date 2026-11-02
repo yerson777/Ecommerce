@@ -302,65 +302,106 @@
       </div>
 
       @if (estadoDestacados() === 'listo' && destacados().length > 0) {
-        <ul class="prendas">
-          @for (prenda of destacados(); track prenda.id; let i = $index) {
-            <li class="prenda" reveal="up" [revealDelay]="i * 0.07">
-              <button
-                type="button"
-                class="prenda-media"
-                (click)="verDetalle(prenda.id)"
-                [attr.aria-label]="'Ver ' + prenda.nombre"
-              >
-                @if (imagenPrincipal(prenda); as foto) {
-                  <img class="prenda-foto" [src]="foto" [alt]="prenda.nombre" loading="lazy" />
-                } @else {
-                  <span class="prenda-sin-foto">Sin foto</span>
-                }
-                <span class="prenda-estado" [class.prenda-estado--libre]="esDisponible(prenda)">
-                  {{ estadoTexto(prenda.estado) }}
-                </span>
-                @if (tieneOferta(prenda)) {
-                  <span class="prenda-descuento">-{{ prenda.descuento_porcentaje }}%</span>
-                }
-              </button>
-
-              <div class="prenda-body">
-                <h3 class="prenda-nombre">{{ prenda.nombre }}</h3>
-                <p class="prenda-meta">
-                  {{ prenda.codigo }}
-                  @if (prenda.color) {
-                    <span> · {{ prenda.color }}</span>
-                  }
-                  @if (prenda.talla?.nombre) {
-                    <span> · Talle {{ prenda.talla?.nombre }}</span>
-                  }
-                </p>
-                @if (tieneOferta(prenda)) {
-                  <p class="prenda-precio">
-                    <span class="precio-tachado">{{ formatearPrecio(prenda.precio) }}</span>
-                    <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(prenda)) }}</span>
-                  </p>
-                } @else {
-                  <p class="prenda-precio">{{ formatearPrecio(prenda.precio) }}</p>
-                }
+        <div class="prendas-track">
+          <ul class="prendas" #prendasList>
+            @for (prenda of destacados(); track prenda.id; let i = $index) {
+              <li class="prenda" reveal="up" [revealDelay]="i * 0.07">
                 <button
                   type="button"
-                  class="btn btn-primary btn-block"
-                  [disabled]="!esDisponible(prenda) || enCarrito(prenda.id)"
-                  (click)="agregarAlCarrito(prenda)"
+                  class="prenda-media"
+                  (click)="verDetalle(prenda.id)"
+                  [attr.aria-label]="'Ver ' + prenda.nombre"
                 >
-                  @if (enCarrito(prenda.id)) {
-                    En el carrito
-                  } @else if (esDisponible(prenda)) {
-                    Agregar al carrito
+                  @if (imagenPrincipal(prenda); as foto) {
+                    <img class="prenda-foto" [src]="foto" [alt]="prenda.nombre" loading="lazy" />
                   } @else {
+                    <span class="prenda-sin-foto">Sin foto</span>
+                  }
+                  <span class="prenda-estado" [class.prenda-estado--libre]="esDisponible(prenda)">
                     {{ estadoTexto(prenda.estado) }}
+                  </span>
+                  @if (tieneOferta(prenda)) {
+                    <span class="prenda-descuento">-{{ prenda.descuento_porcentaje }}%</span>
                   }
                 </button>
-              </div>
-            </li>
-          }
-        </ul>
+
+                <div class="prenda-body">
+                  <h3 class="prenda-nombre">{{ prenda.nombre }}</h3>
+                  <p class="prenda-meta">
+                    {{ prenda.codigo }}
+                    @if (prenda.color) {
+                      <span> · {{ prenda.color }}</span>
+                    }
+                    @if (prenda.talla?.nombre) {
+                      <span> · Talle {{ prenda.talla?.nombre }}</span>
+                    }
+                  </p>
+                  @if (tieneOferta(prenda)) {
+                    <p class="prenda-precio">
+                      <span class="precio-tachado">{{ formatearPrecio(prenda.precio) }}</span>
+                      <span class="precio-oferta">{{ formatearPrecio(precioEfectivo(prenda)) }}</span>
+                    </p>
+                  } @else {
+                    <p class="prenda-precio">{{ formatearPrecio(prenda.precio) }}</p>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-block"
+                    [disabled]="!esDisponible(prenda) || enCarrito(prenda.id)"
+                    (click)="agregarAlCarrito(prenda)"
+                  >
+                    @if (enCarrito(prenda.id)) {
+                      En el carrito
+                    } @else if (esDisponible(prenda)) {
+                      Agregar al carrito
+                    } @else {
+                      {{ estadoTexto(prenda.estado) }}
+                    }
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+
+          <span class="prendas-flechas">
+            <button
+              type="button"
+              class="carrusel-flecha carrusel-flecha--izq"
+              aria-label="Prenda anterior"
+              (click)="scrollPrendas('izq')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="carrusel-flecha carrusel-flecha--der"
+              aria-label="Prenda siguiente"
+              (click)="scrollPrendas('der')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </span>
+        </div>
       } @else if (estadoDestacados() === 'cargando') {
         <p class="aviso">Cargando las prendas más recientes…</p>
       } @else {
@@ -396,7 +437,7 @@
         <a routerLink="/catalogo" class="btn btn-blanco btn-lg">Empezar a comprar</a>
         <a
           class="btn btn-blanco-outline btn-lg"
-          href="https://wa.me/59162640247?text=%C2%A1Hola%20Everly!%20Tengo%20una%20consulta."
+          [href]="config.whatsappConsultaUrl()"
           target="_blank"
           rel="noopener"
         >

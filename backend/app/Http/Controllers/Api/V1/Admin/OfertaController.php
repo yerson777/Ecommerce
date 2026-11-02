@@ -19,7 +19,7 @@ class OfertaController extends Controller
 
     public function index(Request $request)
     {
-        $ofertas = Oferta::query()
+        $query = Oferta::query()
             ->with(['productos:id', 'categorias:id'])
             ->when($request->filled('busqueda'), function ($q) use ($request) {
                 $q->where('nombre', 'like', '%'.$request->string('busqueda').'%');
@@ -27,8 +27,11 @@ class OfertaController extends Controller
             ->when($request->filled('estado'), function ($q) use ($request) {
                 $this->filtrarPorEstado($q, (string) $request->input('estado'));
             })
-            ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('created_at');
+
+        $ofertas = $request->filled('page') || $request->filled('per_page')
+            ? $query->paginate((int) $request->integer('per_page', 15))
+            : $query->get();
 
         return Api::collection(
             OfertaResource::collection($ofertas),

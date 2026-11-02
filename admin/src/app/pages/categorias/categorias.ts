@@ -2,12 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { Categoria } from '../../core/models/catalogo';
+import { Paginated } from '../../core/models/paginated';
 import { CatalogosService } from '../../core/services/catalogos.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
+import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 interface FormCategoria {
@@ -31,6 +33,7 @@ function formularioVacio(): FormCategoria {
     EmptyStateComponent,
     ModalComponent,
     NotificationCenterComponent,
+    PaginatorComponent,
     SpinnerComponent,
   ],
   selector: 'app-categorias',
@@ -43,9 +46,13 @@ export class CategoriasComponent {
   private readonly toast = inject(ToastService);
 
   readonly categorias = signal<Categoria[]>([]);
+  readonly catalogoCategorias = signal<Categoria[]>([]);
+  readonly resultados = signal<Paginated<Categoria> | null>(null);
   readonly cargando = signal(true);
   readonly busqueda = signal('');
   readonly filtroActivo = signal<'' | '1' | '0'>('');
+  readonly pagina = signal(1);
+  readonly perPage = signal(15);
 
   readonly modalAbierto = signal(false);
   readonly editando = signal<Categoria | null>(null);
@@ -62,41 +69,69 @@ export class CategoriasComponent {
 
   constructor() {
     this.cargar();
+    this.cargarCatalogo();
+  }
+
+  onBuscar(): void {
+    this.pagina.set(1);
+    this.cargar();
+  }
+
+  limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroActivo.set('');
+    this.onBuscar();
+  }
+
+  onPagina(nueva: number): void {
+    this.pagina.set(nueva);
+    this.cargar();
   }
 
   cargar(): void {
     this.cargando.set(true);
 
+    this.catalogos
+      .listarCategorias({
+        busqueda: this.busqueda().trim() || undefined,
+        activo: this.filtroActivo() === '' ? undefined : this.filtroActivo() === '1',
+        page: this.pagina(),
+        per_page: this.perPage(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.cargando.set(false);
+          if (res.success && res.data) {
+            this.resultados.set(res.data);
+            this.categorias.set(res.data.data);
+
+            if (this.pagina() > res.data.last_page) {
+              this.pagina.set(res.data.last_page);
+              this.cargar();
+            }
+          }
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.toast.error(err.message ?? 'No se pudieron cargar las categorías.');
+        },
+      });
+  }
+
+  private cargarCatalogo(): void {
     this.catalogos.categorias().subscribe({
       next: (res) => {
-        this.cargando.set(false);
         if (res.success && res.data) {
-          this.categorias.set(res.data);
+          this.catalogoCategorias.set(res.data);
         }
       },
-      error: (err) => {
-        this.cargando.set(false);
-        this.toast.error(err.message ?? 'No se pudieron cargar las categorías.');
-      },
+      error: () => undefined,
     });
   }
 
-  filtradas(): Categoria[] {
-    const termino = this.busqueda().trim().toLowerCase();
-    const activo = this.filtroActivo();
-
-    return this.categorias().filter((categoria) => {
-      if (activo === '1' && !categoria.activo) {
-        return false;
-      }
-      if (activo === '0' && categoria.activo) {
-        return false;
-      }
-      if (!termino) {
-        return true;
-      }
-      return categoria.nombre.toLowerCase().includes(termino);
-    });
+  private refrescar(): void {
+    this.cargar();
+    this.cargarCatalogo();
   }
 
   // --- Crear / editar ---
@@ -169,7 +204,7 @@ export class CategoriasComponent {
 
   opcionesParent(): Categoria[] {
     const actual = this.editando();
-    return this.categorias().filter((categoria) => categoria.id !== actual?.id);
+    return this.catalogoCategorias().filter((categoria) => categoria.id !== actual?.id);
   }
 
   guardar(): void {
@@ -204,7 +239,7 @@ export class CategoriasComponent {
         this.guardando.set(false);
         this.toast.success(this.editando() ? 'Categoría actualizada.' : 'Categoría creada.');
         this.cerrarModal();
-        this.cargar();
+        this.refrescar();
       },
       error: (err: ApiError) => {
         this.guardando.set(false);
@@ -231,7 +266,7 @@ export class CategoriasComponent {
         next: (res) => {
           if (res.success) {
             this.toast.success(categoria.activo ? 'Categoría ocultada.' : 'Categoría activada.');
-            this.cargar();
+            this.refrescar();
           }
         },
         error: (err) => this.toast.error(err.message ?? 'No se pudo cambiar el estado.'),
@@ -252,12 +287,12 @@ export class CategoriasComponent {
 
   opcionesDestino(): Categoria[] {
     const origen = this.moverObjetivo();
-    return this.categorias().filter((categoria) => categoria.id !== origen?.id);
+    return this.catalogoCategorias().filter((categoria) => categoria.id !== origen?.id);
   }
 
   opcionesPadre(): Categoria[] {
     const actual = this.editando();
-    return this.categorias().filter((categoria) => categoria.id !== actual?.id);
+    return this.catalogoCategorias().filter((categoria) => categoria.id !== actual?.id);
   }
 
   confirmarMover(): void {
@@ -271,7 +306,7 @@ export class CategoriasComponent {
         if (res.success) {
           this.toast.success(res.message ?? 'Prendas reasignadas.');
           this.cerrarMover();
-          this.cargar();
+          this.refrescar();
         }
       },
       error: (err) => this.toast.error(err.message ?? 'No se pudieron reasignar las prendas.'),
@@ -295,7 +330,7 @@ export class CategoriasComponent {
         this.eliminarObjetivo = null;
         if (res.success) {
           this.toast.success('Categoría eliminada.');
-          this.cargar();
+          this.refrescar();
         }
       },
       error: (err) => {

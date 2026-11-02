@@ -33,6 +33,8 @@ export interface ProveedorFiltros {
   busqueda?: string;
   tipo?: TipoProveedor | '';
   activo?: boolean | null;
+  page?: number;
+  per_page?: number;
 }
 
 export const TIPOS_PROVEEDOR: TipoProveedor[] = [

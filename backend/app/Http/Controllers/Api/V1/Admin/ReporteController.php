@@ -139,7 +139,14 @@ class ReporteController extends Controller
         $data = $request->validated();
 
         return Api::success(
-            $this->reporteService->pagos($data['periodo'] ?? null, $data['fecha_desde'] ?? null, $data['fecha_hasta'] ?? null, $data['metodo_pago_id'] ?? null),
+            $this->reporteService->pagos(
+                $data['periodo'] ?? null,
+                $data['fecha_desde'] ?? null,
+                $data['fecha_hasta'] ?? null,
+                $data['metodo_pago_id'] ?? null,
+                $data['page'] ?? null,
+                $data['per_page'] ?? null
+            ),
             'Reporte de pagos.'
         );
     }

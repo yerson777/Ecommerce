@@ -20,19 +20,25 @@
           placeholder="Nombre de la categoría…"
           [ngModel]="busqueda()"
           (ngModelChange)="busqueda.set($event)"
+          (keyup.enter)="onBuscar()"
         />
       </div>
 
       <div class="field">
         <label>Estado</label>
-        <select class="select" [ngModel]="filtroActivo()" (ngModelChange)="filtroActivo.set($event)">
+        <select
+          class="select"
+          [ngModel]="filtroActivo()"
+          (ngModelChange)="filtroActivo.set($event); onBuscar()"
+        >
           <option value="">Todas</option>
           <option value="1">Activas</option>
           <option value="0">Ocultas</option>
         </select>
       </div>
 
-      <button type="button" class="btn btn-ghost" (click)="busqueda.set(''); filtroActivo.set('')">Limpiar</button>
+      <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+      <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
     </div>
   </section>
 
@@ -41,13 +47,13 @@
       <div class="center"><app-spinner [size]="28" /></div>
     }
 
-    @if (!cargando() && filtradas().length === 0) {
+    @if (!cargando() && categorias().length === 0) {
       <app-empty-state icon="🗂" title="Sin categorías" message="No hay categorías que coincidan con la búsqueda.">
         <button type="button" class="btn btn-primary btn-sm" (click)="abrirCrear()">Crear categoría</button>
       </app-empty-state>
     }
 
-    @if (filtradas().length > 0) {
+    @if (categorias().length > 0) {
       <div class="table-wrap">
         <table class="table">
           <thead>
@@ -63,7 +69,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (categoria of filtradas(); track categoria.id) {
+            @for (categoria of categorias(); track categoria.id) {
               <tr>
                 <td>
                   @if (categoria.imagen_url) {
@@ -102,6 +108,18 @@
           </tbody>
         </table>
       </div>
+
+      @if (resultados(); as res) {
+        <div class="footer">
+          <app-paginator
+            [page]="res.current_page"
+            [lastPage]="res.last_page"
+            [total]="res.total"
+            [perPage]="res.per_page"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
     }
   </section>
 </div>

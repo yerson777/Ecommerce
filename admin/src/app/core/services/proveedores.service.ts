@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
+import { Paginated } from '../models/paginated';
 import { Proveedor, ProveedorDatos, ProveedorFiltros } from '../models/proveedor';
 import { toQueryString } from '../utils/query';
 import { ApiService } from './api.service';
@@ -14,6 +15,14 @@ export class ProveedoresService extends ApiService {
 
   listar(filtros: ProveedorFiltros = {}): Observable<ApiResponse<Proveedor[]>> {
     return this.get<ApiResponse<Proveedor[]>>(
+      `/v1/admin/proveedores${toQueryString({ ...filtros })}`,
+    );
+  }
+
+  listarPaginado(
+    filtros: ProveedorFiltros & { page: number; per_page: number },
+  ): Observable<ApiResponse<Paginated<Proveedor>>> {
+    return this.get<ApiResponse<Paginated<Proveedor>>>(
       `/v1/admin/proveedores${toQueryString({ ...filtros })}`,
     );
   }

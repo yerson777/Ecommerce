@@ -33,6 +33,13 @@
   margin-left: 0.35rem;
 }
 
+.marca-logo {
+  display: block;
+  max-width: 150px;
+  max-height: 42px;
+  object-fit: contain;
+}
+
 .nav {
   display: flex;
   align-items: center;

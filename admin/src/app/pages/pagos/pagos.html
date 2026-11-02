@@ -5,6 +5,8 @@
       <p class="page-subtitle">Registro, verificación y control de cobros por pedido</p>
     </div>
     <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="togglePorCobrar()">{{ mostrarPorCobrar() ? 'Ocultar' : 'Pedidos por cobrar' }}</button>
+      <button type="button" class="btn btn-outline" (click)="exportarExcel()">Exportar Excel</button>
       <button type="button" class="btn btn-primary" (click)="abrirRegistro()">Registrar pago</button>
       <app-notification-center />
     </div>
@@ -28,7 +30,7 @@
         <select class="select" [(ngModel)]="filtros().estado" (change)="onBuscar()">
           <option value="">Todos</option>
           <option value="pendiente">Pendiente</option>
-          <option value="completado">Completado</option>
+          <option value="completado">Confirmado</option>
           <option value="anulado">Anulado</option>
         </select>
       </div>
@@ -79,8 +81,9 @@
           <table class="table">
             <thead>
               <tr>
+                <th>Fecha</th>
                 <th>Pago</th>
-                <th>Pedido</th>
+                <th>Pedido o venta</th>
                 <th>Cliente</th>
                 <th>Método</th>
                 <th>Monto</th>
@@ -95,19 +98,19 @@
             <tbody>
               @for (pago of page.data; track pago.id) {
                 <tr>
+                  <td class="muted small">{{ formatearFecha(pago.pagado_en || pago.created_at) }}</td>
                   <td>
                     <div class="mono">{{ pago.numero_pago }}</div>
-                    <div class="muted small">{{ pago.created_at }}</div>
                   </td>
                   <td>
-                    <div class="mono">{{ pago.pedido?.numero_pedido ?? '—' }}</div>
+                    <div class="mono">{{ pago.pedido?.numero_pedido ?? pago.venta?.numero_venta ?? '—' }}</div>
                     @if (pago.pedido) {
                       <app-badge [tone]="tonoEstadoPedido(pago.pedido.estado_pago)">
                         {{ etiquetaEstadoPedido(pago.pedido.estado_pago) }}
                       </app-badge>
                     }
                   </td>
-                  <td>{{ pago.pedido?.cliente ?? '—' }}</td>
+                  <td>{{ pago.pedido?.cliente ?? pago.venta?.cliente ?? '—' }}</td>
                   <td>{{ pago.metodo_pago ?? '—' }}</td>
                   <td class="mono">{{ moneda(pago.monto) }}</td>
                   <td class="muted">{{ moneda(pago.pedido?.total) }}</td>
@@ -115,7 +118,7 @@
                   <td class="mono">{{ moneda(pago.pedido?.saldo_pendiente) }}</td>
                   <td>
                     <app-badge [tone]="tonoEstado(pago.estado)">
-                      {{ etiquetaEstado(pago.estado) }}
+                      {{ pago.estado === 'completado' ? 'Confirmado' : etiquetaEstado(pago.estado) }}
                     </app-badge>
                   </td>
                   <td>
@@ -158,6 +161,53 @@
       }
     }
   </section>
+
+  @if (mostrarPorCobrar()) {
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Pedidos por cobrar</h2>
+          <p class="card-subtitle">Con saldo pendiente, días de antigüedad y contacto por WhatsApp</p>
+        </div>
+      </div>
+      @if (cargandoPorCobrar()) {
+        <div class="center"><app-spinner [size]="24" /></div>
+      } @else if (porCobrar().length === 0) {
+        <app-empty-state icon="✅" title="Sin pedidos por cobrar" message="No hay pedidos con saldo pendiente." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Total</th>
+                <th>Pagado</th>
+                <th>Saldo</th>
+                <th>Antigüedad</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of porCobrar(); track p.pedido_id) {
+                <tr>
+                  <td class="mono">{{ p.numero_pedido }}</td>
+                  <td>{{ p.cliente ?? '—' }}</td>
+                  <td>{{ p.telefono ?? '—' }}</td>
+                  <td class="muted">{{ moneda(p.total) }}</td>
+                  <td class="muted">{{ moneda(p.pagado) }}</td>
+                  <td class="mono">{{ moneda(p.saldo) }}</td>
+                  <td>{{ p.dias_antiguedad }} días</td>
+                  <td><button type="button" class="btn btn-outline btn-sm" (click)="abrirWhatsApp(p.telefono)">WhatsApp</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
 </div>
 
 @if (detalleAbierto()) {
@@ -321,12 +371,17 @@
 }
 
 @if (objetivoAnular; as objetivo) {
-  <app-confirm-dialog
-    title="Anular pago"
-    [message]="'Se anulará el pago ' + objetivo.numero_pago + ' (' + moneda(objetivo.monto) + '). No contará para el saldo del pedido y se retirará su ingreso de caja.'"
-    confirmLabel="Anular pago"
-    tone="danger"
-    (confirm)="anularPago()"
-    (cancel)="cancelarTransicion()"
-  />
+  <app-modal title="Anular pago" [width]="'480px'" (closed)="cancelarTransicion()">
+    <div class="stack">
+      <p>Se anulará el pago {{ objetivo.numero_pago }} ({{ moneda(objetivo.monto) }}). No contará para el saldo del pedido y se retirará su ingreso de caja. El pedido volverá a su estado según el saldo.</p>
+      <div class="field">
+        <label>Motivo de anulación (opcional)</label>
+        <input class="input" [(ngModel)]="motivoAnular" placeholder="Motivo..." />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" (click)="cancelarTransicion()">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="anularPago()" [disabled]="transicionando">Anular pago</button>
+      </div>
+    </div>
+  </app-modal>
 }

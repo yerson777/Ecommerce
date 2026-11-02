@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Paginated } from '../../core/models/paginated';
 import {
   Proveedor,
   ProveedorDatos,
@@ -16,6 +17,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
+import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 interface Formulario {
@@ -55,6 +57,7 @@ interface FiltrosVista {
     EmptyStateComponent,
     ModalComponent,
     NotificationCenterComponent,
+    PaginatorComponent,
     SpinnerComponent,
   ],
   selector: 'app-proveedores',
@@ -72,6 +75,9 @@ export class ProveedoresComponent implements OnInit {
   readonly filtros = signal<FiltrosVista>({ busqueda: '', tipo: '', activo: '' });
 
   readonly proveedores = signal<Proveedor[]>([]);
+  readonly resultados = signal<Paginated<Proveedor> | null>(null);
+  readonly pagina = signal(1);
+  readonly perPage = signal(15);
   readonly cargando = signal(true);
 
   readonly modalAbierto = signal(false);
@@ -92,6 +98,7 @@ export class ProveedoresComponent implements OnInit {
   }
 
   onBuscar(): void {
+    this.pagina.set(1);
     this.cargar();
   }
 
@@ -106,23 +113,40 @@ export class ProveedoresComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtros.set({ busqueda: '', tipo: '', activo: '' });
+    this.onBuscar();
+  }
+
+  onPagina(nueva: number): void {
+    this.pagina.set(nueva);
     this.cargar();
   }
 
   cargar(): void {
     this.cargando.set(true);
-    this.proveedoresService.listar(this.filtrosServicio()).subscribe({
-      next: (res) => {
-        this.cargando.set(false);
-        if (res.success && res.data) {
-          this.proveedores.set(res.data);
-        }
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.toast.error(err.message ?? 'No se pudieron cargar los proveedores.');
-      },
-    });
+    this.proveedoresService
+      .listarPaginado({
+        ...this.filtrosServicio(),
+        page: this.pagina(),
+        per_page: this.perPage(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.cargando.set(false);
+          if (res.success && res.data) {
+            this.resultados.set(res.data);
+            this.proveedores.set(res.data.data);
+
+            if (this.pagina() > res.data.last_page) {
+              this.pagina.set(res.data.last_page);
+              this.cargar();
+            }
+          }
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.toast.error(err.message ?? 'No se pudieron cargar los proveedores.');
+        },
+      });
   }
 
   abrirCrear(): void {

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import {
   Categoria,
+  CategoriaFiltros,
   CategoriaPayload,
   Condicion,
   CondicionPayload,
@@ -12,7 +13,9 @@ import {
   Talla,
   TallaPayload,
 } from '../models/catalogo';
+import { Paginated } from '../models/paginated';
 import { CategoriaRef, CondicionRef, MarcaRef, TallaRef } from '../models/producto';
+import { toQueryString } from '../utils/query';
 import { ApiService } from './api.service';
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +28,12 @@ export class CatalogosService extends ApiService {
 
   categorias(): Observable<ApiResponse<CategoriaRef[]>> {
     return this.get<ApiResponse<CategoriaRef[]>>('/v1/admin/categorias');
+  }
+
+  listarCategorias(filtros: CategoriaFiltros = {}): Observable<ApiResponse<Paginated<Categoria>>> {
+    return this.get<ApiResponse<Paginated<Categoria>>>(
+      `/v1/admin/categorias${toQueryString({ ...filtros })}`,
+    );
   }
 
   tallas(): Observable<ApiResponse<TallaRef[]>> {

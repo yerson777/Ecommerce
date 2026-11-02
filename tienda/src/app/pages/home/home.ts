@@ -4,6 +4,7 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -12,6 +13,7 @@ import { animate, scroll, stagger } from 'motion';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { ProductoPublico } from '../../core/models/producto';
 import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { esDisponible, estadoTexto, imagenPrincipal } from '../../core/utils/producto';
@@ -72,7 +74,7 @@ const FEATURES: readonly ItemEstatico[] = [
     icono: 'pago',
     titulo: 'Pago seguro',
     texto:
-      'Transferencia o QR con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
+      'Transferencia bancaria o QR con comprobante. Vos elegís cómo pagar y nos mandás el respaldo.',
   },
   {
     icono: 'entrega',
@@ -114,7 +116,7 @@ const PASOS: readonly Paso[] = [
 const TESTIMONIOS: readonly Testimonio[] = [
   {
     nombre: 'Lucía M.',
-    ciudad: 'Santa Cruz',
+    ciudad: 'Cochabamba',
     texto:
       'Encontré un vestido que buscaba hace semanas y era el único. Me respondieron por WhatsApp el mismo día y llegó impecable.',
   },
@@ -146,9 +148,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly testimonios = TESTIMONIOS;
 
   readonly carrusel = inject(BannerCarouselService);
+  readonly config = inject(ConfiguracionService);
 
   readonly destacados = signal<ProductoPublico[]>([]);
   readonly estadoDestacados = signal<'cargando' | 'listo' | 'error'>('cargando');
+
+  @ViewChild('prendasList') private readonly prendasList!: ElementRef<HTMLElement>;
 
   private stopScroll?: VoidFunction;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -177,7 +182,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ---------- Datos ---------- */
 
   private cargarDestacados(): void {
-    this.catalogo.listar({ page: 1, per_page: 4 }).subscribe({
+    this.catalogo.listar({ page: 1, per_page: 8 }).subscribe({
       next: (res) => {
         this.destacados.set(res.data?.data ?? []);
         this.estadoDestacados.set('listo');
@@ -279,5 +284,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen: this.imagenPrincipal(producto),
     });
+  }
+
+  scrollPrendas(direccion: 'izq' | 'der'): void {
+    const el = this.prendasList?.nativeElement;
+    if (!el) {
+      return;
+    }
+    const paso = el.clientWidth * 0.85;
+    el.scrollBy({ left: direccion === 'der' ? paso : -paso, behavior: 'smooth' });
   }
 }

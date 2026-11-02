@@ -9,6 +9,7 @@ import {
   MetodoPagoRef,
   Pago,
   PagoHistorial,
+  PagoPorCobrar,
   TONO_ESTADO_PAGO,
 } from '../../core/models/pago';
 import {
@@ -78,11 +79,17 @@ export class PagosComponent implements OnInit {
   adjuntandoId: number | null = null;
   objetivoConfirmar: PagoObjetivo | null = null;
   objetivoAnular: PagoObjetivo | null = null;
+  motivoAnular = '';
   transicionando = false;
+
+  readonly porCobrar = signal<PagoPorCobrar[]>([]);
+  readonly cargandoPorCobrar = signal(false);
+  readonly mostrarPorCobrar = signal(false);
 
   ngOnInit(): void {
     this.cargarMetodos();
     this.cargar();
+    this.cargarPorCobrar();
   }
 
   onBuscar(): void {
@@ -104,6 +111,60 @@ export class PagosComponent implements OnInit {
       fecha_hasta: '',
     });
     this.onBuscar();
+  }
+
+  togglePorCobrar(): void {
+    this.mostrarPorCobrar.set(!this.mostrarPorCobrar());
+    if (this.mostrarPorCobrar()) {
+      this.cargarPorCobrar();
+    }
+  }
+
+  cargarPorCobrar(): void {
+    this.cargandoPorCobrar.set(true);
+    this.pagosService.porCobrar().subscribe({
+      next: (res) => {
+        this.cargandoPorCobrar.set(false);
+        if (res.success && res.data) {
+          this.porCobrar.set(res.data);
+        }
+      },
+      error: () => {
+        this.cargandoPorCobrar.set(false);
+      },
+    });
+  }
+
+  exportarExcel(): void {
+    const f = this.filtros();
+    this.pagosService
+      .exportarExcel({
+        busqueda: f.busqueda || undefined,
+        estado: f.estado || null,
+        metodo_pago_id: f.metodo_pago_id || null,
+        fecha_desde: f.fecha_desde || null,
+        fecha_hasta: f.fecha_hasta || null,
+      })
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `pagos_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => this.toast.error('No se pudo exportar a Excel.'),
+      });
+  }
+
+  abrirWhatsApp(telefono: string | null): void {
+    if (!telefono) {
+      this.toast.error('El cliente no tiene teléfono registrado.');
+      return;
+    }
+    const limpio = telefono.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${limpio}`, '_blank', 'noopener');
   }
 
   private cargarMetodos(): void {
@@ -190,11 +251,13 @@ export class PagosComponent implements OnInit {
 
   pedirAnular(pago: PagoObjetivo): void {
     this.objetivoAnular = pago;
+    this.motivoAnular = '';
   }
 
   cancelarTransicion(): void {
     this.objetivoConfirmar = null;
     this.objetivoAnular = null;
+    this.motivoAnular = '';
   }
 
   confirmarPago(): void {
@@ -225,10 +288,11 @@ export class PagosComponent implements OnInit {
     }
 
     this.transicionando = true;
-    this.pagosService.anular(objetivo.id).subscribe({
+    this.pagosService.anular(objetivo.id, this.motivoAnular).subscribe({
       next: () => {
         this.transicionando = false;
         this.objetivoAnular = null;
+        this.motivoAnular = '';
         this.toast.success('Pago anulado: no cuenta para el saldo ni la caja.');
         this.refrescar(objetivo);
       },

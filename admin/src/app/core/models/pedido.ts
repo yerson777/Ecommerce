@@ -1,4 +1,5 @@
 import type { Cliente } from './cliente';
+import type { Envio, ModalidadEnvio, ZonaEnvioResumen } from './envio';
 
 export type EstadoPedido = 'pendiente' | 'confirmado' | 'cancelado' | 'completado' | 'devuelto';
 
@@ -66,6 +67,9 @@ export interface Pedido {
   cliente?: Cliente | null;
   metodo_pago?: string | null;
   metodo_entrega?: string | null;
+  modalidad_entrega?: ModalidadEnvio | null;
+  zona_envio?: ZonaEnvioResumen | null;
+  envio?: Envio | null;
   items?: PedidoItem[] | null;
   pagos?: PedidoPago[] | null;
   historial?: PedidoHistorialEntrada[] | null;

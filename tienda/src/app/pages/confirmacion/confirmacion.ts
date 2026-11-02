@@ -2,11 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const STORAGE_KEY = 'everly_ultimo_pedido';
 const STORAGE_AVISOS_KEY = 'everly_ultimo_pedido_avisos';
-const WHATSAPP_TIENDA = '59162640247';
 
 const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
   pendiente: 'Pendiente de pago',
@@ -25,7 +25,10 @@ export class ConfirmacionComponent implements OnInit {
   order: PedidoPublico | null = null;
   avisos: string[] = [];
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly config: ConfiguracionService,
+  ) {}
 
   ngOnInit(): void {
     const navegacion = this.router.getCurrentNavigation();
@@ -131,7 +134,7 @@ export class ConfirmacionComponent implements OnInit {
     ].join('\n');
 
     window.open(
-      `https://api.whatsapp.com/send?phone=${WHATSAPP_TIENDA}&text=${encodeURIComponent(mensaje)}`,
+      `https://api.whatsapp.com/send?phone=${this.config.whatsapp()}&text=${encodeURIComponent(mensaje)}`,
       '_blank',
       'noopener',
     );

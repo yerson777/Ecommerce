@@ -81,7 +81,9 @@ export class ReportesService {
     return this.http.get<ApiResponse<ClientesReporte>>(`${this.baseUrl}/v1/admin/reportes/clientes`, { params: this.params(filtros) });
   }
 
-  pagos(filtros: ReporteFiltros & { metodo_pago_id?: number } = {}): Observable<ApiResponse<PagosReporte>> {
+  pagos(
+    filtros: ReporteFiltros & { metodo_pago_id?: number; page?: number; per_page?: number } = {},
+  ): Observable<ApiResponse<PagosReporte>> {
     return this.http.get<ApiResponse<PagosReporte>>(`${this.baseUrl}/v1/admin/reportes/pagos`, { params: this.params(filtros) });
   }
 

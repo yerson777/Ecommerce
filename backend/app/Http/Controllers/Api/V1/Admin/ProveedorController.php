@@ -22,7 +22,13 @@ class ProveedorController extends Controller
 
     public function index(Request $request)
     {
-        $proveedores = $this->proveedores->listar($request->all());
+        $paginado = $request->filled('page') || $request->filled('per_page');
+
+        $proveedores = $this->proveedores->listar(
+            $request->all(),
+            $paginado,
+            (int) $request->integer('per_page', 15)
+        );
 
         return Api::collection(
             ProveedorResource::collection($proveedores),

@@ -15,13 +15,13 @@ import { DevolucionesComponent } from './pages/devoluciones/devoluciones';
 import { PedidosComponent } from './pages/pedidos/pedidos';
 import { ClientesComponent } from './pages/clientes/clientes';
 import { PagosComponent } from './pages/pagos/pagos';
+import { EnviosComponent } from './pages/envios/envios';
 import { CajaComponent } from './pages/caja/caja';
 import { ReportesComponent } from './pages/reportes/reportes';
 import { BannersComponent } from './pages/banners/banners';
 import { OfertasComponent } from './pages/ofertas/ofertas';
 import { ProveedoresComponent } from './pages/proveedores/proveedores';
 import { ComprasComponent } from './pages/compras/compras';
-import { ConfiguracionComponent } from './pages/configuracion/configuracion';
 import { CuponesComponent } from './pages/cupones/cupones';
 import { UsuariosComponent } from './pages/usuarios/usuarios';
 
@@ -42,6 +42,7 @@ export const routes: Routes = [
       { path: 'reservas', component: ReservasComponent },
       { path: 'devoluciones', component: DevolucionesComponent },
       { path: 'pedidos', component: PedidosComponent },
+      { path: 'envios', component: EnviosComponent },
       { path: 'clientes', component: ClientesComponent },
       { path: 'pagos', component: PagosComponent },
       { path: 'caja', component: CajaComponent },
@@ -51,7 +52,7 @@ export const routes: Routes = [
       { path: 'proveedores', component: ProveedoresComponent },
       { path: 'compras', component: ComprasComponent },
       { path: 'cupones', component: CuponesComponent },
-      { path: 'configuracion', component: ConfiguracionComponent },
+      { path: 'configuracion', loadComponent: () => import('./pages/configuracion/configuracion').then((m) => m.ConfiguracionComponent) },
       { path: 'usuarios', component: UsuariosComponent },
     ],
   },

@@ -46,7 +46,7 @@
           <div class="campo-doble">
             <div class="field">
               <label for="ciudad">Ciudad *</label>
-              <input id="ciudad" class="input" formControlName="ciudad" placeholder="Ej: Santa Cruz" />
+              <input id="ciudad" class="input" formControlName="ciudad" placeholder="Ej: Cochabamba" />
               <span class="field-error" *ngIf="form.controls.ciudad.touched && (form.controls.ciudad.invalid || erroresDe('ciudad'))">
                 {{ erroresDe('ciudad') ?? 'Ingresá tu ciudad.' }}
               </span>
@@ -93,9 +93,9 @@
           </div>
 
           <div class="qr-bloque" *ngIf="pagoEsQR()">
-            <img class="qr-imagen" [src]="qrImagen" alt="Código QR de pago Everly" />
-            <p class="qr-pagar">Pagar a: Gutierrez Choque Yerson</p>
-            <p class="qr-texto">Descarga el QR, págalo desde tu banco y adjunta la foto del comprobante.</p>
+            <img class="qr-imagen" [src]="qrImagenActual()" alt="Código QR de pago Everly" />
+            <p class="qr-pagar">Pagar a: {{ titularPago() }}</p>
+            <p class="qr-texto">{{ instruccionesPago() }}</p>
             <button type="button" class="btn btn-outline btn-sm" (click)="descargarQR()">Descargar QR</button>
             <div class="field qr-adjuntar">
               <label for="comprobante">Foto del comprobante *</label>
@@ -149,6 +149,22 @@
             <p class="field-error qr-aviso" *ngIf="!comprobante() && !comprobanteError()">
               Debes adjuntar el comprobante de pago para confirmar tu pedido.
             </p>
+          </div>
+
+          <div class="pago-bloque" *ngIf="metodoPagoSeleccionado() && !pagoEsQR()">
+            <h3 class="pago-titulo">{{ metodoPagoSeleccionado()?.nombre }}</h3>
+            <p class="qr-texto">
+              {{
+                metodoPagoSeleccionado()?.instrucciones ||
+                  'Coordinaremos el pago contigo por WhatsApp al confirmar el pedido.'
+              }}
+            </p>
+            <dl class="pago-datos" *ngIf="datosPago().length > 0">
+              <div class="pago-dato" *ngFor="let dato of datosPago()">
+                <dt>{{ dato.etiqueta }}</dt>
+                <dd>{{ dato.valor }}</dd>
+              </div>
+            </dl>
           </div>
         </div>
       </form>

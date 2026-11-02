@@ -1,0 +1,562 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Envíos y entregas</h1>
+      <p class="page-subtitle">Preparación, despacho y entrega de cada pedido</p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="vista() === 'lista'"
+        [class.btn-outline]="vista() !== 'lista'"
+        (click)="cambiarVista('lista')"
+      >
+        Pedidos
+      </button>
+      @if (esAdmin()) {
+        <button
+          type="button"
+          class="btn"
+          [class.btn-primary]="vista() === 'config'"
+          [class.btn-outline]="vista() !== 'config'"
+          (click)="cambiarVista('config')"
+        >
+          Configuración
+        </button>
+      }
+      @if (vista() === 'lista') {
+        <button type="button" class="btn btn-outline" (click)="togglePorEnviar()">
+          {{ soloPorEnviar() ? 'Ver todos' : 'Por enviar' }}
+        </button>
+        <button type="button" class="btn btn-outline" (click)="exportar()">Exportar CSV</button>
+      }
+    </div>
+  </div>
+
+  @if (vista() === 'lista') {
+    <section class="card">
+      <div class="toolbar">
+        <div class="field grow">
+          <label>Buscar</label>
+          <input
+            class="input"
+            type="text"
+            placeholder="Pedido, cliente, teléfono, guía o paquetería…"
+            [(ngModel)]="filtros().busqueda"
+            (keyup.enter)="onBuscar()"
+          />
+        </div>
+
+        <div class="field">
+          <label>Estado de envío</label>
+          <select class="select" [(ngModel)]="filtros().estado_envio" (change)="onBuscar()">
+            <option value="">Todos</option>
+            @for (estado of estados(); track estado) {
+              <option [value]="estado">{{ etiquetaEstado(estado) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Modalidad</label>
+          <select class="select" [(ngModel)]="filtros().modalidad" (change)="onBuscar()">
+            <option value="">Todas</option>
+            <option value="recojo">Retiro en tienda</option>
+            <option value="ciudad">Envío en ciudad</option>
+            <option value="paqueteria">Paquetería</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Desde</label>
+          <input class="input" type="date" [(ngModel)]="filtros().fecha_desde" (change)="onBuscar()" />
+        </div>
+
+        <div class="field">
+          <label>Hasta</label>
+          <input class="input" type="date" [(ngModel)]="filtros().fecha_hasta" (change)="onBuscar()" />
+        </div>
+
+        <button type="button" class="btn btn-ghost" (click)="onBuscar()">Buscar</button>
+        <button type="button" class="btn btn-ghost" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      @if (soloPorEnviar()) {
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Por enviar</h2>
+            <p class="card-subtitle">Pedidos pagados que aún no salen de tienda</p>
+          </div>
+        </div>
+      }
+
+      @if (cargando() && !resultados()) {
+        <div class="center">
+          <app-spinner [size]="28" />
+        </div>
+      }
+
+      @if (resultados(); as page) {
+        @if (page.data.length === 0) {
+          <app-empty-state
+            icon="📦"
+            title="Sin envíos"
+            [message]="soloPorEnviar() ? 'No hay pedidos pagados pendientes de envío.' : 'No hay envíos que coincidan con los filtros.'"
+          >
+            <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Quitar filtros</button>
+          </app-empty-state>
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Zona / destino</th>
+                  <th>Modalidad</th>
+                  <th>Envío</th>
+                  <th>Guía</th>
+                  <th>Costo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pedido of page.data; track pedido.id) {
+                  <tr>
+                    <td>
+                      <div class="mono">{{ pedido.numero_pedido }}</div>
+                      <span class="muted small">Pedido {{ pedido.estado }}</span>
+                    </td>
+                    <td class="muted small">{{ fecha(pedido.fecha_pedido) }}</td>
+                    <td>
+                      <div>{{ pedido.cliente?.nombre ?? '—' }}</div>
+                      <span class="muted small">{{ pedido.cliente?.telefono ?? 'Sin teléfono' }}</span>
+                    </td>
+                    <td>
+                      <div>{{ zonaPrincipal(pedido) }}</div>
+                      @if (pedido.zona_envio?.costo_por_confirmar) {
+                        <span class="muted small">Costo por confirmar</span>
+                      } @else {
+                        <span class="muted small">{{ pedido.cliente?.direccion ?? '—' }}</span>
+                      }
+                    </td>
+                    <td>{{ etiquetaModalidad(pedido.modalidad_entrega) }}</td>
+                    <td>
+                      @if (pedido.envio; as envio) {
+                        <app-badge [tone]="tonoEstado(envio.estado)">
+                          {{ etiquetaEstado(envio.estado) }}
+                        </app-badge>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      @if (pedido.envio?.numero_guia) {
+                        <div class="mono small">{{ pedido.envio?.numero_guia }}</div>
+                        <span class="muted small">{{ pedido.envio?.paqueteria ?? '—' }}</span>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
+                    <td class="mono">{{ moneda(pedido.costo_envio) }}</td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(pedido)">
+                          Ver
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirWhatsApp(pedido)">
+                          WhatsApp
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <app-paginator
+              [page]="pagina()"
+              [lastPage]="page.last_page"
+              [total]="page.total"
+              [perPage]="perPage"
+              (pageChange)="onPagina($event)"
+            />
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (vista() === 'config') {
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">{{ zonaEditando() ? 'Editar zona de envío' : 'Nueva zona de envío' }}</h2>
+          <p class="card-subtitle">El costo se guarda en el pedido al momento de la compra</p>
+        </div>
+      </div>
+
+      <div class="config-form">
+        <div class="field grow">
+          <label>Nombre de la zona</label>
+          <input class="input" type="text" [(ngModel)]="zonaForm.nombre" placeholder="Ej. Cochabamba - Centro" />
+        </div>
+        <div class="field">
+          <label>Departamento</label>
+          <input class="input" type="text" [(ngModel)]="zonaForm.departamento" placeholder="Opcional" />
+        </div>
+        <div class="field">
+          <label>Costo (Bs)</label>
+          <input class="input" type="number" min="0" step="0.01" [(ngModel)]="zonaForm.costo" />
+        </div>
+        <div class="field">
+          <label>Tiempo estimado</label>
+          <input class="input" type="text" [(ngModel)]="zonaForm.tiempo_estimado" placeholder="Ej. 24 a 48 horas" />
+        </div>
+        <div class="field">
+          <label>Envío gratis desde (Bs)</label>
+          <input class="input" type="number" min="0" step="0.01" [(ngModel)]="zonaForm.envio_gratis_desde" placeholder="Sin mínimo" />
+        </div>
+        <div class="field">
+          <label>Orden</label>
+          <input class="input" type="number" min="0" [(ngModel)]="zonaForm.orden" />
+        </div>
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="zonaForm.costo_por_confirmar" />
+          Costo por confirmar
+        </label>
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="zonaForm.activo" />
+          Activa
+        </label>
+        <div class="config-actions">
+          <button type="button" class="btn btn-primary" (click)="guardarZona()">
+            {{ zonaEditando() ? 'Guardar cambios' : 'Crear zona' }}
+          </button>
+          @if (zonaEditando()) {
+            <button type="button" class="btn btn-ghost" (click)="cancelarEdicionZona()">Cancelar</button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Zonas registradas</h2>
+          <p class="card-subtitle">Envío gratis por zona; la zona especial permite coordinar por WhatsApp</p>
+        </div>
+      </div>
+
+      @if (configCargando() && zonas().length === 0) {
+        <div class="center"><app-spinner [size]="24" /></div>
+      } @else if (zonas().length === 0) {
+        <app-empty-state icon="🗺️" title="Sin zonas" message="Crea la primera zona de envío." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Zona</th>
+                <th>Departamento</th>
+                <th>Costo</th>
+                <th>Gratis desde</th>
+                <th>Tiempo</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (zona of zonas(); track zona.id) {
+                <tr>
+                  <td>
+                    <div>{{ zona.nombre }}</div>
+                    @if (zona.costo_por_confirmar) {
+                      <span class="muted small">Costo por confirmar</span>
+                    }
+                  </td>
+                  <td>{{ zona.departamento ?? '—' }}</td>
+                  <td class="mono">{{ moneda(zona.costo) }}</td>
+                  <td class="mono">{{ zona.envio_gratis_desde ? moneda(zona.envio_gratis_desde) : '—' }}</td>
+                  <td>{{ zona.tiempo_estimado ?? '—' }}</td>
+                  <td>
+                    <app-badge [tone]="zona.activo ? 'success' : 'neutral'">
+                      {{ zona.activo ? 'Activa' : 'Inactiva' }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button type="button" class="btn btn-outline btn-sm" (click)="editarZona(zona)">Editar</button>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="toggleZona(zona)">
+                        {{ zona.activo ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Modalidades de entrega</h2>
+          <p class="card-subtitle">Retiro, envío en ciudad o paquetería</p>
+        </div>
+      </div>
+
+      @if (modalidades().length === 0) {
+        <app-empty-state icon="🚚" title="Sin modalidades" message="No hay métodos de entrega registrados." />
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Método</th>
+                <th>Modalidad</th>
+                <th>Costo base</th>
+                <th>Activo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (metodo of modalidades(); track metodo.id) {
+                <tr>
+                  <td>{{ metodo.nombre }}</td>
+                  <td>
+                    <select
+                      class="select"
+                      [ngModel]="metodo.modalidad"
+                      (ngModelChange)="cambiarModalidad(metodo, $event)"
+                    >
+                      <option value="recojo">Retiro en tienda</option>
+                      <option value="ciudad">Envío en ciudad</option>
+                      <option value="paqueteria">Paquetería</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      class="input input-sm"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [ngModel]="metodo.costo"
+                      (change)="cambiarCostoModalidad(metodo, $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="toggleModalidadActiva(metodo)">
+                      {{ metodo.activo ? 'Activo' : 'Inactivo' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (detalleAbierto()) {
+  <app-modal title="Detalle del envío" width="820px" (closed)="cerrarDetalle()">
+    @if (detalleCargando()) {
+      <div class="center"><app-spinner [size]="28" /></div>
+    } @else if (detalle(); as pedido) {
+      <div class="detalle">
+        <div class="detalle-top">
+          <div>
+            <h3 class="mono">{{ pedido.numero_pedido }}</h3>
+            <p class="muted small">{{ fecha(pedido.fecha_pedido) }}</p>
+          </div>
+          <div class="detalle-badges">
+            <app-badge tone="neutral">Pedido {{ pedido.estado }}</app-badge>
+            @if (pedido.envio; as envio) {
+              <app-badge [tone]="tonoEstado(envio.estado)">{{ etiquetaEstado(envio.estado) }}</app-badge>
+            }
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <span class="muted-label">Cliente</span>
+            <span>{{ pedido.cliente?.nombre ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Teléfono</span>
+            <span>{{ pedido.cliente?.telefono ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Email</span>
+            <span>{{ pedido.cliente?.email ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Ciudad / zona</span>
+            <span>{{ zonaPrincipal(pedido) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Dirección</span>
+            <span>{{ pedido.cliente?.direccion ?? '—' }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Modalidad</span>
+            <span>{{ etiquetaModalidad(pedido.modalidad_entrega) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Costo cobrado</span>
+            <span class="mono">{{ moneda(pedido.costo_envio) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Total del pedido</span>
+            <span class="mono">{{ moneda(pedido.total) }}</span>
+          </div>
+          <div>
+            <span class="muted-label">Tiempo estimado</span>
+            <span>{{ pedido.zona_envio?.tiempo_estimado ?? '—' }}</span>
+          </div>
+        </div>
+
+        @if (pedido.envio?.costo_por_confirmar) {
+          <p class="aviso">
+            El costo de envío debe confirmarse con el cliente por WhatsApp antes del despacho.
+          </p>
+        }
+
+        @if (pedido.items?.length) {
+          <div class="items-block">
+            <span class="muted-label">Prendas</span>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Talla</th>
+                    <th>Color</th>
+                    <th>Precio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of pedido.items; track item.id) {
+                    <tr>
+                      <td>
+                        {{ item.producto_nombre ?? item.producto_codigo ?? '—' }}
+                        @if (item.producto_codigo) {
+                          <span class="muted small mono">{{ item.producto_codigo }}</span>
+                        }
+                      </td>
+                      <td>{{ item.producto_talla ?? '—' }}</td>
+                      <td>{{ item.producto_color ?? '—' }}</td>
+                      <td class="mono">{{ moneda(item.precio_unitario) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <div class="envio-block">
+          <div class="block-header">
+            <span class="muted-label">Datos del envío</span>
+            @if (pedido.envio?.costo_real !== null && pedido.envio?.costo_real !== undefined) {
+              <app-badge tone="success">Costo real registrado</app-badge>
+            }
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Paquetería</label>
+              <input class="input" type="text" [(ngModel)]="paqueteria" placeholder="Ej. Flash Store" />
+            </div>
+            <div class="field">
+              <label>Número de guía</label>
+              <input class="input" type="text" [(ngModel)]="numeroGuia" placeholder="Código de seguimiento" />
+            </div>
+            <div class="field grow">
+              <label>Nota interna</label>
+              <input class="input" type="text" [(ngModel)]="nota" placeholder="Observación para el envío" />
+            </div>
+          </div>
+
+          <div class="block-actions">
+            <button type="button" class="btn btn-outline btn-sm" (click)="guardarDatos()" [disabled]="guardando()">
+              Guardar datos
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="abrirWhatsApp(pedido)">WhatsApp</button>
+          </div>
+
+          @if (transiciones.length > 0) {
+            <div class="transiciones">
+              <span class="muted-label">Cambiar estado</span>
+              <div class="actions">
+                @for (estado of transiciones; track estado) {
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    (click)="avanzarEstado(estado)"
+                    [disabled]="guardando()"
+                  >
+                    {{ etiquetaEstado(estado) }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (pedido.envio; as envio) {
+            <div class="timeline">
+              <span>Preparado: {{ envio.preparado_en ? fecha(envio.preparado_en) : '—' }}</span>
+              <span>Enviado: {{ envio.enviado_en ? fecha(envio.enviado_en) : '—' }}</span>
+              <span>Entregado: {{ envio.entregado_en ? fecha(envio.entregado_en) : '—' }}</span>
+            </div>
+          }
+        </div>
+
+        @if (esAdmin()) {
+          <div class="costo-block">
+            <div class="block-header">
+              <span class="muted-label">Costo real del envío</span>
+              <span class="muted small">Se registra como egreso en Caja, sin duplicados</span>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Costo real (Bs)</label>
+                <input class="input" type="number" min="0" step="0.01" [(ngModel)]="costoReal" />
+              </div>
+              <div class="field">
+                <label>Método de pago</label>
+                <select class="select" [(ngModel)]="metodoPagoId">
+                  @for (metodo of metodosPago(); track metodo.id) {
+                    <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Diferencia</label>
+                <span class="mono">
+                  {{ pedido.envio?.diferencia ? moneda(pedido.envio?.diferencia) : '—' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="block-actions">
+              <button type="button" class="btn btn-primary btn-sm" (click)="guardarCostoReal()" [disabled]="guardando()">
+                Registrar costo real
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </app-modal>
+}

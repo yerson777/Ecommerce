@@ -23,8 +23,11 @@ export class CajaService extends ApiService {
     super(http);
   }
 
-  saldo(): Observable<ApiResponse<SaldoCaja>> {
-    return this.get<ApiResponse<SaldoCaja>>('/v1/admin/caja/saldo');
+  saldo(filtros?: { fecha_desde?: string | null; fecha_hasta?: string | null }): Observable<ApiResponse<SaldoCaja>> {
+    return this.get<ApiResponse<SaldoCaja>>(`/v1/admin/caja/saldo${toQueryString({
+      fecha_desde: filtros?.fecha_desde ?? null,
+      fecha_hasta: filtros?.fecha_hasta ?? null,
+    })}`);
   }
 
   flujo(periodo: PeriodoFlujo): Observable<ApiResponse<FlujoCaja>> {
@@ -55,5 +58,17 @@ export class CajaService extends ApiService {
 
   eliminarMovimiento(id: number): Observable<ApiResponse<null>> {
     return this.delete<ApiResponse<null>>(`/v1/admin/caja/movimientos/${id}`);
+  }
+
+  resumenPorMetodo(periodo: PeriodoFlujo = 'ultimos_30_dias'): Observable<ApiResponse<any[]>> {
+    return this.get<ApiResponse<any[]>>(`/v1/admin/caja/resumen-por-metodo?periodo=${periodo}`);
+  }
+
+  cierreDiario(fecha?: string): Observable<ApiResponse<any>> {
+    return this.get<ApiResponse<any>>(`/v1/admin/caja/cierre-diario${fecha ? `?fecha=${fecha}` : ''}`);
+  }
+
+  exportarExcel(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/v1/admin/reportes/caja`, { responseType: 'blob' }).pipe();
   }
 }

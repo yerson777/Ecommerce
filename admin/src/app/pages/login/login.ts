@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 
 @Component({
   imports: [FormsModule, CommonModule],
@@ -15,11 +16,27 @@ export class LoginComponent {
   password = signal('');
   errorMessage: string | null = null;
   loading = false;
+  logoUrl = signal<string | null>(null);
 
   constructor(
     private readonly auth: AuthService,
     private readonly router: Router,
-  ) {}
+    private readonly config: ConfiguracionService,
+  ) {
+    this.cargarLogo();
+  }
+
+  private cargarLogo(): void {
+    this.config.logoTienda().subscribe({
+      next: (res) => {
+        this.logoUrl.set(res.data?.logo_url ?? null);
+      },
+      error: () => {
+        // Sin sesión pública: si falla, se queda sin logo y se muestra el texto fijo.
+        this.logoUrl.set(null);
+      },
+    });
+  }
 
   async onSubmit(): Promise<void> {
     this.errorMessage = null;

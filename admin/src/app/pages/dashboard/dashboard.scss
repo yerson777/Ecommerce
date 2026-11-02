@@ -2,6 +2,14 @@
   display: block;
 }
 
+.grid-2 {
+  min-width: 0;
+}
+
+.card {
+  min-width: 0;
+}
+
 .center {
   display: flex;
   justify-content: center;

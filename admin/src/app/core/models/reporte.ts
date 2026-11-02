@@ -162,6 +162,12 @@ export interface PagosReporte {
     pedidos_parciales: number;
     pedidos_pendientes: number;
   };
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 }
 
 export interface PagosPorMetodo {

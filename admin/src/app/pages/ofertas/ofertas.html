@@ -120,6 +120,18 @@
           </tbody>
         </table>
       </div>
+
+      @if (resultados(); as res) {
+        <div class="footer">
+          <app-paginator
+            [page]="res.current_page"
+            [lastPage]="res.last_page"
+            [total]="res.total"
+            [perPage]="res.per_page"
+            (pageChange)="onPagina($event)"
+          />
+        </div>
+      }
     }
   </section>
 </div>

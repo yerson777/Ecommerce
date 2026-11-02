@@ -100,6 +100,14 @@
   margin-left: 0.3rem;
 }
 
+.col-marca .marca-logo {
+  display: block;
+  max-width: 150px;
+  max-height: 48px;
+  margin-bottom: 0.6rem;
+  object-fit: contain;
+}
+
 .col-marca p {
   margin: 0 0 1.1rem;
   max-width: 340px;

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Compra;
 use App\Models\Proveedor;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProveedorService
 {
@@ -14,9 +15,9 @@ class ProveedorService
      *
      * @param  array<string, mixed>  $filtros
      */
-    public function listar(array $filtros): Collection
+    public function listar(array $filtros, bool $paginado = false, int $porPagina = 15): Collection|LengthAwarePaginator
     {
-        return Proveedor::query()
+        $query = Proveedor::query()
             ->withCount('compras')
             ->when($this->texto($filtros, 'busqueda'), function ($q, $busqueda) {
                 $q->where(function ($query) use ($busqueda) {
@@ -36,8 +37,9 @@ class ProveedorService
                 'costo_total'
             )
             ->withCount('productos as prendas_count')
-            ->orderBy('nombre')
-            ->get();
+            ->orderBy('nombre');
+
+        return $paginado ? $query->paginate($porPagina) : $query->get();
     }
 
     public function ficha(Proveedor $proveedor): Proveedor

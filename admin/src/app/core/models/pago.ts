@@ -77,6 +77,21 @@ export interface PagoFiltros {
   per_page?: number;
 }
 
+export interface PagoPorCobrar {
+  pedido_id: number;
+  numero_pedido: string;
+  cliente_id: number | null;
+  cliente: string | null;
+  telefono: string | null;
+  total: string;
+  pagado: string;
+  saldo: string;
+  estado: string;
+  fecha_pedido: string | null;
+  dias_antiguedad: number;
+  whatsapp: string | null;
+}
+
 export interface PagoPayload {
   pedido_id: number;
   monto: number;

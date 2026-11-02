@@ -30,6 +30,13 @@
   }
 }
 
+.logo {
+  max-height: 96px;
+  width: auto;
+  display: block;
+  margin: 0 auto 1rem;
+}
+
 .tagline {
   color: var(--text-muted);
   margin: 0.15rem 0 1.4rem;

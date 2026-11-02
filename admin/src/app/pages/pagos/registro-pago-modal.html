@@ -141,10 +141,7 @@
       </div>
 
       @if (montoSuperaSaldo()) {
-        <label class="check field-full">
-          <input type="checkbox" [(ngModel)]="permitirExcedente" name="permitirExcedente" />
-          <span>Registrar excedente (cobro mayor al saldo pendiente)</span>
-        </label>
+        <div class="error-banner">No se permiten pagos mayores al saldo pendiente.</div>
       }
 
       <div class="field field-full">

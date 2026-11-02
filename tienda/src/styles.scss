@@ -520,4 +520,37 @@ img {
   .btn-lg {
     width: 100%;
   }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .producto-foto {
+    aspect-ratio: 3 / 4;
+  }
+
+  .producto-body {
+    padding: 0.6rem 0.65rem 0.7rem;
+    gap: 0.25rem;
+  }
+
+  .producto-nombre {
+    font-size: 0.9rem;
+    line-height: 1.25;
+  }
+
+  .producto-meta {
+    font-size: 0.72rem;
+  }
+
+  .producto-precio {
+    font-size: 0.98rem;
+    margin: 0.1rem 0 0.35rem;
+  }
+
+  .producto-body .btn {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+  }
 }

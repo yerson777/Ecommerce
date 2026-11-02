@@ -54,6 +54,7 @@ export class CajaComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly saldo = signal<SaldoCaja | null>(null);
+  readonly saldoPeriodo = signal<SaldoCaja | null>(null);
   readonly flujo = signal<FlujoCaja | null>(null);
   readonly cargandoFlujo = signal(false);
   readonly periodoFlujo = signal<PeriodoFlujo>('ultimos_30_dias');
@@ -63,6 +64,9 @@ export class CajaComponent implements OnInit {
     fecha_desde: '',
     fecha_hasta: '',
   });
+  readonly resumenMetodo = signal<any[]>([]);
+  readonly cierre = signal<any | null>(null);
+  fechaCierre = '';
   readonly metodos = signal<MetodoPagoRef[]>([]);
   readonly categorias = signal<CategoriaGastoRef[]>([]);
   readonly resultados = signal<Paginated<Movimiento> | null>(null);
@@ -77,16 +81,19 @@ export class CajaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarCatalogo();
+    this.fechaCierre = new Date().toISOString().slice(0, 10);
     this.cargarTodo();
   }
 
   cambiarPeriodoFlujo(): void {
     this.cargarFlujo();
+    this.cargarResumenMetodo();
   }
 
   onBuscar(): void {
     this.pagina.set(1);
     this.cargar();
+    this.cargarSaldoPeriodo();
   }
 
   onPagina(nueva: number): void {
@@ -127,7 +134,7 @@ export class CajaComponent implements OnInit {
 
   pedirEliminar(movimiento: Movimiento): void {
     this.objetivoEliminar = {
-      id: movimiento.id,
+      id: movimiento.fuente === 'gasto' ? (movimiento.gasto_id ?? movimiento.id) : movimiento.id,
       origen: movimiento.fuente === 'gasto' ? 'gasto' : 'movimiento',
       descripcion: movimiento.descripcion,
       monto: movimiento.monto,
@@ -190,8 +197,11 @@ export class CajaComponent implements OnInit {
 
   private cargarTodo(): void {
     this.cargarSaldo();
+    this.cargarSaldoPeriodo();
     this.cargarFlujo();
     this.cargar();
+    this.cargarResumenMetodo();
+    this.cargarCierre();
   }
 
   private cargarFlujo(): void {
@@ -237,6 +247,60 @@ export class CajaComponent implements OnInit {
         }
       },
       error: () => undefined,
+    });
+  }
+
+  private cargarSaldoPeriodo(): void {
+    const f = this.filtros();
+    if (f.fecha_desde || f.fecha_hasta) {
+      this.cajaService
+        .saldo({ fecha_desde: f.fecha_desde || null, fecha_hasta: f.fecha_hasta || null })
+        .subscribe({
+          next: (res) => {
+            if (res.success && res.data) {
+              this.saldoPeriodo.set(res.data);
+            }
+          },
+          error: () => undefined,
+        });
+    } else {
+      this.saldoPeriodo.set(null);
+    }
+  }
+
+  cargarResumenMetodo(): void {
+    this.cajaService.resumenPorMetodo(this.periodoFlujo()).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.resumenMetodo.set(res.data);
+        }
+      },
+      error: () => undefined,
+    });
+  }
+
+  cargarCierre(): void {
+    this.cajaService.cierreDiario(this.fechaCierre).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.cierre.set(res.data);
+        }
+      },
+      error: () => undefined,
+    });
+  }
+
+  exportarExcel(): void {
+    this.cajaService.exportarExcel().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `caja_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.toast.error('No se pudo exportar a Excel.'),
     });
   }
 

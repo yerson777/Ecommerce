@@ -164,11 +164,11 @@ export class RegistroPagoModalComponent implements OnInit {
       return;
     }
 
-    if (monto > this.saldoPendiente() && !this.permitirExcedente) {
-      this.errorBanner.set(`El monto supera el saldo pendiente (Bs ${this.saldoPendiente().toFixed(2)}). Marca la opción de excedente para confirmar.`);
-      this.errores.set(null);
-      return;
-    }
+        if (monto > this.saldoPendiente()) {
+          this.errorBanner.set(`El monto supera el saldo pendiente (Bs ${this.saldoPendiente().toFixed(2)}). No se permiten pagos mayores al saldo.`);
+          this.errores.set(null);
+          return;
+        }
 
     if (this.estado === 'completado' && !this.fecha) {
       this.fecha = this.fechaLocal();

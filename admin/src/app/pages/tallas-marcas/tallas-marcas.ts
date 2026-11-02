@@ -8,6 +8,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
+import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 type Pestana = 'tallas' | 'marcas' | 'condiciones';
@@ -42,6 +43,7 @@ function formularioVacio(): Formulario {
     EmptyStateComponent,
     ModalComponent,
     NotificationCenterComponent,
+    PaginatorComponent,
     SpinnerComponent,
   ],
   selector: 'app-tallas-marcas',
@@ -59,6 +61,11 @@ export class TallasMarcasComponent {
   readonly marcas = signal<Marca[]>([]);
   readonly condiciones = signal<Condicion[]>([]);
   readonly cargando = signal(true);
+
+  readonly paginaTallas = signal(1);
+  readonly paginaMarcas = signal(1);
+  readonly paginaCondiciones = signal(1);
+  readonly porPagina = signal(10);
 
   readonly modalAbierto = signal(false);
   readonly tipoForm = signal<Pestana>('tallas');
@@ -101,6 +108,39 @@ export class TallasMarcasComponent {
 
   cambiarPestana(pestana: Pestana): void {
     this.pestana.set(pestana);
+  }
+
+  ultimaPagina(total: number): number {
+    return Math.max(1, Math.ceil(total / this.porPagina()));
+  }
+
+  paginaTallasActual(): number {
+    return Math.min(this.paginaTallas(), this.ultimaPagina(this.tallas().length));
+  }
+
+  paginaMarcasActual(): number {
+    return Math.min(this.paginaMarcas(), this.ultimaPagina(this.marcas().length));
+  }
+
+  paginaCondicionesActual(): number {
+    return Math.min(this.paginaCondiciones(), this.ultimaPagina(this.condiciones().length));
+  }
+
+  tallasVisibles(): Talla[] {
+    return this.paginar(this.tallas(), this.paginaTallasActual());
+  }
+
+  marcasVisibles(): Marca[] {
+    return this.paginar(this.marcas(), this.paginaMarcasActual());
+  }
+
+  condicionesVisibles(): Condicion[] {
+    return this.paginar(this.condiciones(), this.paginaCondicionesActual());
+  }
+
+  private paginar<T>(items: T[], pagina: number): T[] {
+    const inicio = (pagina - 1) * this.porPagina();
+    return items.slice(inicio, inicio + this.porPagina());
   }
 
   // --- Formulario ---

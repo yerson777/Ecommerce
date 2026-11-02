@@ -5,6 +5,13 @@ export type Marca = MarcaRef;
 export type Talla = TallaRef;
 export type Condicion = CondicionRef;
 
+export interface CategoriaFiltros {
+  busqueda?: string;
+  activo?: boolean | null;
+  page?: number;
+  per_page?: number;
+}
+
 export interface CategoriaPayload {
   nombre: string;
   slug?: string | null;

@@ -21,13 +21,17 @@ class CategoriaController extends Controller
 
     public function index(Request $request)
     {
-        $categorias = Categoria::query()
+        $query = Categoria::query()
             ->with('parent:id,nombre')
             ->withCount(['productos', 'hijos'])
             ->when($request->filled('activo'), fn ($q) => $q->where('activo', $request->boolean('activo')))
+            ->when($request->filled('busqueda'), fn ($q) => $q->where('nombre', 'like', '%'.$request->string('busqueda').'%'))
             ->orderBy('orden')
-            ->orderBy('nombre')
-            ->get();
+            ->orderBy('nombre');
+
+        $categorias = $request->filled('page') || $request->filled('per_page')
+            ? $query->paginate((int) $request->integer('per_page', 15))
+            : $query->get();
 
         return Api::collection(CategoriaResource::collection($categorias), 'Listado de categorías.');
     }

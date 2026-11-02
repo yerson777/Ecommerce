@@ -909,8 +909,14 @@ class ReporteService
     /**
      * Detalle de pagos con filtros.
      */
-    public function pagos(?string $periodo, ?string $fechaDesde, ?string $fechaHasta, ?int $metodoPagoId): array
-    {
+    public function pagos(
+        ?string $periodo,
+        ?string $fechaDesde,
+        ?string $fechaHasta,
+        ?int $metodoPagoId,
+        ?int $page = null,
+        ?int $perPage = null
+    ): array {
         [$inicio, $fin] = $this->calcularRangoFechas($periodo, $fechaDesde, $fechaHasta);
 
         $query = Pago::query()
@@ -923,6 +929,12 @@ class ReporteService
 
         if ($metodoPagoId) {
             $query->where('metodo_pago_id', $metodoPagoId);
+        }
+
+        $total = (clone $query)->count();
+
+        if ($page !== null && $perPage !== null) {
+            $query->forPage($page, $perPage);
         }
 
         $pagos = $query->get()->map(fn ($pago) => [
@@ -956,13 +968,20 @@ class ReporteService
                 ),
                 2, '.', ''
             ),
-            'cantidad_pagos' => count($pagos),
+            'cantidad_pagos' => $total,
             'pedidos_pagados' => $this->contarPedidosPorEstadoPago($inicio, $fin, 'pagado'),
             'pedidos_parciales' => $this->contarPedidosPorEstadoPago($inicio, $fin, 'parcial'),
             'pedidos_pendientes' => $this->contarPedidosPorEstadoPago($inicio, $fin, 'pendiente'),
         ];
 
-        return ['pagos' => $pagos, 'resumen' => $resumen];
+        $meta = [
+            'current_page' => $page ?? 1,
+            'last_page' => $perPage !== null ? max(1, (int) ceil($total / $perPage)) : 1,
+            'per_page' => $perPage ?? max($total, 1),
+            'total' => $total,
+        ];
+
+        return ['pagos' => $pagos, 'resumen' => $resumen, 'meta' => $meta];
     }
 
     /**

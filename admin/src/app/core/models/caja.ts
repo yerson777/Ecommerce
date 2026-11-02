@@ -8,6 +8,9 @@ export interface Movimiento {
   fuente: FuenteMovimiento;
   pago_id: number | null;
   gasto_id: number | null;
+  compra_id?: number | null;
+  venta_id?: number | null;
+  devolucion_id?: number | null;
   descripcion: string | null;
   fecha: string | null;
   created_at: string | null;

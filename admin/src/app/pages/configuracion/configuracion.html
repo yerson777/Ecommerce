@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Configuración</h1>
-      <p class="page-subtitle">Métodos de pago y envío de la tienda</p>
+      <p class="page-subtitle">Datos de la tienda, moneda, textos y métodos de pago/entrega</p>
     </div>
     <div class="header-actions">
       <app-notification-center />
@@ -19,6 +19,236 @@
     <section class="card">
       <header class="row-between">
         <div>
+          <h2 class="card-title">Datos de la tienda</h2>
+          <p class="report-note">
+            Los campos vacíos mantienen el contenido actual de la tienda.
+          </p>
+        </div>
+      </header>
+
+      @if (cargandoTienda()) {
+        <div class="center config-spinner">
+          <app-spinner [size]="32" />
+        </div>
+      } @else {
+        <form class="config-form" (ngSubmit)="guardarTienda()">
+          <div class="logo-field">
+            <div class="logo-preview">
+              @if (logoPreview()) {
+                <img [src]="logoPreview()!" alt="Logo de la tienda" />
+              } @else {
+                <span class="muted small">Sin logo</span>
+              }
+            </div>
+            <div class="logo-actions">
+              <div class="logo-botones">
+                <label class="btn btn-outline btn-sm" for="tienda-logo">Seleccionar logo</label>
+                <input
+                  #logoInput
+                  id="tienda-logo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  hidden
+                  (change)="onLogoSeleccionado($event)"
+                />
+                @if (logoPreview() || logoArchivo()) {
+                  <button type="button" class="btn btn-outline btn-sm" (click)="quitarLogoActual()">
+                    Quitar
+                  </button>
+                }
+              </div>
+              <p class="muted small">JPG, PNG o WEBP. Máximo 2 MB.</p>
+              @if (logoArchivo()) {
+                <p class="muted small">{{ logoArchivo()!.name }}</p>
+              }
+              @if (logoError()) {
+                <p class="field-error">{{ logoError() }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="tienda-nombre">Nombre de la tienda</label>
+              <input id="tienda-nombre" class="input" name="nombre" type="text" [(ngModel)]="datos.nombre" />
+            </div>
+
+            <div class="field">
+              <label for="tienda-whatsapp">WhatsApp</label>
+              <input
+                id="tienda-whatsapp"
+                class="input"
+                name="whatsapp"
+                type="text"
+                inputmode="numeric"
+                maxlength="15"
+                placeholder="59162640247"
+                [(ngModel)]="datos.whatsapp"
+                (input)="limpiarWhatsapp()"
+              />
+              <span class="muted small">Solo dígitos, con código de país.</span>
+            </div>
+
+            <div class="field">
+              <label for="tienda-correo">Correo electrónico</label>
+              <input id="tienda-correo" class="input" name="correo" type="email" [(ngModel)]="datos.correo" />
+            </div>
+
+            <div class="field">
+              <label for="tienda-direccion">Dirección</label>
+              <input id="tienda-direccion" class="input" name="direccion" type="text" [(ngModel)]="datos.direccion" />
+            </div>
+
+            <div class="field">
+              <label for="tienda-horario">Horario</label>
+              <input id="tienda-horario" class="input" name="horario" type="text" [(ngModel)]="datos.horario" />
+            </div>
+
+            <div class="field">
+              <label for="tienda-instagram">Instagram</label>
+              <input
+                id="tienda-instagram"
+                class="input"
+                name="instagram"
+                type="text"
+                placeholder="@everlyboutique"
+                [(ngModel)]="datos.instagram"
+              />
+            </div>
+
+            <div class="field">
+              <label for="tienda-facebook">Facebook</label>
+              <input
+                id="tienda-facebook"
+                class="input"
+                name="facebook"
+                type="text"
+                placeholder="everlyboutique"
+                [(ngModel)]="datos.facebook"
+              />
+            </div>
+
+            <div class="field">
+              <label for="tienda-tiktok">TikTok</label>
+              <input
+                id="tienda-tiktok"
+                class="input"
+                name="tiktok"
+                type="text"
+                placeholder="@everlyboutique"
+                [(ngModel)]="datos.tiktok"
+              />
+            </div>
+          </div>
+
+          <div class="form-seccion">
+            <div>
+              <h3 class="config-name">Moneda y formato de precios</h3>
+              <p class="muted small">Así se mostrarán los precios en la tienda.</p>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="moneda-simbolo">Símbolo</label>
+                <input id="moneda-simbolo" class="input" name="moneda_simbolo" type="text" maxlength="10" [(ngModel)]="datos.moneda.simbolo" />
+              </div>
+
+              <div class="field">
+                <label for="moneda-decimales">Decimales</label>
+                <input
+                  id="moneda-decimales"
+                  class="input"
+                  name="moneda_decimales"
+                  type="number"
+                  min="0"
+                  max="4"
+                  [(ngModel)]="datos.moneda.decimales"
+                />
+              </div>
+
+              <div class="field">
+                <label for="moneda-miles">Separador de miles</label>
+                <input
+                  id="moneda-miles"
+                  class="input"
+                  name="moneda_separador_miles"
+                  type="text"
+                  maxlength="3"
+                  placeholder="Sin separador"
+                  [(ngModel)]="datos.moneda.separador_miles"
+                />
+              </div>
+
+              <div class="field">
+                <label for="moneda-decimal">Separador decimal</label>
+                <input
+                  id="moneda-decimal"
+                  class="input"
+                  name="moneda_separador_decimal"
+                  type="text"
+                  maxlength="3"
+                  [(ngModel)]="datos.moneda.separador_decimal"
+                />
+              </div>
+            </div>
+
+            <p class="moneda-muestra">Vista previa: <strong>{{ formatearMuestra() }}</strong></p>
+          </div>
+
+          <div class="form-seccion">
+            <div>
+              <h3 class="config-name">Textos de políticas</h3>
+              <p class="muted small">
+                Se muestran en la página de ayuda cuando tienen contenido.
+              </p>
+            </div>
+
+            <div class="field">
+              <label for="texto-cambios">Cambios y devoluciones</label>
+              <textarea
+                id="texto-cambios"
+                class="textarea"
+                name="cambios_devoluciones"
+                rows="4"
+                [(ngModel)]="datos.textos.cambios_devoluciones"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="texto-envios">Envíos y entregas</label>
+              <textarea
+                id="texto-envios"
+                class="textarea"
+                name="envios"
+                rows="4"
+                [(ngModel)]="datos.textos.envios"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="texto-terminos">Términos y condiciones</label>
+              <textarea
+                id="texto-terminos"
+                class="textarea"
+                name="terminos"
+                rows="4"
+                [(ngModel)]="datos.textos.terminos"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="guardandoTienda()">
+              {{ guardandoTienda() ? 'Guardando…' : 'Guardar datos de la tienda' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <section class="card">
+      <header class="row-between">
+        <div>
           <h2 class="card-title">Métodos de pago</h2>
           <p class="report-note">Al desactivar un método, desaparece de la tienda al hacer un pedido.</p>
         </div>
@@ -29,25 +259,155 @@
       } @else {
         <div class="config-list">
           @for (metodo of metodosPago(); track metodo.id) {
-            <div class="config-row">
-              <div>
-                <div class="config-name">{{ metodo.nombre }}</div>
-                <div class="muted small">{{ metodo.activo ? 'Visible en la tienda' : 'Oculto en la tienda' }}</div>
+            <div class="metodo-pago">
+              <div class="config-row">
+                <div>
+                  <div class="config-name">
+                    {{ metodo.nombre }}
+                    @if (metodo.codigo) {
+                      <span class="codigo-pago">{{ metodo.codigo }}</span>
+                    }
+                  </div>
+                  <div class="muted small">{{ metodo.activo ? 'Visible en la tienda' : 'Oculto en la tienda' }}</div>
+                </div>
+                <div class="config-actions">
+                  <app-badge [tone]="metodo.activo ? 'success' : 'danger'">
+                    {{ metodo.activo ? 'Activo' : 'Inactivo' }}
+                  </app-badge>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="metodo.activo"
+                      [disabled]="accionandoId() !== null"
+                      (change)="alternarPago(metodo)"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                </div>
               </div>
-              <div class="config-actions">
-                <app-badge [tone]="metodo.activo ? 'success' : 'danger'">
-                  {{ metodo.activo ? 'Activo' : 'Inactivo' }}
-                </app-badge>
-                <label class="switch">
-                  <input
-                    type="checkbox"
-                    [checked]="metodo.activo"
-                    [disabled]="accionandoId() !== null"
-                    (change)="alternarPago(metodo)"
-                  />
-                  <span class="slider"></span>
-                </label>
-              </div>
+
+              <details class="pago-detalle">
+                <summary>Configurar datos del método</summary>
+
+                <div class="pago-form">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label [attr.for]="'pago-nombre-' + metodo.id">Nombre visible</label>
+                      <input
+                        class="input"
+                        [id]="'pago-nombre-' + metodo.id"
+                        type="text"
+                        maxlength="120"
+                        [(ngModel)]="metodo.nombre"
+                      />
+                    </div>
+
+                    <div class="field">
+                      <label [attr.for]="'pago-orden-' + metodo.id">Orden</label>
+                      <input
+                        class="input"
+                        [id]="'pago-orden-' + metodo.id"
+                        type="number"
+                        min="0"
+                        max="255"
+                        [(ngModel)]="metodo.orden"
+                      />
+                    </div>
+
+                    <div class="field">
+                      <label [attr.for]="'pago-titular-' + metodo.id">Titular</label>
+                      <input
+                        class="input"
+                        [id]="'pago-titular-' + metodo.id"
+                        type="text"
+                        maxlength="150"
+                        [(ngModel)]="metodo.titular"
+                      />
+                    </div>
+
+                    <div class="field">
+                      <label [attr.for]="'pago-banco-' + metodo.id">Banco</label>
+                      <input
+                        class="input"
+                        [id]="'pago-banco-' + metodo.id"
+                        type="text"
+                        maxlength="120"
+                        [(ngModel)]="metodo.banco"
+                      />
+                    </div>
+
+                    <div class="field">
+                      <label [attr.for]="'pago-cuenta-' + metodo.id">Número de cuenta</label>
+                      <input
+                        class="input"
+                        [id]="'pago-cuenta-' + metodo.id"
+                        type="text"
+                        maxlength="80"
+                        [(ngModel)]="metodo.numero_cuenta"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label [attr.for]="'pago-instrucciones-' + metodo.id">Instrucciones para el cliente</label>
+                    <textarea
+                      class="textarea"
+                      [id]="'pago-instrucciones-' + metodo.id"
+                      rows="3"
+                      maxlength="2000"
+                      placeholder="Ej.: Realiza el pago y envía el comprobante por WhatsApp."
+                      [(ngModel)]="metodo.instrucciones"
+                    ></textarea>
+                  </div>
+
+                  <div class="logo-field">
+                    <div class="logo-preview qr-preview">
+                      @if (qrPreview(metodo)) {
+                        <img [src]="qrPreview(metodo)!" alt="QR del método de pago" />
+                      } @else {
+                        <span class="muted small">Sin QR</span>
+                      }
+                    </div>
+                    <div class="logo-actions">
+                      <div class="logo-botones">
+                        <label class="btn btn-outline btn-sm" [attr.for]="'qr-pago-' + metodo.id">
+                          Seleccionar QR
+                        </label>
+                        <input
+                          [id]="'qr-pago-' + metodo.id"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          hidden
+                          (change)="onQrSeleccionado(metodo, $event)"
+                        />
+                        @if (qrPreview(metodo) || qrArchivoNombre(metodo)) {
+                          <button type="button" class="btn btn-outline btn-sm" (click)="quitarQrActual(metodo)">
+                            Quitar
+                          </button>
+                        }
+                      </div>
+                      <p class="muted small">JPG, PNG o WEBP. Máximo 2 MB.</p>
+                      @if (qrArchivoNombre(metodo)) {
+                        <p class="muted small">{{ qrArchivoNombre(metodo) }}</p>
+                      }
+                      @if (qrErrores()[metodo.id]) {
+                        <p class="field-error">{{ qrErrores()[metodo.id] }}</p>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      [disabled]="guardandoPagoId() !== null"
+                      (click)="guardarPago(metodo)"
+                    >
+                      {{ guardandoPagoId() === metodo.id ? 'Guardando…' : 'Guardar método' }}
+                    </button>
+                  </div>
+                </div>
+              </details>
             </div>
           }
         </div>
@@ -94,6 +454,34 @@
                   />
                   <span class="slider"></span>
                 </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <header class="row-between">
+        <div>
+          <h2 class="card-title">Historial de actividad</h2>
+          <p class="report-note">Últimos cambios realizados en la configuración.</p>
+        </div>
+      </header>
+
+      @if (historial().length === 0) {
+        <div class="muted">Todavía no hay cambios registrados.</div>
+      } @else {
+        <div class="config-list">
+          @for (registro of historial(); track registro.id) {
+            <div class="historial-row">
+              <div class="historial-dato">
+                <div class="config-name">{{ registro.campo_etiqueta }}</div>
+                <div class="muted small historial-valor">{{ valorHistorial(registro) }}</div>
+              </div>
+              <div class="historial-meta">
+                <span class="muted small">{{ registro.usuario ?? 'Sistema' }}</span>
+                <span class="muted small">{{ fechaHistorial(registro) }}</span>
               </div>
             </div>
           }

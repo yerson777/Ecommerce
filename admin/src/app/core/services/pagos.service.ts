@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import { Paginated } from '../models/paginated';
-import { MetodoPagoRef, Pago, PagoFiltros, PagoPayload } from '../models/pago';
+import { MetodoPagoRef, Pago, PagoFiltros, PagoPayload, PagoPorCobrar } from '../models/pago';
 import { ApiService } from './api.service';
 import { toQueryString } from '../utils/query';
 
@@ -44,7 +44,7 @@ export class PagosService extends ApiService {
     if (payload.nota) {
       formData.append('nota', payload.nota);
     }
-    formData.append('permitir_excedente', payload.permitir_excedente ? '1' : '0');
+    // permitir_excedente ya no se usa; backend lo rechaza
     if (payload.comprobante) {
       formData.append('comprobante', payload.comprobante);
     }
@@ -56,8 +56,22 @@ export class PagosService extends ApiService {
     return this.post<ApiResponse<Pago>>(`/v1/admin/pagos/${id}/confirmar`, {});
   }
 
-  anular(id: number): Observable<ApiResponse<Pago>> {
-    return this.post<ApiResponse<Pago>>(`/v1/admin/pagos/${id}/anular`, {});
+  anular(id: number, motivo?: string | null): Observable<ApiResponse<Pago>> {
+    return this.post<ApiResponse<Pago>>(`/v1/admin/pagos/${id}/anular`, motivo ? { motivo } : {});
+  }
+
+  porCobrar(): Observable<ApiResponse<PagoPorCobrar[]>> {
+    return this.get<ApiResponse<PagoPorCobrar[]>>('/v1/admin/pagos/por-cobrar');
+  }
+
+  exportarExcel(filtros: PagoFiltros): Observable<Blob> {
+    const query = toQueryString({
+      ...filtros,
+      formato: 'excel',
+    });
+    return this.http.get(`${this.baseUrl}/v1/admin/reportes/pagos${query}`, {
+      responseType: 'blob',
+    });
   }
 
   adjuntarComprobante(id: number, archivo: File): Observable<ApiResponse<Pago>> {

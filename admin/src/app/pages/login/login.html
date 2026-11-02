@@ -1,5 +1,9 @@
 <div class="card">
-  <h1 class="brand">Everly <span>Admin</span></h1>
+  @if (logoUrl()) {
+    <img class="logo" [src]="logoUrl()" alt="Logo de la tienda" />
+  } @else {
+    <h1 class="brand">Everly <span>Admin</span></h1>
+  }
   <p class="tagline">Panel de administración</p>
 
   <form (ngSubmit)="onSubmit()" class="login-form">

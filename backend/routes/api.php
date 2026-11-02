@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Admin\VentaController;
 use App\Http\Controllers\Api\V1\Store\BannerController;
 use App\Http\Controllers\Api\V1\Store\CategoriaController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
+use App\Http\Controllers\Api\V1\Store\ContactoController;
 use App\Http\Controllers\Api\V1\Store\ConfiguracionController as StoreConfiguracionController;
 use App\Http\Controllers\Api\V1\Store\CuponController;
 use App\Http\Controllers\Api\V1\Store\EnvioController as StoreEnvioController;
@@ -86,6 +87,11 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('/metodos-pago/detalle', [StoreMetodoPagoController::class, 'index'])->name('metodos-pago.detalle');
         Route::post('/pedidos', [CheckoutController::class, 'crear'])->name('pedidos.store');
         Route::get('/pedidos/{numero_pedido}', [CheckoutController::class, 'seguimiento'])->name('pedidos.seguimiento');
+
+        // Formulario de contacto público (sin auth, con límite de envíos)
+        Route::post('/contacto', [ContactoController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name('contacto.store');
     });
 
     /* ====================== ADMIN (autenticado) ====================== */

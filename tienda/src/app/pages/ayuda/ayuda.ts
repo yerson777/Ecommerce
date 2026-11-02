@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 
 interface PreguntaFrecuente {
   pregunta: string;
@@ -14,6 +15,8 @@ interface PreguntaFrecuente {
   templateUrl: './ayuda.html',
 })
 export class AyudaComponent {
+  readonly config = inject(ConfiguracionService);
+
   readonly faqs: PreguntaFrecuente[] = [
     {
       pregunta: '¿De dónde vienen las prendas?',
@@ -33,12 +36,12 @@ export class AyudaComponent {
     {
       pregunta: '¿Cuánto demora la entrega?',
       respuesta:
-        'En Santa Cruz coordinamos la entrega en 24 a 48 horas. Al resto de Bolivia despachamos por encomienda y suele llegar entre 3 y 7 días hábiles, según la ciudad.',
+        'En Cochabamba coordinamos la entrega en 24 a 48 horas. Al resto de Bolivia despachamos por encomienda y suele llegar entre 3 y 7 días hábiles, según la ciudad.',
     },
     {
       pregunta: '¿Qué medios de pago aceptan?',
       respuesta:
-        'Aceptamos transferencia bancaria, QR y pago en efectivo coordinado. Al finalizar tu compra te mostramos las opciones disponibles y los datos para abonar.',
+        'Aceptamos transferencia bancaria y QR. Al finalizar tu compra te mostramos las opciones disponibles y los datos para abonar.',
     },
     {
       pregunta: '¿Hacen envíos internacionales?',

@@ -99,6 +99,16 @@
               </tbody>
             </table>
           </div>
+
+          <div class="footer">
+            <app-paginator
+              [page]="d.meta.current_page"
+              [lastPage]="d.meta.last_page"
+              [total]="d.meta.total"
+              [perPage]="d.meta.per_page"
+              (pageChange)="onPagina($event)"
+            />
+          </div>
         } @else {
           <app-empty-state
             icon="💳"
