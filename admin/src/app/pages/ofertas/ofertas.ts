@@ -102,7 +102,7 @@ export class OfertasComponent implements OnInit {
   readonly ofertas = signal<Oferta[]>([]);
   readonly resultados = signal<Paginated<Oferta> | null>(null);
   readonly pagina = signal(1);
-  readonly perPage = signal(15);
+  readonly perPage = signal(10);
   readonly cargando = signal(true);
 
   readonly categorias = signal<CategoriaRef[]>([]);

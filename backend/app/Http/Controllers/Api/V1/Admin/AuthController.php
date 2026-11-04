@@ -28,7 +28,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('admin-token')->plainTextToken;
+        $token = $user->createToken('admin-token', ['admin'])->plainTextToken;
 
         return Api::success([
             'token' => $token,

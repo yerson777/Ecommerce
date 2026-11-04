@@ -66,9 +66,9 @@
           <tbody>
             @for (item of resumenMetodo(); track item.metodo) {
               <tr>
-                <td>{{ item.metodo }}</td>
-                <td class="mono">{{ item.cantidad }}</td>
-                <td class="mono pos-total">{{ moneda(item.total) }}</td>
+                <td data-label="M&eacute;todo de pago">{{ item.metodo }}</td>
+                <td class="mono" data-label="Cantidad">{{ item.cantidad }}</td>
+                <td class="mono pos-total" data-label="Total">{{ moneda(item.total) }}</td>
               </tr>
             }
           </tbody>
@@ -212,13 +212,13 @@
             <tbody>
               @for (movimiento of page.data; track movimiento.id) {
                 <tr>
-                  <td class="mono">{{ formatearFecha(movimiento.fecha) }}</td>
-                  <td>
+                  <td class="mono" data-label="Fecha">{{ formatearFecha(movimiento.fecha) }}</td>
+                  <td data-label="Tipo">
                     <app-badge [tone]="tonoTipo(movimiento.tipo)">
                       {{ etiquetaTipo(movimiento.tipo) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Descripción">
                     <div>{{ movimiento.descripcion ?? '—' }}</div>
                     @if (movimiento.pago) {
                       <div class="muted small">
@@ -229,18 +229,18 @@
                       </div>
                     }
                   </td>
-                  <td>
+                  <td data-label="Origen">
                     <span class="muted">{{ etiquetaFuente(movimiento.fuente) }}</span>
                     @if (movimiento.gasto?.categoria) {
                       <div class="muted small">{{ movimiento.gasto!.categoria }}</div>
                     }
                   </td>
-                  <td class="mono">
+                  <td class="mono" data-label="Monto">
                     <span [class.pos-total]="movimiento.tipo === 'ingreso'" [class.neg-total]="movimiento.tipo === 'egreso'">
                       {{ movimiento.tipo === 'ingreso' ? '+' : '−' }} {{ moneda(movimiento.monto) }}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     @if (puedeEliminar(movimiento)) {
                       <div class="actions">
                         <button type="button" class="btn btn-outline btn-sm" (click)="pedirEliminar(movimiento)">

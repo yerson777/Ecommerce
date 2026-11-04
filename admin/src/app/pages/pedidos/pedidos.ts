@@ -1,4 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { interval } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -85,7 +86,7 @@ export class PedidosComponent implements OnInit {
   readonly metodos = signal<MetodoPagoRef[]>([]);
   readonly registroPagoAbierto = signal(false);
 
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargarMetodos();
@@ -335,22 +336,13 @@ export class PedidosComponent implements OnInit {
       });
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   descuentoPositivo(descuento: string | number | null | undefined): boolean {
     return parseFloat(String(descuento ?? '0')) > 0;
   }
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 
   formatearFechaHora(fecha: string | null | undefined): string {
     if (!fecha) {

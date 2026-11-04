@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Store;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Store\ContactoStoreRequest;
 use App\Support\Api;
 use Illuminate\Support\Facades\Mail;
@@ -18,12 +19,12 @@ class ContactoController extends Controller
         $asunto = trim($validados['asunto'] ?? 'Consulta desde la tienda online');
         $mensaje = trim($validados['mensaje']);
 
-        $para = env('MAIL_TO');
-        $desde = env('MAIL_FROM_ADDRESS');
-        $nombreDesde = env('MAIL_FROM_NAME');
+        $para = config('mail.contacto_to');
+        $desde = config('mail.from.address');
+        $nombreDesde = config('mail.from.name');
 
-        if (!$para || !$desde) {
-            Log::error('contacto: faltan MAIL_TO o MAIL_FROM_ADDRESS en .env');
+        if (! $para || ! $desde) {
+            Log::error('contacto: faltan mail.contacto_to o mail.from.address en configuración');
 
             return Api::error(
                 'No se pudo enviar el mensaje. Configuración de correo incompleta.',

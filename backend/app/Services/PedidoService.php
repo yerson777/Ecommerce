@@ -12,11 +12,9 @@ use App\Models\MetodoPago;
 use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
-use App\Models\PedidoHistorial;
 use App\Models\PedidoItem;
 use App\Models\Producto;
 use App\Models\Reserva;
-use App\Models\Setting;
 use App\Models\Venta;
 use App\Models\VentaItem;
 use App\Models\ZonaEnvio;
@@ -25,7 +23,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Ciclo de vida completo de un pedido de tienda.
@@ -54,6 +51,11 @@ class PedidoService
     public function __construct(
         private readonly InventarioService $inventario,
         private readonly EnvioService $envios,
+        private readonly PedidoPreciosService $precios,
+        private readonly PedidoNumeracionService $numeracion,
+        private readonly ReservaConfigService $reservasConfig,
+        private readonly ClienteBloqueoService $clientesBloqueados,
+        private readonly PedidoHistorialService $historial,
     ) {}
 
     /**
@@ -150,22 +152,37 @@ class PedidoService
 
             $telefonoNorm = Contacto::normalizarTelefono($datos['telefono']);
 
-            // Se identifica al cliente por teléfono normalizado para no duplicar
-            // fichas por diferencias de formato. No se reutiliza por correo para
-            // no fusionar a distintas personas que comparten un mismo email.
-            $cliente = null;
-            if ($telefonoNorm) {
+            // Si la tienda envió un token de cliente, el pedido se asocia a esa
+            // cuenta para que aparezca en "Mis pedidos". Sin sesión se mantiene
+            // exactamente el flujo de invitado (identificación por teléfono).
+            $clienteAutenticadoId = isset($datos['cliente_autenticado_id'])
+                ? (int) $datos['cliente_autenticado_id']
+                : null;
+
+            $cliente = $clienteAutenticadoId
+                ? Cliente::query()->find($clienteAutenticadoId)
+                : null;
+
+            if (! $cliente && $telefonoNorm) {
                 $cliente = Cliente::query()->where('telefono_normalizado', $telefonoNorm)->first();
             }
             if (! $cliente) {
                 $cliente = new Cliente;
             }
 
+            if ($clienteAutenticadoId && $cliente->bloqueado) {
+                throw new InventarioException('No pudimos procesar tu pedido, contáctanos por WhatsApp.');
+            }
+
             // El mutador de Cliente sincroniza telefono_normalizado.
             $cliente->telefono = $datos['telefono'];
             $cliente->fill([
                 'nombre' => trim($datos['nombre']),
-                'email' => $datos['email'] ?? $cliente->email,
+                // Con sesión se conserva el correo de la cuenta para no romper
+                // el inicio de sesión ni la vinculación de sus pedidos.
+                'email' => $clienteAutenticadoId
+                    ? $cliente->email
+                    : ($datos['email'] ?? $cliente->email),
                 'ciudad' => trim($datos['ciudad']),
                 'direccion' => trim($datos['direccion']),
                 'notas' => $datos['notas'] ?? $cliente->notas,
@@ -872,23 +889,7 @@ class PedidoService
      */
     private function resolverPrecios(array $unidades): array
     {
-        $conOferta = app(OfertaService::class)->preciosPara($unidades);
-
-        $mapa = [];
-
-        foreach ($unidades as $producto) {
-            $oferta = $conOferta[$producto->id] ?? null;
-            $original = (float) $producto->precio;
-
-            $mapa[$producto->id] = [
-                'precio_original' => $original,
-                'precio_final' => $oferta['precio_final'] ?? $original,
-                'descuento' => $oferta['descuento'] ?? 0.0,
-                'oferta' => $oferta['oferta'] ?? null,
-            ];
-        }
-
-        return $mapa;
+        return $this->precios->resolverPrecios($unidades);
     }
 
     /**
@@ -905,75 +906,7 @@ class PedidoService
      */
     private function resolverDescuentos(array $unidades, array $precios, array $datos, array $contextoCupon): array
     {
-        $subtotalOriginal = round(array_sum(array_map(fn (Producto $u) => (float) $u->precio, $unidades)), 2);
-        $subtotalOfertado = round(array_sum(array_map(fn (array $p) => $p['precio_final'], $precios)), 2);
-        $ahorroOferta = round($subtotalOriginal - $subtotalOfertado, 2);
-
-        $cupon = null;
-        $uso = null;
-        $descuento = 0.0;
-        $avisos = [];
-
-        $hayCupon = ! empty($datos['cupon_codigo']);
-
-        if ($hayCupon) {
-            $codigo = trim($datos['cupon_codigo']);
-
-            $algunaSinCupon = collect($precios)
-                ->contains(fn (array $p) => $p['oferta'] !== null && ! $p['oferta']->permitir_cupon);
-
-            if ($algunaSinCupon) {
-                // Comparación justa sobre los precios originales: si el cupón
-                // gana, la oferta no se aplica; si no, el cupón no se gasta.
-                $validado = app(CuponService::class)->validar($codigo, $unidades, array_merge($contextoCupon, [
-                    'subtotal' => $subtotalOriginal,
-                ]));
-
-                if ($validado['descuento'] > $ahorroOferta + 0.005) {
-                    $aplicado = app(CuponService::class)->aplicar($codigo, $unidades, array_merge($contextoCupon, [
-                        'subtotal' => $subtotalOriginal,
-                    ]));
-
-                    $cupon = $aplicado['cupon'];
-                    $uso = $aplicado['uso'];
-                    $descuento = $aplicado['descuento'];
-
-                    foreach ($precios as $id => $precio) {
-                        $precios[$id]['oferta'] = null;
-                        $precios[$id]['precio_final'] = $precio['precio_original'];
-                        $precios[$id]['descuento'] = 0.0;
-                    }
-
-                    $avisos[] = 'La oferta no se aplicó porque el cupón '.$cupon->codigo.' dio un descuento mayor.';
-                } else {
-                    $avisos[] = 'El cupón no se aplicó porque la oferta dio un descuento igual o mayor.';
-                }
-            } else {
-                $aplicado = app(CuponService::class)->aplicar($codigo, $unidades, array_merge($contextoCupon, [
-                    'subtotal' => $subtotalOfertado,
-                    'precios_efectivos' => array_map(fn (array $p) => $p['precio_final'], $precios),
-                ]));
-
-                $cupon = $aplicado['cupon'];
-                $uso = $aplicado['uso'];
-                $descuento = $aplicado['descuento'];
-            }
-        } elseif (! empty($datos['descuento']) && (float) $datos['descuento'] > 0) {
-            // Descuento manual del admin (venta presencial): se aplica sobre
-            // el precio ya con oferta, como ajuste explícito del vendedor.
-            $descuento = min((float) $datos['descuento'], $subtotalOfertado);
-        }
-
-        $subtotal = round(array_sum(array_map(fn (array $p) => $p['precio_final'], $precios)), 2);
-
-        return [
-            'precios' => $precios,
-            'subtotal' => $subtotal,
-            'descuento' => round($descuento, 2),
-            'cupon' => $cupon,
-            'uso' => $uso,
-            'avisos' => $avisos,
-        ];
+        return $this->precios->resolverDescuentos($unidades, $precios, $datos, $contextoCupon);
     }
 
     /**
@@ -988,40 +921,7 @@ class PedidoService
      */
     private function avisosDePreciosEsperados(array $unidades, array $precios, array $datos): array
     {
-        $esperados = [];
-
-        foreach ($datos['precios_esperados'] ?? [] as $fila) {
-            if (is_array($fila) && isset($fila['producto_id'])) {
-                $esperados[(int) $fila['producto_id']] = (float) ($fila['precio'] ?? 0);
-            }
-        }
-
-        if (empty($esperados)) {
-            return [];
-        }
-
-        $avisos = [];
-
-        foreach ($unidades as $producto) {
-            $esperado = $esperados[$producto->id] ?? null;
-
-            if ($esperado === null) {
-                continue;
-            }
-
-            $cobrado = (float) $precios[$producto->id]['precio_final'];
-
-            if (abs($esperado - $cobrado) > 0.005) {
-                $avisos[] = sprintf(
-                    'El precio de %s cambió: se cobró Bs %s (antes Bs %s).',
-                    $producto->nombre,
-                    number_format($cobrado, 2, '.', ''),
-                    number_format($esperado, 2, '.', ''),
-                );
-            }
-        }
-
-        return $avisos;
+        return $this->precios->avisosDePreciosEsperados($unidades, $precios, $datos);
     }
 
     /**
@@ -1032,15 +932,7 @@ class PedidoService
      */
     private function crearItemPedido(Pedido $pedido, Producto $producto, array $precio): void
     {
-        PedidoItem::create([
-            'pedido_id' => $pedido->id,
-            'producto_id' => $producto->id,
-            'oferta_id' => $precio['oferta']?->id,
-            'precio_unitario' => $precio['precio_final'],
-            'precio_original' => $precio['precio_original'],
-            'descuento' => $precio['descuento'],
-            'costo_unitario' => (float) $producto->costo,
-        ]);
+        $this->precios->crearItem($pedido, $producto, $precio);
     }
 
     /**
@@ -1049,31 +941,12 @@ class PedidoService
      */
     private function clienteBloqueado(string $telefono, ?string $email): bool
     {
-        $tel = Contacto::normalizarTelefono($telefono);
-        $mail = Contacto::normalizarEmail($email);
-
-        if (! $tel && ! $mail) {
-            return false;
-        }
-
-        return Cliente::query()
-            ->where('bloqueado', true)
-            ->where(function ($q) use ($tel, $mail) {
-                if ($tel) {
-                    $q->orWhere('telefono_normalizado', $tel);
-                }
-                if ($mail) {
-                    $q->orWhereRaw('LOWER(email) = ?', [$mail]);
-                }
-            })
-            ->exists();
+        return $this->clientesBloqueados->estaBloqueado($telefono, $email);
     }
 
     private function horasReserva(): int
     {
-        $horas = Setting::query()->where('nombre', 'duracion_reserva_horas')->value('valor');
-
-        return max(1, (int) $horas ?: 24);
+        return $this->reservasConfig->duracionHoras();
     }
 
     /**
@@ -1081,22 +954,16 @@ class PedidoService
      */
     public function registrarHistorial(Pedido $pedido, ?string $estadoAnterior, string $estadoNuevo, ?string $motivo = null): void
     {
-        PedidoHistorial::create([
-            'pedido_id' => $pedido->id,
-            'estado_anterior' => $estadoAnterior,
-            'estado_nuevo' => $estadoNuevo,
-            'motivo' => $motivo,
-            'user_id' => auth()->id(),
-        ]);
+        $this->historial->registrar($pedido, $estadoAnterior, $estadoNuevo, $motivo);
     }
 
     private function proximoNumeroPedido(): string
     {
-        return 'PED-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
+        return $this->numeracion->numeroPedido();
     }
 
     private function proximoNumeroVenta(): string
     {
-        return 'V-'.now()->format('Ymd').'-'.strtoupper(Str::random(5));
+        return $this->numeracion->numeroVenta();
     }
 }

@@ -47,16 +47,16 @@
             <tbody>
               @for (talla of tallasVisibles(); track talla.id) {
                 <tr>
-                  <td><strong>{{ talla.nombre }}</strong></td>
-                  <td>{{ talla.productos_count ?? 0 }}</td>
-                  <td>{{ talla.orden }}</td>
-                  <td>
+                  <td data-label="Nombre"><strong>{{ talla.nombre }}</strong></td>
+                  <td data-label="Prendas">{{ talla.productos_count ?? 0 }}</td>
+                  <td data-label="Orden">{{ talla.orden }}</td>
+                  <td data-label="Estado">
                     <label class="switch" [title]="talla.activo ? 'Ocultar' : 'Activar'">
                       <input type="checkbox" [checked]="talla.activo" (change)="cambiarActivo('tallas', talla)" />
                       <span class="slider"></span>
                     </label>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('tallas', talla)">Editar</button>
                       <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('tallas', talla)">Eliminar</button>
@@ -109,17 +109,17 @@
                       <div class="thumb thumb--empty">—</div>
                     }
                   </td>
-                  <td><strong>{{ marca.nombre }}</strong></td>
-                  <td class="mono">{{ marca.slug }}</td>
-                  <td>{{ marca.productos_count ?? 0 }}</td>
-                  <td>{{ marca.orden }}</td>
-                  <td>
+                  <td data-label="Nombre"><strong>{{ marca.nombre }}</strong></td>
+                  <td class="mono" data-label="Slug">{{ marca.slug }}</td>
+                  <td data-label="Prendas">{{ marca.productos_count ?? 0 }}</td>
+                  <td data-label="Orden">{{ marca.orden }}</td>
+                  <td data-label="Estado">
                     <label class="switch" [title]="marca.activo ? 'Ocultar' : 'Activar'">
                       <input type="checkbox" [checked]="marca.activo" (change)="cambiarActivo('marcas', marca)" />
                       <span class="slider"></span>
                     </label>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('marcas', marca)">Editar</button>
                       <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('marcas', marca)">Eliminar</button>
@@ -163,16 +163,16 @@
             <tbody>
               @for (condicion of condicionesVisibles(); track condicion.id) {
                 <tr>
-                  <td><strong>{{ condicion.nombre }}</strong></td>
-                  <td>{{ condicion.productos_count ?? 0 }}</td>
-                  <td>{{ condicion.orden }}</td>
-                  <td>
+                  <td data-label="Nombre"><strong>{{ condicion.nombre }}</strong></td>
+                  <td data-label="Prendas">{{ condicion.productos_count ?? 0 }}</td>
+                  <td data-label="Orden">{{ condicion.orden }}</td>
+                  <td data-label="Estado">
                     <label class="switch" [title]="condicion.activo ? 'Ocultar' : 'Activar'">
                       <input type="checkbox" [checked]="condicion.activo" (change)="cambiarActivo('condiciones', condicion)" />
                       <span class="slider"></span>
                     </label>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar('condiciones', condicion)">Editar</button>
                       <button type="button" class="btn btn-ghost btn-sm danger" (click)="pedirEliminar('condiciones', condicion)">Eliminar</button>

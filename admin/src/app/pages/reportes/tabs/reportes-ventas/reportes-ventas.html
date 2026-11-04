@@ -63,30 +63,30 @@
             </thead>
             <tbody>
               <tr>
-                <td>Monto vendido</td>
-                <td><strong>{{ moneda(comparacion()?.actual?.monto) }}</strong></td>
-                <td>{{ moneda(comparacion()?.anterior?.monto) }}</td>
-                <td>
+                <td data-label="Métrica">Monto vendido</td>
+                <td data-label="Período actual"><strong>{{ moneda(comparacion()?.actual?.monto) }}</strong></td>
+                <td data-label="Período anterior">{{ moneda(comparacion()?.anterior?.monto) }}</td>
+                <td data-label="Variación">
                   <app-badge [tone]="variacionTone(comparacion()?.variacion_monto)">
                     {{ variacion(comparacion()?.variacion_monto) }}
                   </app-badge>
                 </td>
               </tr>
               <tr>
-                <td>Prendas vendidas</td>
-                <td><strong>{{ comparacion()?.actual?.prendas }}</strong></td>
-                <td>{{ comparacion()?.anterior?.prendas }}</td>
-                <td>
+                <td data-label="Métrica">Prendas vendidas</td>
+                <td data-label="Período actual"><strong>{{ comparacion()?.actual?.prendas }}</strong></td>
+                <td data-label="Período anterior">{{ comparacion()?.anterior?.prendas }}</td>
+                <td data-label="Variación">
                   <app-badge [tone]="variacionTone(comparacion()?.variacion_prendas)">
                     {{ variacion(comparacion()?.variacion_prendas) }}
                   </app-badge>
                 </td>
               </tr>
               <tr>
-                <td>Ventas registradas</td>
-                <td><strong>{{ comparacion()?.actual?.tickets }}</strong></td>
-                <td>{{ comparacion()?.anterior?.tickets }}</td>
-                <td><span class="report-note">—</span></td>
+                <td data-label="Métrica">Ventas registradas</td>
+                <td data-label="Período actual"><strong>{{ comparacion()?.actual?.tickets }}</strong></td>
+                <td data-label="Período anterior">{{ comparacion()?.anterior?.tickets }}</td>
+                <td data-label="Variación"><span class="report-note">—</span></td>
               </tr>
             </tbody>
           </table>
@@ -179,12 +179,12 @@
             <tbody>
               @for (fila of gananciaOrigen()!.por_origen; track fila.origen) {
                 <tr>
-                  <td>{{ fila.etiqueta }}</td>
-                  <td>{{ fila.prendas_vendidas }}</td>
-                  <td>{{ moneda(fila.recuperado) }}</td>
-                  <td>{{ moneda(fila.costo) }}</td>
-                  <td><strong>{{ moneda(fila.ganancia) }}</strong></td>
-                  <td>{{ fila.margen_pct }}%</td>
+                  <td data-label="Origen">{{ fila.etiqueta }}</td>
+                  <td data-label="Prendas vendidas">{{ fila.prendas_vendidas }}</td>
+                  <td data-label="Recuperado">{{ moneda(fila.recuperado) }}</td>
+                  <td data-label="Costo">{{ moneda(fila.costo) }}</td>
+                  <td data-label="Ganancia"><strong>{{ moneda(fila.ganancia) }}</strong></td>
+                  <td data-label="Margen">{{ fila.margen_pct }}%</td>
                 </tr>
               }
             </tbody>
@@ -245,17 +245,17 @@
             <tbody>
               @for (item of masVendidos(); track item.producto_id) {
                 <tr>
-                  <td>
+                  <td data-label="Prenda">
                     <div class="product-cell">
                       <span class="mono">{{ item.codigo }}</span>
                       <span>{{ item.nombre }}</span>
                     </div>
                   </td>
-                  <td>{{ item.categoria }}</td>
-                  <td>{{ item.talla }}</td>
-                  <td>{{ moneda(item.precio) }}</td>
-                  <td>{{ item.ultima_venta ?? '—' }}</td>
-                  <td><strong>{{ moneda(item.monto_total) }}</strong></td>
+                  <td data-label="Categoría">{{ item.categoria }}</td>
+                  <td data-label="Talla">{{ item.talla }}</td>
+                  <td data-label="Precio">{{ moneda(item.precio) }}</td>
+                  <td data-label="Vendida">{{ item.ultima_venta ?? '—' }}</td>
+                  <td data-label="Monto"><strong>{{ moneda(item.monto_total) }}</strong></td>
                 </tr>
               }
             </tbody>
@@ -313,9 +313,9 @@
             @if (porCategoria().length > 0) {
               @for (c of porCategoria(); track c.categoria) {
                 <tr>
-                  <td>{{ c.categoria }}</td>
-                  <td>{{ c.cantidad_productos }}</td>
-                  <td>{{ moneda(c.monto_total) }}</td>
+                  <td data-label="Categoría">{{ c.categoria }}</td>
+                  <td data-label="Cantidad">{{ c.cantidad_productos }}</td>
+                  <td data-label="Monto">{{ moneda(c.monto_total) }}</td>
                 </tr>
               }
             } @else {
@@ -340,9 +340,9 @@
             @if (porTalla().length > 0) {
               @for (t of porTalla(); track t.talla) {
                 <tr>
-                  <td>{{ t.talla }}</td>
-                  <td>{{ t.cantidad_productos }}</td>
-                  <td>{{ moneda(t.monto_total) }}</td>
+                  <td data-label="Talla">{{ t.talla }}</td>
+                  <td data-label="Cantidad">{{ t.cantidad_productos }}</td>
+                  <td data-label="Monto">{{ moneda(t.monto_total) }}</td>
                 </tr>
               }
             } @else {
@@ -367,9 +367,9 @@
             @if (porMarca().length > 0) {
               @for (m of porMarca(); track m.marca) {
                 <tr>
-                  <td>{{ m.marca }}</td>
-                  <td>{{ m.cantidad_productos }}</td>
-                  <td>{{ moneda(m.monto_total) }}</td>
+                  <td data-label="Marca">{{ m.marca }}</td>
+                  <td data-label="Cantidad">{{ m.cantidad_productos }}</td>
+                  <td data-label="Monto">{{ moneda(m.monto_total) }}</td>
                 </tr>
               }
             } @else {

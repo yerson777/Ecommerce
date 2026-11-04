@@ -138,7 +138,7 @@ class ConfiguracionController extends Controller
             'costo' => number_format((float) $metodo->costo, 2, '.', ''),
             'activo' => $metodo->activo,
             'orden' => $metodo->orden,
-        ], 'MǸtodo de entrega actualizado.');
+        ], 'Método de entrega actualizado.');
     }
 
     public function tienda()

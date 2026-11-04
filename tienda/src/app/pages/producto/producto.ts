@@ -1,8 +1,9 @@
-import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
+import { CartToastService } from '../../core/services/cart-toast.service';
 import { ProductoPublico } from '../../core/models/producto';
 import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { imagenPrincipal } from '../../core/utils/producto';
@@ -18,6 +19,8 @@ export class ProductoComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly producto = signal<ProductoPublico | null>(null);
   readonly fotoActiva = signal<string | null>(null);
+
+  private readonly cartToast = inject(CartToastService);
 
   readonly zoomActivo = signal(false);
   readonly zoomImagenEstilo = signal<Record<string, string>>({});
@@ -180,5 +183,7 @@ export class ProductoComponent implements OnInit {
       descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen: this.fotoActiva(),
     });
+
+    this.cartToast.mostrar();
   }
 }

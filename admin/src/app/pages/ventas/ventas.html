@@ -124,19 +124,19 @@
             <tbody>
               @for (venta of page.data; track venta.id) {
                 <tr>
-                  <td class="mono">{{ venta.numero_venta }}</td>
-                  <td>{{ venta.fecha_venta }}</td>
-                  <td>{{ venta.cliente?.nombre ?? '—' }}</td>
-                  <td>{{ venta.items?.length ?? 0 }}</td>
-                  <td class="muted">{{ venta.metodo_pago ?? '—' }}</td>
-                  <td>{{ moneda(venta.total) }}</td>
-                  <td class="muted">{{ moneda(venta.total_pagado) }}</td>
-                  <td>
+                  <td class="mono" data-label="Número">{{ venta.numero_venta }}</td>
+                  <td data-label="Fecha">{{ venta.fecha_venta }}</td>
+                  <td data-label="Cliente">{{ venta.cliente?.nombre ?? '—' }}</td>
+                  <td data-label="Prendas">{{ venta.items?.length ?? 0 }}</td>
+                  <td class="muted" data-label="Método">{{ venta.metodo_pago ?? '—' }}</td>
+                  <td data-label="Total">{{ moneda(venta.total) }}</td>
+                  <td class="muted" data-label="Pagado">{{ moneda(venta.total_pagado) }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoEstado(venta.estado)">
                       {{ etiquetaEstado(venta.estado) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(venta)">
                         Ver
@@ -228,17 +228,17 @@
               <tbody>
                 @for (item of detalle.items; track item.id) {
                   <tr>
-                    <td class="mono">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
-                    <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
-                    <td>{{ moneda(item.precio_unitario) }}</td>
-                    <td>
+                    <td class="mono" data-label="Código">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
+                    <td data-label="Nombre">{{ item.producto_nombre ?? 'Prenda' }}</td>
+                    <td data-label="Precio">{{ moneda(item.precio_unitario) }}</td>
+                    <td data-label="Costo">
                       @if (item.tiene_costo) {
                         {{ moneda(item.costo_unitario ?? '0') }}
                       } @else {
                         <span class="muted" title="Prenda sin costo cargado">—</span>
                       }
                     </td>
-                    <td>
+                    <td data-label="Ganancia">
                       @if (item.tiene_costo) {
                         {{ moneda(item.ganancia ?? '0') }}
                       } @else {
@@ -297,11 +297,11 @@
                 <tbody>
                   @for (pago of detalle.pagos; track pago.id) {
                     <tr>
-                      <td class="mono">{{ pago.numero_pago }}</td>
-                      <td>{{ formatearFechaHora(pago.pagado_en) }}</td>
-                      <td>{{ pago.metodo_pago ?? '—' }}</td>
-                      <td>{{ moneda(pago.monto) }}</td>
-                      <td class="muted">
+                      <td class="mono" data-label="Número">{{ pago.numero_pago }}</td>
+                      <td data-label="Fecha">{{ formatearFechaHora(pago.pagado_en) }}</td>
+                      <td data-label="Método">{{ pago.metodo_pago ?? '—' }}</td>
+                      <td data-label="Monto">{{ moneda(pago.monto) }}</td>
+                      <td class="muted" data-label="Referencia">
                         @if (pago.referencia) {
                           {{ pago.referencia }}
                         } @else {
@@ -311,7 +311,7 @@
                           <a [href]="pago.comprobante!.url" target="_blank" rel="noopener"> · Ver archivo</a>
                         }
                       </td>
-                      <td>
+                      <td data-label="Estado">
                         <app-badge [tone]="pago.estado === 'completado' ? 'success' : pago.estado === 'anulado' ? 'danger' : pago.estado === 'reembolsado' ? 'neutral' : 'warning'">
                           {{ pago.estado }}
                         </app-badge>
@@ -396,17 +396,17 @@
       <tbody>
         @for (item of d.items ?? []; track item.id) {
           <tr>
-            <td class="mono">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
-            <td>{{ item.producto_nombre ?? 'Prenda' }}</td>
-            <td>{{ moneda(item.precio_unitario) }}</td>
-            <td>
+            <td class="mono" data-label="Código">{{ item.producto_codigo ?? nombreProducto(item.producto_id) }}</td>
+            <td data-label="Nombre">{{ item.producto_nombre ?? 'Prenda' }}</td>
+            <td data-label="Precio">{{ moneda(item.precio_unitario) }}</td>
+            <td data-label="Costo">
               @if (item.tiene_costo) {
                 {{ moneda(item.costo_unitario ?? '0') }}
               } @else {
                 <span class="muted" title="Prenda sin costo cargado">—</span>
               }
             </td>
-            <td>
+            <td data-label="Ganancia">
               @if (item.tiene_costo) {
                 {{ moneda(item.ganancia ?? '0') }}
               } @else {

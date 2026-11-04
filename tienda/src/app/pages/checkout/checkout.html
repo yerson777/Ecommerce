@@ -14,6 +14,20 @@
       </button>
     </div>
 
+    @if (!auth.logueado()) {
+      <div class="invitacion-cuenta card">
+        <p>
+          ¿Querés guardar tus datos y ver tus pedidos? <a routerLink="/registrarme">Creá tu cuenta</a>
+          o <a routerLink="/ingresar">ingresá</a>. También podés comprar como invitado.
+        </p>
+      </div>
+    } @else {
+      <p class="sesion-checkout">
+        Sesión iniciada como <strong>{{ auth.cliente()?.email }}</strong>. Podés editar los datos de
+        entrega.
+      </p>
+    }
+
     <div class="layout-col">
       <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
         <div class="card panel">

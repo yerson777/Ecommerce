@@ -79,27 +79,27 @@
           <tbody>
             @for (proveedor of proveedores(); track proveedor.id) {
               <tr>
-                <td>
+                <td data-label="Nombre">
                   <button type="button" class="link" (click)="verDetalle(proveedor)">
                     <strong>{{ proveedor.nombre }}</strong>
                   </button>
                 </td>
-                <td><app-badge tone="info">{{ tipoTexto(proveedor) }}</app-badge></td>
-                <td class="muted">
+                <td data-label="Tipo"><app-badge tone="info">{{ tipoTexto(proveedor) }}</app-badge></td>
+                <td class="muted" data-label="Contacto">
                   {{ proveedor.contacto || '—' }}
                   @if (proveedor.telefono) {
                     <span class="nowrap"> · {{ proveedor.telefono }}</span>
                   }
                 </td>
-                <td class="muted">{{ proveedor.ciudad || '—' }}</td>
-                <td class="muted">{{ proveedor.compras_count ?? 0 }}</td>
-                <td class="muted">$ {{ proveedor.total_comprado ?? '0.00' }}</td>
-                <td>
+                <td class="muted" data-label="Ciudad">{{ proveedor.ciudad || '—' }}</td>
+                <td class="muted" data-label="Compras">{{ proveedor.compras_count ?? 0 }}</td>
+                <td class="muted" data-label="Total comprado">$ {{ proveedor.total_comprado ?? '0.00' }}</td>
+                <td data-label="Estado">
                   <app-badge [tone]="proveedor.activo ? 'success' : 'neutral'">
                     {{ proveedor.activo ? 'Activo' : 'Inactivo' }}
                   </app-badge>
                 </td>
-                <td class="align-right">
+                <td class="align-right" data-label="Acciones">
                   <div class="row-actions">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="verDetalle(proveedor)">
                       Ver
@@ -284,11 +284,11 @@
               <tbody>
                 @for (compra of p.historial; track compra.id) {
                   <tr>
-                    <td class="muted nowrap">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
-                    <td class="muted">{{ compra.prendas_count ?? 0 }}</td>
-                    <td class="muted">$ {{ compra.costo_total }}</td>
-                    <td class="muted">$ {{ compra.gastos_extra }}</td>
-                    <td>
+                    <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                    <td class="muted" data-label="Prendas">{{ compra.prendas_count ?? 0 }}</td>
+                    <td class="muted" data-label="Costo total">$ {{ compra.costo_total }}</td>
+                    <td class="muted" data-label="Gastos">$ {{ compra.gastos_extra }}</td>
+                    <td data-label="Estado">
                       <app-badge [tone]="compra.estado === 'activa' ? 'success' : 'neutral'">
                         {{ compra.estado === 'activa' ? 'Activa' : 'Anulada' }}
                       </app-badge>

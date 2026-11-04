@@ -16,12 +16,15 @@ export class Footer {
     () => this.config.datos().correo?.trim() || 'contacto@everlyboutique.yervixsoft.com',
   );
   readonly direccion = computed(
-    () => this.config.datos().direccion?.trim() || 'Av. Las Flores 123, Cochabamba',
+    () => this.config.datos().direccion?.trim() || 'Calle Panamá 158 entre Argentina',
   );
   readonly horario = computed(
-    () => this.config.datos().horario?.trim() || 'Lun a Sáb · 9:00 a 19:30',
+    () =>
+      this.config.datos().horario?.trim() ||
+      'Lunes a viernes 9:00 – 19:30 · Sábados 9:30 – 14:00',
   );
-  readonly telefono = computed(() => `+${this.config.whatsapp()}`);
+  readonly telefono = computed(() => '+59178849663');
+  readonly whatsappNumero = computed(() => `+${this.config.whatsapp()}`);
   readonly instagram = computed(
     () => this.config.datos().instagram?.trim() || 'https://www.instagram.com/vest.fashionoficial',
   );

@@ -115,4 +115,9 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    | Destinatario del formulario de contacto público de la tienda.
+    */
+    'contacto_to' => env('MAIL_TO', env('MAIL_FROM_ADDRESS')),
+
 ];

@@ -1,4 +1,5 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
+import { formatearMoneda } from '../../../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
   ETIQUETA_ESTADO_PAGO_PEDIDO,
@@ -32,7 +33,7 @@ export class ReportesPedidosComponent {
   readonly items = signal<PedidoReporte[]>([]);
   readonly total = signal(0);
   readonly pagina = signal(1);
-  readonly porPagina = signal(15);
+  readonly porPagina = signal(10);
   readonly cargando = signal(true);
   error: string | null = null;
 
@@ -156,8 +157,5 @@ export class ReportesPedidosComponent {
     return TONO_ESTADO_PAGO_PEDIDO[estado as keyof typeof TONO_ESTADO_PAGO_PEDIDO] ?? 'neutral';
   }
 
-  moneda(valor: string): string {
-    const numero = parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 }

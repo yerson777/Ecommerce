@@ -43,6 +43,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->input('email', '') . '|' . $request->ip());
         });
 
+        RateLimiter::for('registro', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('recuperar', function (Request $request) {
+            return Limit::perMinute(3)->by($request->input('email', '') . '|' . $request->ip());
+        });
+
         Event::listen(PedidoCreado::class, GenerarNotificacionPedidoCreado::class);
 
         Event::listen(PedidoEstadoCambiado::class, GenerarNotificacionPedidoEstado::class);

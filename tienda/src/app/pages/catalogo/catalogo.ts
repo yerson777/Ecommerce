@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
+import { CartToastService } from '../../core/services/cart-toast.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../../core/models/producto';
 import { OfertaPublica } from '../../core/models/oferta';
@@ -24,6 +25,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly tallas = signal<TallaRef[]>([]);
 
   readonly carrusel = inject(BannerCarouselService);
+  private readonly cartToast = inject(CartToastService);
 
   readonly formatearPrecio = formatearPrecio;
   readonly precioEfectivo = precioEfectivo;
@@ -165,7 +167,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   agregarAlCarrito(producto: ProductoPublico): void {
     const imagen = this.imagenPrincipal(producto);
-    this.carrito.agregar({
+    const agregado = this.carrito.agregar({
       producto_id: producto.id,
       codigo: producto.codigo,
       nombre: producto.nombre,
@@ -176,5 +178,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen,
     });
+
+    if (agregado) {
+      this.cartToast.mostrar();
+    }
   }
 }

@@ -98,8 +98,8 @@
                 <tbody>
                   @for (c of porCategoria(); track c.nombre) {
                     <tr>
-                      <td>{{ c.nombre }}</td>
-                      <td>{{ c.total }}</td>
+                      <td data-label="Categoría">{{ c.nombre }}</td>
+                      <td data-label="Total">{{ c.total }}</td>
                     </tr>
                   }
                 </tbody>
@@ -122,8 +122,8 @@
                 <tbody>
                   @for (t of porTalla(); track t.nombre) {
                     <tr>
-                      <td>{{ t.nombre }}</td>
-                      <td>{{ t.total }}</td>
+                      <td data-label="Talla">{{ t.nombre }}</td>
+                      <td data-label="Total">{{ t.total }}</td>
                     </tr>
                   }
                 </tbody>

@@ -78,23 +78,23 @@
                     <div class="thumb thumb--empty">—</div>
                   }
                 </td>
-                <td>
+                <td data-label="Nombre">
                   <strong>{{ categoria.nombre }}</strong>
                   @if (categoria.parent?.nombre) {
                     <div class="muted small">en {{ categoria.parent?.nombre }}</div>
                   }
                 </td>
-                <td class="mono">{{ categoria.slug }}</td>
-                <td>{{ categoria.productos_count ?? 0 }}</td>
-                <td>{{ categoria.hijos_count ?? 0 }}</td>
-                <td>{{ categoria.orden }}</td>
-                <td>
+                <td class="mono" data-label="Slug">{{ categoria.slug }}</td>
+                <td data-label="Prendas">{{ categoria.productos_count ?? 0 }}</td>
+                <td data-label="Subcategorías">{{ categoria.hijos_count ?? 0 }}</td>
+                <td data-label="Orden">{{ categoria.orden }}</td>
+                <td data-label="Estado">
                   <label class="switch" [title]="categoria.activo ? 'Ocultar' : 'Activar'">
                     <input type="checkbox" [checked]="categoria.activo" (change)="cambiarActivo(categoria)" />
                     <span class="slider"></span>
                   </label>
                 </td>
-                <td>
+                <td data-label="Acciones">
                   <div class="actions">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(categoria)">Editar</button>
                     @if ((categoria.productos_count ?? 0) > 0) {

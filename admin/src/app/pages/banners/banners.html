@@ -54,7 +54,7 @@
                 (dragend)="dragIndex = null"
               >
                 <td class="drag-cell" title="Arrastrar para reordenar">⠿</td>
-                <td>
+                <td data-label="Imagen">
                   <div class="thumb-wrap">
                     <img class="banner-thumb" [src]="banner.url" [alt]="banner.titulo ?? ''" />
                     @if (banner.url_movil) {
@@ -62,13 +62,13 @@
                     }
                   </div>
                 </td>
-                <td>
+                <td data-label="Texto">
                   <div class="banner-titulo">{{ banner.titulo ?? 'Sin título' }}</div>
                   @if (banner.subtitulo) {
                     <div class="muted">{{ banner.subtitulo }}</div>
                   }
                 </td>
-                <td>
+                <td data-label="Enlace">
                   @if (banner.enlace_tipo === 'ninguno') {
                     <span class="muted">—</span>
                   } @else {
@@ -81,7 +81,7 @@
                     <div class="aviso-destino">⚠ {{ banner.aviso_destino }}</div>
                   }
                 </td>
-                <td class="muted small-cell">
+                <td class="muted small-cell" data-label="Vigencia">
                   <div>
                     @if (banner.fecha_inicio) {
                       {{ banner.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
@@ -97,7 +97,7 @@
                     }
                   </div>
                 </td>
-                <td>
+                <td data-label="Estado">
                   <div class="estado-stack">
                     <app-badge [tone]="banner.activo ? 'success' : 'neutral'">
                       {{ banner.activo ? 'Activo' : 'Oculto' }}
@@ -107,7 +107,7 @@
                     }
                   </div>
                 </td>
-                <td>
+                <td data-label="Acciones">
                   <div class="actions">
                     <button
                       type="button"

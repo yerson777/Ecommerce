@@ -324,3 +324,41 @@
     width: calc(50% - 0.5rem);
   }
 }
+
+@media (min-width: 768px) {
+  .detalle .galeria {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .detalle .galeria .zoom-origen {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .detalle .galeria .miniaturas {
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 10px;
+    flex: 0 0 86px;
+    width: 86px;
+    /* Altura igual a la foto grande: (ancho galería - 86px - 12px) * 5/4 */
+    max-height: calc((100cqw - 98px) * 1.25);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .detalle .galeria .miniatura {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 8px;
+    flex: 0 0 auto;
+  }
+}

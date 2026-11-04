@@ -1,0 +1,48 @@
+<div class="page auth-page">
+  <div class="container estrecho">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Recuperar contraseña</h1>
+      <p class="bajada">Te enviamos un enlace para que puedas crear una nueva.</p>
+    </header>
+
+    <section class="card auth-card">
+      @if (enviado()) {
+        <div class="exito">
+          Si el correo está registrado, te enviamos un enlace para restablecer tu
+          contraseña. Revisá también la carpeta de spam.
+        </div>
+        <div class="auth-links">
+          <a routerLink="/ingresar">Volver a ingresar</a>
+        </div>
+      } @else {
+        @if (error()) {
+          <div class="error">{{ error() }}</div>
+        }
+
+        <form class="auth-form" (ngSubmit)="enviar()">
+          <div class="field">
+            <label for="rec-email">Correo electrónico</label>
+            <input
+              id="rec-email"
+              class="input"
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit" [disabled]="enviando()">
+            {{ enviando() ? 'Enviando…' : 'Enviar enlace' }}
+          </button>
+        </form>
+
+        <div class="auth-links">
+          <a routerLink="/ingresar">Volver a ingresar</a>
+        </div>
+      }
+    </section>
+  </div>
+</div>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 import { CartService } from '../../core/services/cart.service';
+import { ClienteAuthService } from '../../core/services/cliente-auth.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
 
 @Component({
@@ -14,7 +15,9 @@ import { ConfiguracionService } from '../../core/services/configuracion.service'
 export class Header {
   readonly conteo: Signal<number>;
   readonly menuAbierto = signal(false);
+  readonly menuUsuarioAbierto = signal(false);
   readonly config = inject(ConfiguracionService);
+  readonly auth = inject(ClienteAuthService);
 
   private readonly router = inject(Router);
 
@@ -23,7 +26,10 @@ export class Header {
 
     this.router.events
       .pipe(filter((evento) => evento instanceof NavigationEnd))
-      .subscribe(() => this.menuAbierto.set(false));
+      .subscribe(() => {
+        this.menuAbierto.set(false);
+        this.menuUsuarioAbierto.set(false);
+      });
   }
 
   alternarMenu(): void {
@@ -32,6 +38,21 @@ export class Header {
 
   cerrarMenu(): void {
     this.menuAbierto.set(false);
+  }
+
+  alternarUsuario(): void {
+    this.menuUsuarioAbierto.set(!this.menuUsuarioAbierto());
+  }
+
+  cerrarUsuario(): void {
+    this.menuUsuarioAbierto.set(false);
+  }
+
+  cerrarSesion(): void {
+    this.auth.cerrarSesion();
+    this.menuUsuarioAbierto.set(false);
+    this.menuAbierto.set(false);
+    this.router.navigateByUrl('/');
   }
 
   @HostListener('window:resize')

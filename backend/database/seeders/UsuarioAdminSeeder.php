@@ -9,8 +9,8 @@ class UsuarioAdminSeeder extends \Illuminate\Database\Seeder
 {
     public function run(): void
     {
-        $email = env('ADMIN_EMAIL', 'admin@everly.local');
-        $password = env('ADMIN_PASSWORD') ?: Str::password(12, true, true);
+        $email = config('admin.email', 'admin@everly.local');
+        $password = config('admin.password') ?: Str::password(12, true, true);
 
         User::query()->updateOrCreate(
             ['email' => $email],
@@ -22,7 +22,7 @@ class UsuarioAdminSeeder extends \Illuminate\Database\Seeder
             ]
         );
 
-        if (! env('ADMIN_PASSWORD')) {
+        if (! config('admin.password')) {
             $this->command?->warn("Usuario admin creado. Contraseña temporal: {$password}");
         }
     }

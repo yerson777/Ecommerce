@@ -88,28 +88,28 @@
           <tbody>
             @for (cupon of resultados()!.data; track cupon.id) {
               <tr>
-                <td class="mono">{{ cupon.codigo }}</td>
-                <td>
+                <td class="mono" data-label="Código">{{ cupon.codigo }}</td>
+                <td data-label="Tipo">
                   <app-badge [tone]="tonosTipo[cupon.tipo]">{{ etiquetasTipo[cupon.tipo] }}</app-badge>
                 </td>
-                <td>
+                <td data-label="Valor">
                   @if (cupon.tipo === 'porcentaje') {
                     {{ cupon.valor }}%
                   } @else {
                     $ {{ cupon.valor }}
                   }
                 </td>
-                <td class="muted">
+                <td class="muted" data-label="Mínimo">
                   @if (cupon.minimo_compra) {
                     $ {{ cupon.minimo_compra }}
                   } @else {
                     —
                   }
                 </td>
-                <td>
+                <td data-label="Estado">
                   <app-badge [tone]="tonosEstado[cupon.estado]">{{ etiquetasEstado[cupon.estado] }}</app-badge>
                 </td>
-                <td class="muted">
+                <td class="muted" data-label="Usos">
                   {{ cupon.usos }}
                   @if (cupon.limite_usos) {
                     / {{ cupon.limite_usos }}
@@ -117,15 +117,15 @@
                     / ∞
                   }
                 </td>
-                <td class="muted">
+                <td class="muted" data-label="Vence">
                   @if (cupon.vence_en) {
                     {{ cupon.vence_en | date: 'dd MMM yyyy' }}
                   } @else {
                     —
                   }
                 </td>
-                <td class="muted">{{ nombresCategorias(cupon) }}</td>
-                <td class="align-right">
+                <td class="muted" data-label="Categorías">{{ nombresCategorias(cupon) }}</td>
+                <td class="align-right" data-label="Acciones">
                   <div class="row-actions">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="abrirDetalle(cupon)">
                       Usos
@@ -357,11 +357,11 @@
                 <tbody>
                   @for (uso of usosDe(detalle()!); track uso.id) {
                     <tr>
-                      <td class="muted">{{ uso.fecha | date: 'dd MMM yyyy HH:mm' }}</td>
-                      <td class="mono">{{ uso.numero_pedido ?? '—' }}</td>
-                      <td>{{ uso.cliente ?? '—' }}</td>
-                      <td class="muted">{{ uso.telefono ?? uso.email ?? '—' }}</td>
-                      <td>$ {{ uso.monto_descontado }}</td>
+                      <td class="muted" data-label="Fecha">{{ uso.fecha | date: 'dd MMM yyyy HH:mm' }}</td>
+                      <td class="mono" data-label="Pedido">{{ uso.numero_pedido ?? '—' }}</td>
+                      <td data-label="Cliente">{{ uso.cliente ?? '—' }}</td>
+                      <td class="muted" data-label="Contacto">{{ uso.telefono ?? uso.email ?? '—' }}</td>
+                      <td data-label="Descontado">$ {{ uso.monto_descontado }}</td>
                     </tr>
                   }
                 </tbody>

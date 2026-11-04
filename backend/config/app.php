@@ -55,6 +55,12 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | URL pública de la tienda. Se usa en enlaces enviados por correo
+    | (por ejemplo, el restablecimiento de contraseña de clientes).
+    */
+    'tienda_url' => env('TIENDA_URL', 'http://localhost:4200'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

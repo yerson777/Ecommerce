@@ -1,4 +1,5 @@
 import { effect, Component, inject, input, signal, untracked } from '@angular/core';
+import { formatearMoneda } from '../../../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ETIQUETA_ESTADO_PAGO, TONO_ESTADO_PAGO } from '../../../../core/models/pago';
 import {
@@ -44,7 +45,7 @@ export class ReportesPagosComponent {
   readonly metodoSeleccionado = signal<number | null>(null);
   readonly cargando = signal(true);
   readonly pagina = signal(1);
-  readonly perPage = signal(15);
+  readonly perPage = signal(10);
   error: string | null = null;
 
   constructor() {
@@ -127,10 +128,7 @@ export class ReportesPagosComponent {
     }));
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   etiquetaEstado(estado: string): string {
     return ETIQUETA_ESTADO_PAGO[estado as keyof typeof ETIQUETA_ESTADO_PAGO] ?? estado;

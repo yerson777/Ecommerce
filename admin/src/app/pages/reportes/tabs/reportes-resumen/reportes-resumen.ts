@@ -1,4 +1,5 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
+import { formatearMoneda } from '../../../../core/utils/formato';
 import { ReporteFiltros, ReporteResumen } from '../../../../core/models/reporte';
 import { ReportesService } from '../../../../core/services/reportes.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -49,8 +50,5 @@ export class ReportesResumenComponent {
     });
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 }

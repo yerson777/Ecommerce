@@ -60,18 +60,18 @@
         <tbody>
           @for (item of items(); track item.id) {
             <tr>
-              <td class="mono">{{ item.numero_pedido }}</td>
-              <td>{{ item.cliente }}</td>
-              <td>{{ item.fecha_pedido }}</td>
-              <td>{{ moneda(item.total) }}</td>
-              <td>{{ moneda(item.total_pagado) }}</td>
-              <td>{{ moneda(item.saldo_pendiente) }}</td>
-              <td>
+              <td class="mono" data-label="Nº pedido">{{ item.numero_pedido }}</td>
+              <td data-label="Cliente">{{ item.cliente }}</td>
+              <td data-label="Fecha">{{ item.fecha_pedido }}</td>
+              <td data-label="Total">{{ moneda(item.total) }}</td>
+              <td data-label="Pagado">{{ moneda(item.total_pagado) }}</td>
+              <td data-label="Saldo">{{ moneda(item.saldo_pendiente) }}</td>
+              <td data-label="Estado">
                 <app-badge [tone]="tonoEstado(item.estado)">
                   {{ etiquetaEstado(item.estado) }}
                 </app-badge>
               </td>
-              <td>
+              <td data-label="Pago">
                 <app-badge [tone]="tonoEstadoPago(item.estado_pago)">
                   {{ etiquetaEstadoPago(item.estado_pago) }}
                 </app-badge>

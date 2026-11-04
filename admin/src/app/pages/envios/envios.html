@@ -127,16 +127,16 @@
               <tbody>
                 @for (pedido of page.data; track pedido.id) {
                   <tr>
-                    <td>
+                    <td data-label="Pedido">
                       <div class="mono">{{ pedido.numero_pedido }}</div>
                       <span class="muted small">Pedido {{ pedido.estado }}</span>
                     </td>
-                    <td class="muted small">{{ fecha(pedido.fecha_pedido) }}</td>
-                    <td>
+                    <td class="muted small" data-label="Fecha">{{ fecha(pedido.fecha_pedido) }}</td>
+                    <td data-label="Cliente">
                       <div>{{ pedido.cliente?.nombre ?? '—' }}</div>
                       <span class="muted small">{{ pedido.cliente?.telefono ?? 'Sin teléfono' }}</span>
                     </td>
-                    <td>
+                    <td data-label="Zona / destino">
                       <div>{{ zonaPrincipal(pedido) }}</div>
                       @if (pedido.zona_envio?.costo_por_confirmar) {
                         <span class="muted small">Costo por confirmar</span>
@@ -144,8 +144,8 @@
                         <span class="muted small">{{ pedido.cliente?.direccion ?? '—' }}</span>
                       }
                     </td>
-                    <td>{{ etiquetaModalidad(pedido.modalidad_entrega) }}</td>
-                    <td>
+                    <td data-label="Modalidad">{{ etiquetaModalidad(pedido.modalidad_entrega) }}</td>
+                    <td data-label="Envío">
                       @if (pedido.envio; as envio) {
                         <app-badge [tone]="tonoEstado(envio.estado)">
                           {{ etiquetaEstado(envio.estado) }}
@@ -154,7 +154,7 @@
                         <span class="muted">—</span>
                       }
                     </td>
-                    <td>
+                    <td data-label="Guía">
                       @if (pedido.envio?.numero_guia) {
                         <div class="mono small">{{ pedido.envio?.numero_guia }}</div>
                         <span class="muted small">{{ pedido.envio?.paqueteria ?? '—' }}</span>
@@ -162,8 +162,8 @@
                         <span class="muted">—</span>
                       }
                     </td>
-                    <td class="mono">{{ moneda(pedido.costo_envio) }}</td>
-                    <td>
+                    <td class="mono" data-label="Costo">{{ moneda(pedido.costo_envio) }}</td>
+                    <td data-label="Acciones">
                       <div class="actions">
                         <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(pedido)">
                           Ver
@@ -275,22 +275,22 @@
             <tbody>
               @for (zona of zonas(); track zona.id) {
                 <tr>
-                  <td>
+                  <td data-label="Zona">
                     <div>{{ zona.nombre }}</div>
                     @if (zona.costo_por_confirmar) {
                       <span class="muted small">Costo por confirmar</span>
                     }
                   </td>
-                  <td>{{ zona.departamento ?? '—' }}</td>
-                  <td class="mono">{{ moneda(zona.costo) }}</td>
-                  <td class="mono">{{ zona.envio_gratis_desde ? moneda(zona.envio_gratis_desde) : '—' }}</td>
-                  <td>{{ zona.tiempo_estimado ?? '—' }}</td>
-                  <td>
+                  <td data-label="Departamento">{{ zona.departamento ?? '—' }}</td>
+                  <td class="mono" data-label="Costo">{{ moneda(zona.costo) }}</td>
+                  <td class="mono" data-label="Gratis desde">{{ zona.envio_gratis_desde ? moneda(zona.envio_gratis_desde) : '—' }}</td>
+                  <td data-label="Tiempo">{{ zona.tiempo_estimado ?? '—' }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="zona.activo ? 'success' : 'neutral'">
                       {{ zona.activo ? 'Activa' : 'Inactiva' }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="editarZona(zona)">Editar</button>
                       <button type="button" class="btn btn-ghost btn-sm" (click)="toggleZona(zona)">
@@ -330,8 +330,8 @@
             <tbody>
               @for (metodo of modalidades(); track metodo.id) {
                 <tr>
-                  <td>{{ metodo.nombre }}</td>
-                  <td>
+                  <td data-label="Método">{{ metodo.nombre }}</td>
+                  <td data-label="Modalidad">
                     <select
                       class="select"
                       [ngModel]="metodo.modalidad"
@@ -342,7 +342,7 @@
                       <option value="paqueteria">Paquetería</option>
                     </select>
                   </td>
-                  <td>
+                  <td data-label="Costo base">
                     <input
                       class="input input-sm"
                       type="number"
@@ -352,7 +352,7 @@
                       (change)="cambiarCostoModalidad(metodo, $any($event.target).value)"
                     />
                   </td>
-                  <td>
+                  <td data-label="Activo">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="toggleModalidadActiva(metodo)">
                       {{ metodo.activo ? 'Activo' : 'Inactivo' }}
                     </button>
@@ -447,15 +447,15 @@
                 <tbody>
                   @for (item of pedido.items; track item.id) {
                     <tr>
-                      <td>
+                      <td data-label="Producto">
                         {{ item.producto_nombre ?? item.producto_codigo ?? '—' }}
                         @if (item.producto_codigo) {
                           <span class="muted small mono">{{ item.producto_codigo }}</span>
                         }
                       </td>
-                      <td>{{ item.producto_talla ?? '—' }}</td>
-                      <td>{{ item.producto_color ?? '—' }}</td>
-                      <td class="mono">{{ moneda(item.precio_unitario) }}</td>
+                      <td data-label="Talla">{{ item.producto_talla ?? '—' }}</td>
+                      <td data-label="Color">{{ item.producto_color ?? '—' }}</td>
+                      <td class="mono" data-label="Precio">{{ moneda(item.precio_unitario) }}</td>
                     </tr>
                   }
                 </tbody>

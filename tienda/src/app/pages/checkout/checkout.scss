@@ -282,3 +282,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+.invitacion-cuenta {
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.invitacion-cuenta p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.invitacion-cuenta a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.sesion-checkout {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}

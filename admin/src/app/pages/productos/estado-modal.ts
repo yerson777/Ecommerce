@@ -1,4 +1,5 @@
 import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { Producto } from '../../core/models/producto';
 import { ClientesService } from '../../core/services/clientes.service';
@@ -49,10 +50,7 @@ export class EstadoModalComponent implements OnInit {
     return this.tipo() === 'vender';
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   private cargarClientes(): void {
     this.cargandoClientes.set(true);

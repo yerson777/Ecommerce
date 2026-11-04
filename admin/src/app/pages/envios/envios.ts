@@ -61,7 +61,7 @@ export class EnviosComponent implements OnInit {
   readonly resultados = signal<Paginated<Pedido> | null>(null);
   readonly cargando = signal(true);
   readonly pagina = signal(1);
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   readonly detalle = signal<Pedido | null>(null);
   readonly detalleAbierto = signal(false);

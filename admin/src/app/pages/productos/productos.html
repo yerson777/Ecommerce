@@ -156,26 +156,26 @@
                       <div class="thumb thumb--empty" (click)="abrirImagenes(producto)">—</div>
                     }
                   </td>
-                  <td class="mono">{{ producto.codigo }}</td>
-                  <td>
+                  <td class="mono" data-label="Código">{{ producto.codigo }}</td>
+                  <td data-label="Nombre">
                     <strong>{{ producto.nombre }}</strong>
                     @if (producto.color) {
                       <div class="muted small">{{ producto.color }}</div>
                     }
                   </td>
-                  <td>{{ producto.categoria?.nombre ?? '—' }}</td>
-                  <td>{{ producto.talla?.nombre ?? '—' }}</td>
-                  <td>{{ producto.marca?.nombre ?? '—' }}</td>
-                  <td>{{ etiquetaCondicion(producto.condicion) }}</td>
-                  <td>{{ moneda(producto.precio) }}</td>
-                  <td>{{ producto.dias_en_inventario ?? '—' }}</td>
-                  <td>
+                  <td data-label="Categoría">{{ producto.categoria?.nombre ?? '—' }}</td>
+                  <td data-label="Talla">{{ producto.talla?.nombre ?? '—' }}</td>
+                  <td data-label="Marca">{{ producto.marca?.nombre ?? '—' }}</td>
+                  <td data-label="Condición">{{ etiquetaCondicion(producto.condicion) }}</td>
+                  <td data-label="Precio">{{ moneda(producto.precio) }}</td>
+                  <td data-label="Días">{{ producto.dias_en_inventario ?? '—' }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge>
                     @if (!producto.publicado) {
                       <app-badge tone="neutral">Oculta</app-badge>
                     }
                   </td>
-                  <td>
+                  <td data-label="Publicado">
                     <label class="switch">
                       <input
                         type="checkbox"
@@ -185,7 +185,7 @@
                       <span class="slider"></span>
                     </label>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" title="Ver" (click)="abrirLectura(producto)">Ver</button>
                       <button type="button" class="btn btn-ghost btn-sm" title="Editar" (click)="abrirEdicion(producto)">Editar</button>

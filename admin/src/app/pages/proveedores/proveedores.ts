@@ -77,7 +77,7 @@ export class ProveedoresComponent implements OnInit {
   readonly proveedores = signal<Proveedor[]>([]);
   readonly resultados = signal<Paginated<Proveedor> | null>(null);
   readonly pagina = signal(1);
-  readonly perPage = signal(15);
+  readonly perPage = signal(10);
   readonly cargando = signal(true);
 
   readonly modalAbierto = signal(false);

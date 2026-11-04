@@ -554,3 +554,9 @@ img {
     font-size: 0.78rem;
   }
 }
+
+@media (max-width: 767px) {
+  body:has(.cta-flotante) .footer {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}

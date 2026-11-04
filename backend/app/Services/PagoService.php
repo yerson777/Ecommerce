@@ -44,7 +44,7 @@ class PagoService
     }
 
     /**
-     * Url pÃºblica de una ruta relativa almacenada en la base de datos.
+     * Url pública de una ruta relativa almacenada en la base de datos.
      */
     public function urlDeRuta(string $ruta): string
     {
@@ -78,8 +78,8 @@ class PagoService
      * }  $datos
      * @param  UploadedFile|null  $comprobante  Archivo opcional adjunto al pago.
      *
-     * @throws ValidationException si el pedido es invÃ¡lido o el monto supera
-     *                             el saldo pendiente sin confirmaciÃ³n explÃ­cita.
+     * @throws ValidationException si el pedido es inválido o el monto supera
+     *                             el saldo pendiente sin confirmación explícita.
      * @throws ModelNotFoundException
      */
     public function registrar(int $pedidoId, array $datos, ?UploadedFile $comprobante = null): Pago
@@ -185,7 +185,7 @@ class PagoService
     /**
      * Confirma un pago pendiente: pasa a "completado", fija la fecha de pago
      * y registra el ingreso en caja. Si supera el saldo y el pago fue creado
-     * como excedente confirmado, se respeta esa decisiÃ³n.
+     * como excedente confirmado, se respeta esa decisión.
      */
     public function confirmar(int $pagoId): Pago
     {
@@ -212,7 +212,7 @@ class PagoService
 
             if (! $pedido || $pedido->estado === Pedido::ESTADO_CANCELADO) {
                 throw ValidationException::withMessages([
-                    'estado' => 'No se puede confirmar el pago: el pedido estÃ¡ cancelado o ya no existe.',
+                    'estado' => 'No se puede confirmar el pago: el pedido está cancelado o ya no existe.',
                 ]);
             }
 
@@ -334,7 +334,7 @@ class PagoService
 
     /**
      * Registra (o actualiza) el ingreso de caja del pago confirmado.
-     * Idempotente gracias a la relaciÃ³n 1:1 pago -> movimiento.
+     * Idempotente gracias a la relación 1:1 pago -> movimiento.
      */
     protected function registrarIngresoCaja(Pago $pago, Pedido $pedido): void
     {
@@ -344,7 +344,7 @@ class PagoService
                 'tipo' => 'ingreso',
                 'monto' => $pago->monto,
                 'fuente' => 'pago',
-                'descripcion' => 'Pago '.$pago->numero_pago.' Â· Pedido '.$pedido->numero_pedido,
+                'descripcion' => 'Pago '.$pago->numero_pago.' · Pedido '.$pedido->numero_pedido,
                 'fecha' => ($pago->pagado_en ?? now())->toDateString(),
             ]
         );

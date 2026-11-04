@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
   CategoriaRef,
@@ -79,7 +80,7 @@ export class ProductosComponent implements OnInit {
   });
 
   readonly pagina = signal(1);
-  readonly perPage = signal(15);
+  readonly perPage = signal(10);
   readonly resultados = signal<Paginated<Producto> | null>(null);
   readonly cargando = signal(true);
 
@@ -391,8 +392,5 @@ export class ProductosComponent implements OnInit {
     return TONO_ESTADO[estado as keyof typeof TONO_ESTADO] ?? 'neutral';
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 }

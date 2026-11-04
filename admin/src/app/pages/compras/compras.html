@@ -80,28 +80,28 @@
           <tbody>
             @for (compra of compras(); track compra.id) {
               <tr>
-                <td class="muted nowrap">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
-                <td>
+                <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                <td data-label="Proveedor">
                   <button type="button" class="link" (click)="verDetalle(compra)">
                     <strong>{{ proveedorNombre(compra) }}</strong>
                   </button>
                 </td>
-                <td class="muted">
+                <td class="muted" data-label="Prendas">
                   {{ compra.prendas_count ?? 0 }}
                   @if ((compra.vendidas_count ?? 0) > 0) {
                     <span class="nowrap"> · {{ compra.vendidas_count }} vendidas</span>
                   }
                 </td>
-                <td class="muted">$ {{ compra.costo_total }}</td>
-                <td class="muted">$ {{ compra.gastos_extra }}</td>
-                <td class="muted">$ {{ compra.costo_repartible }}</td>
-                <td class="muted">$ {{ compra.recuperado ?? '0.00' }}</td>
-                <td>
+                <td class="muted" data-label="Costo total">$ {{ compra.costo_total }}</td>
+                <td class="muted" data-label="Gastos">$ {{ compra.gastos_extra }}</td>
+                <td class="muted" data-label="Costo repartible">$ {{ compra.costo_repartible }}</td>
+                <td class="muted" data-label="Recuperado">$ {{ compra.recuperado ?? '0.00' }}</td>
+                <td data-label="Estado">
                   <app-badge [tone]="tonosEstado[compra.estado]">
                     {{ etiquetasEstado[compra.estado] }}
                   </app-badge>
                 </td>
-                <td class="align-right">
+                <td class="align-right" data-label="Acciones">
                   <div class="row-actions">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="verDetalle(compra)">Ver</button>
                     @if (compra.estado === 'activa') {
@@ -274,12 +274,12 @@
               <tbody>
                 @for (producto of prendasSeleccionadas(); track producto.id) {
                   <tr>
-                    <td>
+                    <td data-label="Prenda">
                       <strong>{{ producto.nombre }}</strong>
                       <span class="muted nowrap"> · {{ producto.codigo }}</span>
                     </td>
-                    <td class="muted">$ {{ producto.precio }}</td>
-                    <td>
+                    <td class="muted" data-label="Precio">$ {{ producto.precio }}</td>
+                    <td data-label="Costo asignado">
                       <input
                         class="input input-sm"
                         type="number"
@@ -289,7 +289,7 @@
                         (ngModelChange)="setCostoManual(producto.id, $event)"
                       />
                     </td>
-                    <td [class.negative]="gananciaPotencial(producto) < 0">
+                    <td [class.negative]="gananciaPotencial(producto) < 0" data-label="Ganancia esperada">
                       $ {{ gananciaPotencial(producto).toFixed(2) }}
                     </td>
                     <td class="align-right">
@@ -442,17 +442,17 @@
               <tbody>
                 @for (item of detalleProductos(c); track item.id) {
                   <tr>
-                    <td>
+                    <td data-label="Prenda">
                       <strong>{{ item.producto?.nombre ?? '—' }}</strong>
                       @if (item.producto?.codigo) {
                         <span class="muted nowrap"> · {{ item.producto?.codigo }}</span>
                       }
                     </td>
-                    <td class="muted">{{ item.producto?.talla ?? '—' }}</td>
-                    <td class="muted">$ {{ item.costo_asignado }}</td>
-                    <td class="muted">$ {{ item.producto?.precio ?? '0.00' }}</td>
-                    <td class="muted">$ {{ item.ganancia_potencial }}</td>
-                    <td class="muted">{{ item.producto?.estado ?? '—' }}</td>
+                    <td class="muted" data-label="Talla">{{ item.producto?.talla ?? '—' }}</td>
+                    <td class="muted" data-label="Costo asignado">$ {{ item.costo_asignado }}</td>
+                    <td class="muted" data-label="Precio lista">$ {{ item.producto?.precio ?? '0.00' }}</td>
+                    <td class="muted" data-label="Ganancia potencial">$ {{ item.ganancia_potencial }}</td>
+                    <td class="muted" data-label="Estado prenda">{{ item.producto?.estado ?? '—' }}</td>
                   </tr>
                 }
               </tbody>

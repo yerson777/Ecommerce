@@ -54,7 +54,7 @@ export class UsuariosComponent implements OnInit {
   readonly resultados = signal<Paginated<Usuario> | null>(null);
   readonly cargando = signal(true);
   readonly pagina = signal(1);
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   readonly modalAbierto = signal(false);
   readonly editando = signal<Usuario | null>(null);

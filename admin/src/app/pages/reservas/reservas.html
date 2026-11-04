@@ -71,14 +71,14 @@
             <tbody>
               @for (reserva of page.data; track reserva.id) {
                 <tr>
-                  <td>
+                  <td data-label="Prenda">
                     <div class="prenda">
                       <span class="mono">{{ reserva.producto?.codigo ?? '—' }}</span>
                       <span>{{ etiquetaProducto(reserva) }}</span>
                       <span class="muted">{{ moneda(reserva.producto?.precio) }}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Cliente">
                     <div class="prenda">
                       <span>{{ nombreCliente(reserva) }}</span>
                       @if (reserva.cliente?.telefono) {
@@ -86,16 +86,16 @@
                       }
                     </div>
                   </td>
-                  <td>{{ formatearFecha(reserva.created_at) }}</td>
-                  <td>
+                  <td data-label="Reservada">{{ formatearFecha(reserva.created_at) }}</td>
+                  <td data-label="Fecha límite">
                     <span [class.danger-text]="esVencida(reserva)">{{ formatearFecha(reserva.vence_en) }}</span>
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoEstado(reserva)">
                       {{ etiquetaEstado(reserva) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     @if (esActiva(reserva)) {
                       <div class="actions">
                         <button type="button" class="btn btn-primary btn-sm" (click)="solicitarConvertir(reserva)">

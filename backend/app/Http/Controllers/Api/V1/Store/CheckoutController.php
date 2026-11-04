@@ -21,6 +21,13 @@ class CheckoutController extends Controller
     {
         $datos = $request->validated();
 
+        // Si la tienda envió un token de cliente válido, el pedido se asocia
+        // a esa cuenta. Sin sesión, el checkout sigue funcionando como invitado.
+        $clienteAutenticado = auth('sanctum')->user();
+        if ($clienteAutenticado instanceof \App\Models\Cliente) {
+            $datos['cliente_autenticado_id'] = $clienteAutenticado->id;
+        }
+
         if ($this->esMetodoQr((int) $datos['metodo_pago_id']) && ! $request->hasFile('comprobante')) {
             $mensaje = 'Debes adjuntar el comprobante de pago para confirmar tu pedido.';
 

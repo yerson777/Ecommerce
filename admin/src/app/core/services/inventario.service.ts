@@ -46,7 +46,7 @@ export class InventarioService extends ApiService {
     );
   }
 
-  sinRotacion(dias: number, page = 1, perPage = 20): Observable<ApiResponse<Paginated<Producto>>> {
+  sinRotacion(dias: number, page = 1, perPage = 10): Observable<ApiResponse<Paginated<Producto>>> {
     return this.get<ApiResponse<Paginated<Producto>>>(
       `/v1/admin/inventario/sin-rotacion${toQueryString({ dias, page, per_page: perPage })}`,
     );

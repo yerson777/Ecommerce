@@ -1,0 +1,169 @@
+<div class="page auth-page">
+  <div class="container">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Detalle del pedido</h1>
+      <p class="bajada">
+        <a routerLink="/mis-pedidos">← Volver a mis pedidos</a>
+      </p>
+    </header>
+
+    @if (error()) {
+      <div class="error">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+      <p class="texto-sesion">Cargando pedido…</p>
+    } @else if (pedido(); as p) {
+      <div class="perfil-grid">
+        <section class="card detalle-card">
+          <div class="pedido-cabecera">
+            <div>
+              <div class="pedido-numero">Pedido {{ p.numero_pedido }}</div>
+              <div class="pedido-fecha">{{ formatearFecha(p.fecha_pedido) }}</div>
+            </div>
+            <span [class]="'estado-badge estado--' + p.estado">{{ etiquetaEstado(p.estado) }}</span>
+          </div>
+
+          <div class="pedido-datos detalle-datos">
+            <div class="pedido-dato">
+              <span class="etq">Total</span>
+              <span class="val">{{ formatearPrecio(p.total) }}</span>
+            </div>
+            <div class="pedido-dato">
+              <span class="etq">Pagado</span>
+              <span class="val">{{ formatearPrecio(p.total_pagado) }}</span>
+            </div>
+            <div class="pedido-dato">
+              <span class="etq">Saldo</span>
+              <span class="val">{{ formatearPrecio(p.saldo) }}</span>
+            </div>
+            <div class="pedido-dato">
+              <span class="etq">Estado de pago</span>
+              <span class="val">{{ etiquetaPago(p.estado_pago) }}</span>
+            </div>
+          </div>
+
+          <h2 class="detalle-titulo">Prendas</h2>
+          <div class="detalle-items">
+            @for (item of p.items; track item.id) {
+              <div class="detalle-item">
+                @if (item.producto_imagen) {
+                  <img [src]="item.producto_imagen" [alt]="item.producto_nombre ?? 'Prenda'" />
+                } @else {
+                  <div class="detalle-item-sin-foto">—</div>
+                }
+                <div class="detalle-item-info">
+                  <div class="nombre">{{ item.producto_nombre ?? 'Prenda' }}</div>
+                  <div class="meta">
+                    @if (item.producto_codigo) {
+                      <span>{{ item.producto_codigo }}</span>
+                    }
+                    @if (item.producto_talla) {
+                      <span> · Talle {{ item.producto_talla }}</span>
+                    }
+                    @if (item.producto_color) {
+                      <span> · {{ item.producto_color }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="detalle-item-precio">
+                  @if (item.precio_original && item.precio_original !== item.precio_unitario) {
+                    <span class="precio-tachado">{{ formatearPrecio(item.precio_original) }}</span>
+                  }
+                  <span>{{ formatearPrecio(item.precio_unitario) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="resumen-linea">
+            <span class="muted">Subtotal</span>
+            <span>{{ formatearPrecio(p.subtotal) }}</span>
+          </div>
+          @if (tieneDescuento(p.descuento)) {
+            <div class="resumen-linea">
+              <span class="muted">Descuento{{ p.cupon ? ' (' + p.cupon + ')' : '' }}</span>
+              <span>-{{ formatearPrecio(p.descuento) }}</span>
+            </div>
+          }
+          <div class="resumen-linea">
+            <span class="muted">Envío</span>
+            <span>{{ formatearPrecio(p.costo_envio) }}</span>
+          </div>
+          <div class="resumen-total-final">
+            <span>Total</span>
+            <span>{{ formatearPrecio(p.total) }}</span>
+          </div>
+        </section>
+
+        <section class="card detalle-card">
+          <h2 class="detalle-titulo">Entrega</h2>
+          <div class="pedido-datos detalle-datos">
+            <div class="pedido-dato">
+              <span class="etq">Método</span>
+              <span class="val">{{ p.metodo_entrega ?? '—' }}</span>
+            </div>
+            <div class="pedido-dato">
+              <span class="etq">Zona</span>
+              <span class="val">{{ p.zona_envio ?? '—' }}</span>
+            </div>
+            <div class="pedido-dato">
+              <span class="etq">Pago</span>
+              <span class="val">{{ p.metodo_pago ?? '—' }}</span>
+            </div>
+          </div>
+
+          @if (p.envio) {
+            <div class="envio-info">
+              @if (p.envio.estado) {
+                <div class="resumen-linea">
+                  <span class="muted">Estado del envío</span>
+                  <span>{{ p.envio.estado }}</span>
+                </div>
+              }
+              @if (p.envio.paqueteria) {
+                <div class="resumen-linea">
+                  <span class="muted">Paquetería</span>
+                  <span>{{ p.envio.paqueteria }}</span>
+                </div>
+              }
+              @if (p.envio.numero_guia) {
+                <div class="resumen-linea">
+                  <span class="muted">Guía</span>
+                  <span>{{ p.envio.numero_guia }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          @if (p.cliente) {
+            <h2 class="detalle-titulo">Datos de contacto</h2>
+            <div class="resumen-linea">
+              <span class="muted">Nombre</span>
+              <span>{{ p.cliente.nombre ?? '—' }}</span>
+            </div>
+            <div class="resumen-linea">
+              <span class="muted">Teléfono</span>
+              <span>{{ p.cliente.telefono ?? '—' }}</span>
+            </div>
+            <div class="resumen-linea">
+              <span class="muted">Dirección</span>
+              <span>{{ p.cliente.direccion ?? '—' }}</span>
+            </div>
+            <div class="resumen-linea">
+              <span class="muted">Ciudad</span>
+              <span>{{ p.cliente.ciudad ?? '—' }}</span>
+            </div>
+          }
+
+          @if (p.comprobante_url) {
+            <p class="texto-sesion" style="margin-top: 1rem">
+              <a [href]="p.comprobante_url" target="_blank" rel="noopener">Ver comprobante de pago</a>
+            </p>
+          }
+        </section>
+      </div>
+    }
+  </div>
+</div>

@@ -1,4 +1,5 @@
 import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { formatearFecha as formatearFechaCompartida } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ClienteDuplicadoRef } from '../../core/models/cliente';
 import { ClientesService } from '../../core/services/clientes.service';
@@ -103,13 +104,7 @@ export class ClientesDuplicadosModalComponent implements OnInit {
     });
   }
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 
   cerrar(): void {
     this.cerrado.emit();

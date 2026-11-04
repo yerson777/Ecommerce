@@ -1,5 +1,7 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { formatearMoneda } from '../../core/utils/formato';
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { interval } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { ReportesService } from '../../core/services/reportes.service';
@@ -42,6 +44,7 @@ const ETIQUETAS_PAGO: Record<string, string> = {
 
 @Component({
   imports: [
+    RouterLink,
     StatCardComponent,
     BadgeComponent,
     ProgressComponent,
@@ -255,10 +258,7 @@ export class DashboardComponent implements OnInit {
     return TONOS_PAGO[estado] ?? 'neutral';
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   totalInventario(): number {
     const d = this.datos();

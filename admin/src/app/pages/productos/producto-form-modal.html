@@ -141,6 +141,24 @@
 
       <div class="field field-full">
         <label>Fotos</label>
+
+        @let actual = producto();
+        @if (esEdicion && actual?.imagenes?.length) {
+          <div class="ver-fotos">
+            @for (imagen of actual?.imagenes ?? []; track imagen.id) {
+              <img
+                class="ver-foto"
+                [src]="imagen.url"
+                [alt]="imagen.nombre_original ?? actual?.nombre ?? 'Foto del producto'"
+              />
+            }
+          </div>
+          <p class="hint">
+            Fotos actuales del producto. Para quitarlas, reordenarlas o cambiar la principal, usá
+            el botón "Imágenes" en la lista.
+          </p>
+        }
+
         <label class="btn btn-outline file-btn">
           {{ imagenesPendientes().length ? 'Agregar más fotos' : 'Subir fotos' }}
           <input type="file" accept="image/*" multiple (change)="onSeleccionarImagenes($event)" />

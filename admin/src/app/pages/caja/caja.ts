@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
   FuenteMovimiento,
@@ -72,7 +73,7 @@ export class CajaComponent implements OnInit {
   readonly resultados = signal<Paginated<Movimiento> | null>(null);
   readonly cargando = signal(true);
   readonly pagina = signal(1);
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   registrandoGasto = false;
   registrandoIngreso = false;
@@ -344,18 +345,9 @@ export class CajaComponent implements OnInit {
     return fuente === 'pago' ? 'Pago' : fuente === 'gasto' ? 'Gasto' : 'Manual';
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 
   etiquetaFechaCorta(fecha: string): string {
     return fecha.slice(8, 10) + '/' + fecha.slice(5, 7);

@@ -1,0 +1,23 @@
+@if (toast.visible()) {
+  <div class="cart-toast" role="status" aria-live="polite">
+    <div class="cart-toast-texto">
+      <strong>Agregado al carrito ✓</strong>
+      <span>
+        {{ carrito.conteo() }} {{ carrito.conteo() === 1 ? 'prenda' : 'prendas' }} en el carrito
+      </span>
+    </div>
+
+    <a class="btn btn-primary btn-sm" routerLink="/carrito" (click)="toast.cerrar()">
+      Ir al carrito
+    </a>
+
+    <button
+      type="button"
+      class="cart-toast-cerrar"
+      aria-label="Cerrar aviso"
+      (click)="toast.cerrar()"
+    >
+      ✕
+    </button>
+  </div>
+}

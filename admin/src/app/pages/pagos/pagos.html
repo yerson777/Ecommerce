@@ -98,11 +98,11 @@
             <tbody>
               @for (pago of page.data; track pago.id) {
                 <tr>
-                  <td class="muted small">{{ formatearFecha(pago.pagado_en || pago.created_at) }}</td>
-                  <td>
+                  <td class="muted small" data-label="Fecha">{{ formatearFecha(pago.pagado_en || pago.created_at) }}</td>
+                  <td data-label="Pago">
                     <div class="mono">{{ pago.numero_pago }}</div>
                   </td>
-                  <td>
+                  <td data-label="Pedido o venta">
                     <div class="mono">{{ pago.pedido?.numero_pedido ?? pago.venta?.numero_venta ?? '—' }}</div>
                     @if (pago.pedido) {
                       <app-badge [tone]="tonoEstadoPedido(pago.pedido.estado_pago)">
@@ -110,25 +110,25 @@
                       </app-badge>
                     }
                   </td>
-                  <td>{{ pago.pedido?.cliente ?? pago.venta?.cliente ?? '—' }}</td>
-                  <td>{{ pago.metodo_pago ?? '—' }}</td>
-                  <td class="mono">{{ moneda(pago.monto) }}</td>
-                  <td class="muted">{{ moneda(pago.pedido?.total) }}</td>
-                  <td class="muted">{{ moneda(pago.pedido?.total_pagado) }}</td>
-                  <td class="mono">{{ moneda(pago.pedido?.saldo_pendiente) }}</td>
-                  <td>
+                  <td data-label="Cliente">{{ pago.pedido?.cliente ?? pago.venta?.cliente ?? '—' }}</td>
+                  <td data-label="Método">{{ pago.metodo_pago ?? '—' }}</td>
+                  <td class="mono" data-label="Monto">{{ moneda(pago.monto) }}</td>
+                  <td class="muted" data-label="Total">{{ moneda(pago.pedido?.total) }}</td>
+                  <td class="muted" data-label="Pagado">{{ moneda(pago.pedido?.total_pagado) }}</td>
+                  <td class="mono" data-label="Saldo">{{ moneda(pago.pedido?.saldo_pendiente) }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoEstado(pago.estado)">
                       {{ pago.estado === 'completado' ? 'Confirmado' : etiquetaEstado(pago.estado) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Comprobante">
                     @if (pago.comprobante) {
                       <a class="link" (click)="verComprobante(pago.comprobante!, pago.id)">Adjunto</a>
                     } @else {
                       <span class="muted">—</span>
                     }
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(pago)">
                         Ver
@@ -192,13 +192,13 @@
             <tbody>
               @for (p of porCobrar(); track p.pedido_id) {
                 <tr>
-                  <td class="mono">{{ p.numero_pedido }}</td>
-                  <td>{{ p.cliente ?? '—' }}</td>
-                  <td>{{ p.telefono ?? '—' }}</td>
-                  <td class="muted">{{ moneda(p.total) }}</td>
-                  <td class="muted">{{ moneda(p.pagado) }}</td>
-                  <td class="mono">{{ moneda(p.saldo) }}</td>
-                  <td>{{ p.dias_antiguedad }} días</td>
+                  <td class="mono" data-label="Pedido">{{ p.numero_pedido }}</td>
+                  <td data-label="Cliente">{{ p.cliente ?? '—' }}</td>
+                  <td data-label="Teléfono">{{ p.telefono ?? '—' }}</td>
+                  <td class="muted" data-label="Total">{{ moneda(p.total) }}</td>
+                  <td class="muted" data-label="Pagado">{{ moneda(p.pagado) }}</td>
+                  <td class="mono" data-label="Saldo">{{ moneda(p.saldo) }}</td>
+                  <td data-label="Antigüedad">{{ p.dias_antiguedad }} días</td>
                   <td><button type="button" class="btn btn-outline btn-sm" (click)="abrirWhatsApp(p.telefono)">WhatsApp</button></td>
                 </tr>
               }
@@ -296,15 +296,15 @@
                 <tbody>
                   @for (historial of detalle.pedido.pagos; track historial.id) {
                     <tr>
-                      <td class="mono">{{ historial.numero_pago }}</td>
-                      <td>{{ historial.metodo_pago ?? '—' }}</td>
-                      <td>{{ moneda(historial.monto) }}</td>
-                      <td>
+                      <td class="mono" data-label="Número">{{ historial.numero_pago }}</td>
+                      <td data-label="Método">{{ historial.metodo_pago ?? '—' }}</td>
+                      <td data-label="Monto">{{ moneda(historial.monto) }}</td>
+                      <td data-label="Estado">
                         <app-badge [tone]="tonoEstado(historial.estado)">
                           {{ etiquetaEstado(historial.estado) }}
                         </app-badge>
                       </td>
-                      <td>
+                      <td data-label="Comprobante">
                         @if (historial.comprobante) {
                           <a class="link" (click)="verComprobante(historial.comprobante!, historial.id)">Ver</a>
                         } @else {
@@ -323,7 +323,7 @@
                           </label>
                         }
                       </td>
-                      <td>
+                      <td data-label="Acciones">
                         <div class="actions">
                           @if (historial.estado === 'pendiente') {
                             <button type="button" class="btn btn-outline btn-sm" (click)="pedirConfirmar(historial)">

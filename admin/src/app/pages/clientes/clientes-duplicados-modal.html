@@ -42,7 +42,7 @@
               <tbody>
                 @for (cliente of grupo; track cliente.id) {
                   <tr [class.es-principal]="esPrincipal(gi, cliente.id)">
-                    <td>
+                    <td data-label="Principal">
                       <input
                         type="radio"
                         [name]="'principal-' + gi"
@@ -50,7 +50,7 @@
                         (change)="elegirPrincipal(gi, cliente.id)"
                       />
                     </td>
-                    <td>
+                    <td data-label="Cliente">
                       <div class="nombre">{{ cliente.nombre }}</div>
                       @if (cliente.bloqueado) {
                         <app-badge tone="danger">Bloqueado</app-badge>
@@ -59,11 +59,11 @@
                         <app-badge tone="primary">Principal</app-badge>
                       }
                     </td>
-                    <td class="muted">{{ cliente.telefono ?? '—' }}</td>
-                    <td class="muted">{{ cliente.email ?? '—' }}</td>
-                    <td class="muted">{{ cliente.ciudad ?? '—' }}</td>
-                    <td>{{ cliente.pedidos_count }}</td>
-                    <td class="muted">{{ formatearFecha(cliente.fecha_ultimo_pedido) }}</td>
+                    <td class="muted" data-label="Teléfono">{{ cliente.telefono ?? '—' }}</td>
+                    <td class="muted" data-label="Correo">{{ cliente.email ?? '—' }}</td>
+                    <td class="muted" data-label="Ciudad">{{ cliente.ciudad ?? '—' }}</td>
+                    <td data-label="Pedidos">{{ cliente.pedidos_count }}</td>
+                    <td class="muted" data-label="Último pedido">{{ formatearFecha(cliente.fecha_ultimo_pedido) }}</td>
                   </tr>
                 }
               </tbody>

@@ -1,4 +1,5 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
+import { formatearMoneda } from '../../../../core/utils/formato';
 import {
   ComparacionPeriodo,
   GananciaPorOrigen,
@@ -206,10 +207,7 @@ export class ReportesVentasComponent {
     return `${signo}${numero.toFixed(1)}%`;
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   dias(valor: number | null | undefined): string {
     if (valor === null || valor === undefined) {

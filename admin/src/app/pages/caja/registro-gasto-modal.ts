@@ -1,4 +1,5 @@
 import { Component, inject, input, output, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { CajaService } from '../../core/services/caja.service';
@@ -99,10 +100,7 @@ export class RegistroGastoModalComponent {
     return this.errores()?.[campo]?.[0];
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   private hoy(): string {
     const ahora = new Date();

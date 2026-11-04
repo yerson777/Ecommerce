@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
   ConfiguracionHistorial,
@@ -458,10 +459,7 @@ export class ConfiguracionComponent implements OnDestroy {
     });
   }
 
-  moneda(valor: string | null | undefined): string {
-    const numero = parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   private limpiarQrArchivo(metodoId: number): void {
     this.revocarQrBlob(metodoId);

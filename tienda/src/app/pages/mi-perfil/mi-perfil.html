@@ -1,0 +1,149 @@
+<div class="page auth-page">
+  <div class="container estrecho">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Mi perfil</h1>
+      <p class="bajada">Actualizá tus datos o cambiá tu contraseña.</p>
+    </header>
+
+    @if (cliente(); as c) {
+      <div class="perfil-grid">
+        <section class="card perfil-card">
+          <h2>Mis datos</h2>
+          <p class="perfil-email">Correo: {{ c.email }}</p>
+
+          @if (okPerfil()) {
+            <div class="exito">{{ okPerfil() }}</div>
+          }
+          @if (errorPerfil()) {
+            <div class="error">{{ errorPerfil() }}</div>
+          }
+
+          <form class="auth-form" (ngSubmit)="guardarPerfil()">
+            <div class="field">
+              <label for="per-nombre">Nombre y apellido</label>
+              <input
+                id="per-nombre"
+                class="input"
+                type="text"
+                name="nombre"
+                [(ngModel)]="nombre"
+                autocomplete="name"
+                maxlength="120"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="per-telefono">Teléfono</label>
+              <input
+                id="per-telefono"
+                class="input"
+                type="tel"
+                name="telefono"
+                [(ngModel)]="telefono"
+                autocomplete="tel"
+              />
+            </div>
+
+            <div class="field">
+              <label for="per-direccion">Dirección</label>
+              <input
+                id="per-direccion"
+                class="input"
+                type="text"
+                name="direccion"
+                [(ngModel)]="direccion"
+                autocomplete="street-address"
+                maxlength="300"
+              />
+            </div>
+
+            <div class="field">
+              <label for="per-ciudad">Ciudad</label>
+              <input
+                id="per-ciudad"
+                class="input"
+                type="text"
+                name="ciudad"
+                [(ngModel)]="ciudad"
+                autocomplete="address-level2"
+                maxlength="150"
+              />
+            </div>
+
+            <button class="btn btn-primary" type="submit" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </form>
+        </section>
+
+        <section class="card perfil-card">
+          <h2>Cambiar contraseña</h2>
+
+          @if (okPassword()) {
+            <div class="exito">{{ okPassword() }}</div>
+          }
+          @if (errorPassword()) {
+            <div class="error">{{ errorPassword() }}</div>
+          }
+
+          <form class="auth-form" (ngSubmit)="cambiarPassword()">
+            <div class="field">
+              <label for="per-actual">Contraseña actual</label>
+              <input
+                id="per-actual"
+                class="input"
+                type="password"
+                name="actual"
+                [(ngModel)]="actual"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="per-nueva">Nueva contraseña</label>
+                <input
+                  id="per-nueva"
+                  class="input"
+                  type="password"
+                  name="nueva"
+                  [(ngModel)]="nueva"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label for="per-confirmar">Repetir nueva</label>
+                <input
+                  id="per-confirmar"
+                  class="input"
+                  type="password"
+                  name="confirmar"
+                  [(ngModel)]="confirmar"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required
+                />
+              </div>
+            </div>
+
+            <button class="btn btn-primary" type="submit" [disabled]="guardandoPassword()">
+              {{ guardandoPassword() ? 'Guardando…' : 'Cambiar contraseña' }}
+            </button>
+          </form>
+        </section>
+
+        <section class="card perfil-card">
+          <h2>Mis pedidos</h2>
+          <p class="texto-sesion">Revisá el estado y el detalle de tus compras.</p>
+          <a class="btn btn-outline" routerLink="/mis-pedidos">Ver mis pedidos</a>
+        </section>
+      </div>
+    }
+  </div>
+</div>

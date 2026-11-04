@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Cliente;
 use App\Models\User;
 
 return [
@@ -65,6 +66,12 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        // Cuentas de cliente de la tienda (separadas del admin).
+        'clientes' => [
+            'driver' => 'eloquent',
+            'model' => Cliente::class,
         ],
 
         // 'users' => [

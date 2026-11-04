@@ -12,6 +12,7 @@ import { Router, RouterLink } from '@angular/router';
 import { animate, scroll, stagger } from 'motion';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
+import { CartToastService } from '../../core/services/cart-toast.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { ProductoPublico } from '../../core/models/producto';
@@ -149,6 +150,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly carrusel = inject(BannerCarouselService);
   readonly config = inject(ConfiguracionService);
+  private readonly cartToast = inject(CartToastService);
 
   readonly destacados = signal<ProductoPublico[]>([]);
   readonly estadoDestacados = signal<'cargando' | 'listo' | 'error'>('cargando');
@@ -273,7 +275,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.esDisponible(producto)) {
       return;
     }
-    this.carrito.agregar({
+    const agregado = this.carrito.agregar({
       producto_id: producto.id,
       codigo: producto.codigo,
       nombre: producto.nombre,
@@ -284,6 +286,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       descuento_porcentaje: producto.descuento_porcentaje ?? null,
       imagen: this.imagenPrincipal(producto),
     });
+
+    if (agregado) {
+      this.cartToast.mostrar();
+    }
   }
 
   scrollPrendas(direccion: 'izq' | 'der'): void {

@@ -278,11 +278,176 @@ textarea {
   background: #faf9fb;
 }
 
-.table .actions {
-  white-space: nowrap;
+/* ---------- Acciones de tablas (compartido en todos los módulos) ---------- */
+:is(.table-wrap, .report-table-wrap) > .table .actions,
+:is(.table-wrap, .report-table-wrap) > .table .row-actions,
+.table .actions,
+.table .row-actions {
   display: flex;
-  gap: 0.35rem;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 6px;
+}
+
+:is(.table-wrap, .report-table-wrap) > .table .actions .btn,
+:is(.table-wrap, .report-table-wrap) > .table .row-actions .btn,
+.table .actions .btn,
+.table .row-actions .btn {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Tablet: scroll horizontal dentro del contenedor y acciones que envuelven. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :is(.table-wrap, .report-table-wrap) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table .actions,
+  :is(.table-wrap, .report-table-wrap) > .table .row-actions,
+  .table .actions,
+  .table .row-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* Móvil: cada fila se convierte en una tarjeta etiqueta / valor. */
+@media (max-width: 767px) {
+  :is(.table-wrap, .report-table-wrap) {
+    overflow: visible;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    border-collapse: collapse;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > thead {
+    display: none;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody {
+    display: block;
+    width: 100%;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr {
+    display: block;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr:last-child {
+    margin-bottom: 0;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    border-bottom: 1px dashed var(--border);
+    text-align: right;
+    vertical-align: top;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:last-child {
+    border-bottom: 0;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td::before {
+    content: attr(data-label);
+    flex: 0 0 40%;
+    max-width: 46%;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: normal;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:not([data-label])::before {
+    display: none;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:not([data-label]) {
+    justify-content: flex-start;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td > * {
+    min-width: 0;
+    text-align: right;
+  }
+
+  /* Celda de acciones: al final, a todo el ancho y con botones en cuadrícula. */
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions),
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) {
+    display: block;
+    margin-top: 2px;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 0;
+    text-align: left;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions)::before,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions)::before {
+    display: block;
+    flex: none;
+    max-width: none;
+    margin-bottom: 8px;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) > .row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions > .btn,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) > .row-actions > .btn {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 8px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  /* Acción principal (Vender / Reservar / Convertir...) destacada arriba. */
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions > .btn-primary,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) > .row-actions > .btn-primary {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  /* Eliminar / Rechazar separada y al final, ocupando todo el ancho. */
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions > .btn-danger,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions > .btn.danger,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) > .row-actions > .btn-danger,
+  :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .row-actions) > .row-actions > .btn.danger {
+    grid-column: 1 / -1;
+    order: 99;
+  }
 }
 
 /* ---------- Toolbar / filters ---------- */

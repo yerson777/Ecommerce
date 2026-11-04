@@ -52,7 +52,7 @@ export class CategoriasComponent {
   readonly busqueda = signal('');
   readonly filtroActivo = signal<'' | '1' | '0'>('');
   readonly pagina = signal(1);
-  readonly perPage = signal(15);
+  readonly perPage = signal(10);
 
   readonly modalAbierto = signal(false);
   readonly editando = signal<Categoria | null>(null);

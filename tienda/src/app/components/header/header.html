@@ -3,10 +3,9 @@
     <a routerLink="/" class="marca" (click)="cerrarMenu()">
       @if (config.logoUrl(); as logo) {
         <img class="marca-logo" [src]="logo" [alt]="config.nombre()" />
-      } @else {
-        @let marca = config.marca();
-        {{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}
       }
+      @let marca = config.marca();
+      {{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}
     </a>
 
     <button
@@ -45,11 +44,69 @@
       <a routerLink="/seguimiento" routerLinkActive="activo" (click)="cerrarMenu()">
         Seguí tu pedido
       </a>
-      <a routerLink="/carrito" routerLinkActive="activo" class="carrito-link" (click)="cerrarMenu()">
-        <span aria-hidden="true">🛍</span>
+      <a
+        routerLink="/carrito"
+        routerLinkActive="activo"
+        class="carrito-link"
+        [attr.aria-label]="'Carrito: ' + conteo() + (conteo() === 1 ? ' prenda' : ' prendas')"
+        (click)="cerrarMenu()"
+      >
+        <span class="carrito-icono" aria-hidden="true">
+          🛒
+          <span class="contador" *ngIf="conteo() > 0">{{ conteo() }}</span>
+        </span>
         <span>Carrito</span>
-        <span class="contador" *ngIf="conteo() > 0">{{ conteo() }}</span>
       </a>
+
+      @if (auth.logueado()) {
+        <div class="usuario" [class.usuario--abierto]="menuUsuarioAbierto()">
+          <button
+            type="button"
+            class="usuario-toggle"
+            [attr.aria-expanded]="menuUsuarioAbierto()"
+            aria-label="Mi cuenta"
+            (click)="alternarUsuario()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" />
+            </svg>
+            <span class="usuario-nombre">{{ auth.cliente()?.nombre }}</span>
+          </button>
+
+          <div class="usuario-panel">
+            <a routerLink="/mis-pedidos" (click)="cerrarUsuario(); cerrarMenu()">Mis pedidos</a>
+            <a routerLink="/mi-perfil" (click)="cerrarUsuario(); cerrarMenu()">Mi perfil</a>
+            <button type="button" class="usuario-salir" (click)="cerrarSesion()">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      } @else {
+        <a routerLink="/ingresar" routerLinkActive="activo" (click)="cerrarMenu()">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+          </svg>
+          <span>Ingresar</span>
+        </a>
+      }
     </nav>
   </div>
 </header>

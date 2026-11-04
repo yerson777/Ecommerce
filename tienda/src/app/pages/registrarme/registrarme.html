@@ -1,0 +1,97 @@
+<div class="page auth-page">
+  <div class="container estrecho">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Crear cuenta</h1>
+      <p class="bajada">Es opcional: podés seguir comprando como invitado cuando quieras.</p>
+    </header>
+
+    <section class="card auth-card">
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <form class="auth-form" (ngSubmit)="enviar()">
+        <div class="field">
+          <label for="reg-nombre">Nombre y apellido</label>
+          <input
+            id="reg-nombre"
+            class="input"
+            type="text"
+            name="nombre"
+            [(ngModel)]="nombre"
+            autocomplete="name"
+            maxlength="120"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="reg-email">Correo electrónico</label>
+            <input
+              id="reg-email"
+              class="input"
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="reg-telefono">Teléfono</label>
+            <input
+              id="reg-telefono"
+              class="input"
+              type="tel"
+              name="telefono"
+              [(ngModel)]="telefono"
+              autocomplete="tel"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="reg-password">Contraseña</label>
+            <input
+              id="reg-password"
+              class="input"
+              type="password"
+              name="password"
+              [(ngModel)]="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="reg-password2">Repetir contraseña</label>
+            <input
+              id="reg-password2"
+              class="input"
+              type="password"
+              name="password2"
+              [(ngModel)]="passwordConfirmation"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <span>¿Ya tenés cuenta? <a routerLink="/ingresar">Ingresá</a></span>
+      </div>
+    </section>
+  </div>
+</div>

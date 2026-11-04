@@ -4,23 +4,18 @@ namespace App\Models;
 
 use App\Support\Contacto;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Cliente extends Model
+class Cliente extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'clientes';
-
-    protected $casts = [
-        'fecha_primer_pedido' => 'date',
-        'fecha_ultimo_pedido' => 'date',
-        'bloqueado' => 'boolean',
-        'es_prueba' => 'boolean',
-    ];
 
     protected $fillable = [
         'nombre',
@@ -35,7 +30,29 @@ class Cliente extends Model
         'bloqueado',
         'motivo_bloqueo',
         'es_prueba',
+        'password',
     ];
+
+    /**
+     * La contraseña y el token de "recordarme" nunca se serializan.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'fecha_primer_pedido' => 'date',
+            'fecha_ultimo_pedido' => 'date',
+            'bloqueado' => 'boolean',
+            'es_prueba' => 'boolean',
+            'email_verified_at' => 'datetime',
+            'ultimo_acceso_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
     /**
      * Mantiene el teléfono normalizado sincronizado con el teléfono real,

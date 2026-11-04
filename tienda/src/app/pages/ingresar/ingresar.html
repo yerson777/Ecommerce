@@ -1,0 +1,52 @@
+<div class="page auth-page">
+  <div class="container estrecho">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Ingresar</h1>
+      <p class="bajada">Accedé a tus pedidos y a tus datos guardados.</p>
+    </header>
+
+    <section class="card auth-card">
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <form class="auth-form" (ngSubmit)="enviar()">
+        <div class="field">
+          <label for="login-email">Correo electrónico</label>
+          <input
+            id="login-email"
+            class="input"
+            type="email"
+            name="email"
+            [(ngModel)]="email"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="login-password">Contraseña</label>
+          <input
+            id="login-password"
+            class="input"
+            type="password"
+            name="password"
+            [(ngModel)]="password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+        <span>¿No tenés cuenta? <a routerLink="/registrarme">Registrate</a></span>
+      </div>
+    </section>
+  </div>
+</div>

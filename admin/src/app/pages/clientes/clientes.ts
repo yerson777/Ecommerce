@@ -1,5 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import {
   Cliente,
   ClienteDuplicadoRef,
@@ -39,6 +41,7 @@ function esEstadoPedido(estado: string): estado is EstadoPedido {
 @Component({
   imports: [
     FormsModule,
+    RouterLink,
     BadgeComponent,
     ConfirmDialogComponent,
     EmptyStateComponent,
@@ -88,7 +91,7 @@ export class ClientesComponent implements OnInit {
   eliminarObjetivo: Cliente | null = null;
   bloqueoObjetivo: Cliente | null = null;
 
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargar();
@@ -333,16 +336,7 @@ export class ClientesComponent implements OnInit {
     return enlaceWhatsApp(cliente.telefono, mensaje);
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 }

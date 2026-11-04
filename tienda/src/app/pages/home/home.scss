@@ -667,26 +667,30 @@ h3 {
 }
 
 /* ================= CÓMO COMPRAR ================= */
-.pasos {
+#como-comprar .pasos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-lg);
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: paso;
 }
 
-.paso {
-  padding: var(--space-xl);
+#como-comprar .paso {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  text-align: left;
   border: 1px solid rgb(255 255 255 / 35%);
   border-radius: var(--radius);
   background: rgb(255 255 255 / 8%);
 }
 
-.paso-num {
+#como-comprar .paso-num {
   display: block;
-  margin-bottom: var(--space-sm);
+  margin: 0;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 2.75rem;
   font-weight: 700;
@@ -694,14 +698,15 @@ h3 {
   color: var(--surface);
 }
 
-.paso h3 {
-  margin-bottom: 0.4rem;
+#como-comprar .paso h3 {
+  margin: 0;
   font-size: 1.2rem;
   color: var(--surface);
 }
 
-.paso p {
+#como-comprar .paso p {
   margin: 0;
+  width: 100%;
   font-size: 0.98rem;
   color: var(--primary-soft);
 }
@@ -856,6 +861,33 @@ h3 {
   }
 }
 
+@media (min-width: 1024px) {
+  .hero .hero-grid {
+    grid-template-columns: 1fr 1.25fr;
+  }
+
+  .hero .carrusel {
+    height: clamp(460px, 40vh, 500px);
+  }
+
+  .hero .carrusel-pista,
+  .hero .carrusel-slide {
+    height: 100%;
+  }
+
+  .hero .carrusel-slide picture {
+    display: block;
+    height: 100%;
+  }
+
+  .hero .carrusel-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+}
+
 @media (max-width: 900px) {
   .prendas {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -867,6 +899,18 @@ h3 {
 
   .hero-visual {
     order: -1;
+  }
+
+  .hero-copy {
+    text-align: center;
+  }
+
+  .hero-acciones {
+    justify-content: center;
+  }
+
+  .hero-promesas {
+    text-align: left;
   }
 
   .hero-bajada {
@@ -1004,6 +1048,10 @@ h3 {
   .bloque-cta .btn,
   .cta-final .bloque-cta .btn {
     width: 100%;
+  }
+
+  #como-comprar .pasos {
+    grid-template-columns: 1fr;
   }
 
   .feature,

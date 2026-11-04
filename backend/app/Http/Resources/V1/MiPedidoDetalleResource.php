@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Http\Resources\V1;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * Detalle de un pedido para la cuenta del cliente.
+ * No expone información administrativa (costos, márgenes, ids de pago).
+ */
+class MiPedidoDetalleResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'numero_pedido' => $this->numero_pedido,
+            'estado' => $this->estado,
+            'estado_pago' => $this->estadoPago(),
+            'fecha_pedido' => $this->fecha_pedido?->toDateString(),
+            'created_at' => $this->created_at?->toISOString(),
+            'subtotal' => $this->subtotal,
+            'descuento' => $this->descuento,
+            'costo_envio' => $this->costo_envio,
+            'total' => $this->total,
+            'total_pagado' => $this->totalPagado(),
+            'saldo' => $this->saldoPendiente(),
+            'cupon' => $this->whenLoaded('cupon', fn () => $this->cupon?->codigo),
+            'comprobante_url' => $this->comprobante_path
+                ? Storage::disk('public')->url($this->comprobante_path)
+                : null,
+            'metodo_pago' => $this->whenLoaded('metodoPago', fn () => $this->metodoPago?->nombre),
+            'metodo_entrega' => $this->whenLoaded('metodoEntrega', fn () => $this->metodoEntrega?->nombre),
+            'zona_envio' => $this->whenLoaded('zonaEnvio', fn () => $this->zonaEnvio?->nombre),
+            'envio' => $this->whenLoaded('envio', fn () => $this->envio ? [
+                'estado' => $this->envio->estado,
+                'paqueteria' => $this->envio->paqueteria,
+                'numero_guia' => $this->envio->numero_guia,
+                'enviado_en' => $this->envio->enviado_en?->toISOString(),
+                'entregado_en' => $this->envio->entregado_en?->toISOString(),
+            ] : null),
+            'cliente' => $this->whenLoaded('cliente', fn () => [
+                'nombre' => $this->cliente->nombre,
+                'telefono' => $this->cliente->telefono,
+                'email' => $this->cliente->email,
+                'ciudad' => $this->cliente->ciudad,
+                'direccion' => $this->cliente->direccion,
+            ]),
+            'items' => MiPedidoItemResource::collection($this->whenLoaded('items')),
+        ];
+    }
+}

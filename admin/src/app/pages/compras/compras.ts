@@ -84,7 +84,7 @@ export class ComprasComponent implements OnInit {
     proveedor_id: null,
     estado: '',
     page: 1,
-    per_page: 15,
+    per_page: 10,
   });
 
   readonly compras = signal<Compra[]>([]);
@@ -92,7 +92,7 @@ export class ComprasComponent implements OnInit {
   readonly pagina = signal(1);
   readonly ultimaPagina = signal(1);
   readonly total = signal(0);
-  readonly porPagina = signal(15);
+  readonly porPagina = signal(10);
 
   readonly proveedores = signal<Proveedor[]>([]);
 
@@ -137,7 +137,7 @@ export class ComprasComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filtros.set({ fecha_desde: '', fecha_hasta: '', proveedor_id: null, estado: '', page: 1, per_page: 15 });
+    this.filtros.set({ fecha_desde: '', fecha_hasta: '', proveedor_id: null, estado: '', page: 1, per_page: 10 });
     this.pagina.set(1);
     this.cargar();
   }

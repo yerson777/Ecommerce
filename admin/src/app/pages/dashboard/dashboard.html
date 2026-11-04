@@ -123,9 +123,12 @@
           <h2 class="card-title">Pedidos por atender</h2>
           <p class="card-subtitle">Pendientes y confirmados, aún sin completar</p>
         </div>
-        <span class="pill">
-          <app-badge tone="warning">{{ d.pedidos_por_atender.length }} en pantalla</app-badge>
-        </span>
+        <div class="card-actions">
+          <span class="pill">
+            <app-badge tone="warning">{{ d.pedidos_por_atender.length }} en pantalla</app-badge>
+          </span>
+          <a class="ver-todo" routerLink="/pedidos">Ver todo →</a>
+        </div>
       </div>
 
       @if (d.pedidos_por_atender.length > 0) {
@@ -145,21 +148,21 @@
             <tbody>
               @for (pedido of pedidosUrgentes(d.pedidos_por_atender); track pedido.id) {
                 <tr>
-                  <td class="mono">{{ pedido.numero_pedido }}</td>
-                  <td>{{ pedido.cliente }}</td>
-                  <td class="mono">{{ pedido.fecha_pedido }}</td>
-                  <td>
+                  <td class="mono" data-label="Pedido">{{ pedido.numero_pedido }}</td>
+                  <td data-label="Cliente">{{ pedido.cliente }}</td>
+                  <td class="mono" data-label="Fecha">{{ pedido.fecha_pedido }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoPedido(pedido.estado)">
                       {{ etiquetaPedido(pedido.estado) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Pago">
                     <app-badge [tone]="tonoPago(pedido.estado_pago)">
                       {{ etiquetaPago(pedido.estado_pago) }}
                     </app-badge>
                   </td>
-                  <td class="right mono">{{ moneda(pedido.total) }}</td>
-                  <td class="right mono">
+                  <td class="right mono" data-label="Total">{{ moneda(pedido.total) }}</td>
+                  <td class="right mono" data-label="Saldo">
                     @if (tieneSaldo(pedido)) {
                       <span class="saldo-alerta">{{ moneda(pedido.saldo) }}</span>
                     } @else {
@@ -188,7 +191,10 @@
             <h2 class="card-title">Prendas sin venta</h2>
             <p class="card-subtitle">Disponibles hace más de 30 días</p>
           </div>
-          <span class="pill"><app-badge tone="warning">{{ d.prendas_sin_venta.length }}</app-badge></span>
+          <div class="card-actions">
+            <span class="pill"><app-badge tone="warning">{{ d.prendas_sin_venta.length }}</app-badge></span>
+            <a class="ver-todo" routerLink="/inventario">Ver todo →</a>
+          </div>
         </div>
 
         @if (d.prendas_sin_venta.length > 0) {
@@ -206,16 +212,16 @@
               <tbody>
                 @for (prenda of d.prendas_sin_venta; track prenda.id) {
                   <tr>
-                    <td>
+                    <td data-label="Prenda">
                       {{ prenda.nombre }}
                       @if (!prenda.publicado) {
                         <app-badge tone="neutral">No publicada</app-badge>
                       }
                     </td>
-                    <td class="muted">{{ prenda.categoria }}</td>
-                    <td class="muted">{{ prenda.talla }}</td>
-                    <td class="right mono">{{ moneda(prenda.precio) }}</td>
-                    <td class="right mono">{{ prenda.dias_disponible }}</td>
+                    <td class="muted" data-label="Categoría">{{ prenda.categoria }}</td>
+                    <td class="muted" data-label="Talla">{{ prenda.talla }}</td>
+                    <td class="right mono" data-label="Precio">{{ moneda(prenda.precio) }}</td>
+                    <td class="right mono" data-label="Días">{{ prenda.dias_disponible }}</td>
                   </tr>
                 }
               </tbody>
@@ -236,7 +242,10 @@
             <h2 class="card-title">Reservas por vencer</h2>
             <p class="card-subtitle">Prendas apartadas que hay que liberar</p>
           </div>
-          <span class="pill"><app-badge tone="warning">{{ d.reservas_por_vencer.length }}</app-badge></span>
+          <div class="card-actions">
+            <span class="pill"><app-badge tone="warning">{{ d.reservas_por_vencer.length }}</app-badge></span>
+            <a class="ver-todo" routerLink="/reservas">Ver todo →</a>
+          </div>
         </div>
 
         @if (d.reservas_por_vencer.length > 0) {
@@ -253,13 +262,13 @@
               <tbody>
                 @for (reserva of d.reservas_por_vencer; track reserva.id) {
                   <tr>
-                    <td>
+                    <td data-label="Prenda">
                       {{ reserva.producto }}
                       <div class="muted small">{{ reserva.categoria }}</div>
                     </td>
-                    <td>{{ reserva.cliente }}</td>
-                    <td class="mono">{{ reserva.vence_en }}</td>
-                    <td class="right">
+                    <td data-label="Cliente">{{ reserva.cliente }}</td>
+                    <td class="mono" data-label="Vence">{{ reserva.vence_en }}</td>
+                    <td class="right" data-label="Restante">
                       @if (reserva.vencida) {
                         <app-badge tone="danger">Vencida</app-badge>
                       } @else {
@@ -291,7 +300,10 @@
             {{ moneda(d.ganancia.total) }} sobre {{ moneda(d.ganancia.ingresos) }}
           </p>
         </div>
-        <span class="pill"><app-badge tone="success">Margen {{ d.ganancia.margen_pct }}%</app-badge></span>
+          <div class="card-actions">
+            <span class="pill"><app-badge tone="success">Margen {{ d.ganancia.margen_pct }}%</app-badge></span>
+            <a class="ver-todo" routerLink="/reportes">Ver todo →</a>
+          </div>
       </div>
 
       @if (d.ganancia.prendas.length > 0) {
@@ -310,12 +322,12 @@
             <tbody>
               @for (prenda of d.ganancia.prendas; track prenda.id) {
                 <tr>
-                  <td>{{ prenda.nombre }}</td>
-                  <td class="muted">{{ prenda.categoria }}</td>
-                  <td class="mono">{{ prenda.fecha_venta }}</td>
-                  <td class="right mono">{{ moneda(prenda.precio_venta) }}</td>
-                  <td class="right mono muted">{{ moneda(prenda.costo) }}</td>
-                  <td class="right mono ganancia">{{ prenda.ganancia }}</td>
+                  <td data-label="Prenda">{{ prenda.nombre }}</td>
+                  <td class="muted" data-label="Categoría">{{ prenda.categoria }}</td>
+                  <td class="mono" data-label="Venta">{{ prenda.fecha_venta }}</td>
+                  <td class="right mono" data-label="Precio">{{ moneda(prenda.precio_venta) }}</td>
+                  <td class="right mono muted" data-label="Costo">{{ moneda(prenda.costo) }}</td>
+                  <td class="right mono ganancia" data-label="Ganancia">{{ prenda.ganancia }}</td>
                 </tr>
               }
             </tbody>
@@ -378,7 +390,10 @@
       </section>
 
       <section class="card">
-        <h2 class="card-title">Últimas ventas</h2>
+        <div class="row-between">
+          <h2 class="card-title">Últimas ventas</h2>
+          <a class="ver-todo" routerLink="/ventas">Ver todo →</a>
+        </div>
 
         @if (d.ventas.recientes.length > 0) {
           <div class="table-wrap">
@@ -395,11 +410,11 @@
               <tbody>
                 @for (venta of d.ventas.recientes; track venta.id) {
                   <tr>
-                    <td>{{ venta.fecha_venta }}</td>
-                    <td class="mono">{{ venta.numero_venta }}</td>
-                    <td>{{ venta.cliente?.nombre ?? '—' }}</td>
-                    <td class="right mono">{{ moneda(venta.total) }}</td>
-                    <td>
+                    <td data-label="Fecha">{{ venta.fecha_venta }}</td>
+                    <td class="mono" data-label="Número">{{ venta.numero_venta }}</td>
+                    <td data-label="Cliente">{{ venta.cliente?.nombre ?? '—' }}</td>
+                    <td class="right mono" data-label="Total">{{ moneda(venta.total) }}</td>
+                    <td data-label="Estado">
                       <app-badge [tone]="tonoEstadoVenta(venta.estado)">
                         {{ etiquetaEstadoVenta(venta.estado) }}
                       </app-badge>
@@ -421,7 +436,10 @@
 
     <!-- ===== Productos recientes ===== -->
     <section class="card">
-      <h2 class="card-title">Productos recientes</h2>
+      <div class="row-between">
+        <h2 class="card-title">Productos recientes</h2>
+        <a class="ver-todo" routerLink="/productos">Ver todo →</a>
+      </div>
 
       @if (d.productos.recientes.length > 0) {
         <div class="table-wrap">
@@ -448,17 +466,17 @@
                       <div class="thumb thumb--empty">—</div>
                     }
                   </td>
-                  <td class="mono">{{ producto.codigo }}</td>
-                  <td>{{ producto.nombre }}</td>
-                  <td>{{ producto.categoria?.nombre ?? '—' }}</td>
-                  <td>{{ producto.talla?.nombre ?? '—' }}</td>
-                  <td class="right mono">{{ moneda(producto.precio) }}</td>
-                  <td>
+                  <td class="mono" data-label="Código">{{ producto.codigo }}</td>
+                  <td data-label="Nombre">{{ producto.nombre }}</td>
+                  <td data-label="Categoría">{{ producto.categoria?.nombre ?? '—' }}</td>
+                  <td data-label="Talla">{{ producto.talla?.nombre ?? '—' }}</td>
+                  <td class="right mono" data-label="Precio">{{ moneda(producto.precio) }}</td>
+                  <td data-label="Estado">
                     <app-badge [tone]="tonoEstado(producto.estado)">
                       {{ etiquetaEstado(producto.estado) }}
                     </app-badge>
                   </td>
-                  <td>
+                  <td data-label="Publicado">
                     <app-badge [tone]="producto.publicado ? 'success' : 'neutral'">
                       {{ producto.publicado ? 'Sí' : 'No' }}
                     </app-badge>

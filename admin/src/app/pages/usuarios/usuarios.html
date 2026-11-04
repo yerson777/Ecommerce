@@ -71,7 +71,7 @@
             <tbody>
               @for (usuario of page.data; track usuario.id) {
                 <tr>
-                  <td>
+                  <td data-label="Usuario">
                     <div class="user-cell">
                       <span class="user-avatar-tabla">{{ usuario.name.charAt(0).toUpperCase() }}</span>
                       <span>{{ usuario.name }}</span>
@@ -80,17 +80,17 @@
                       }
                     </div>
                   </td>
-                  <td class="muted">{{ usuario.email }}</td>
-                  <td>
+                  <td class="muted" data-label="Correo">{{ usuario.email }}</td>
+                  <td data-label="Rol">
                     <app-badge tone="neutral">{{ usuario.etiqueta_rol }}</app-badge>
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     <app-badge [tone]="usuario.activo ? 'success' : 'danger'">
                       {{ usuario.activo ? 'Activo' : 'Inactivo' }}
                     </app-badge>
                   </td>
-                  <td class="muted">{{ formatearFecha(usuario.created_at) }}</td>
-                  <td>
+                  <td class="muted" data-label="Registrado">{{ formatearFecha(usuario.created_at) }}</td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="abrirEditar(usuario)">
                         Editar

@@ -1,0 +1,74 @@
+<div class="page auth-page">
+  <div class="container estrecho">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Nueva contraseña</h1>
+      <p class="bajada">Elegí una contraseña nueva para tu cuenta.</p>
+    </header>
+
+    <section class="card auth-card">
+      @if (listo()) {
+        <div class="exito">Contraseña restablecida. Ya podés iniciar sesión.</div>
+        <div class="auth-links">
+          <a routerLink="/ingresar">Ingresar</a>
+        </div>
+      } @else {
+        @if (error()) {
+          <div class="error">{{ error() }}</div>
+        }
+
+        <form class="auth-form" (ngSubmit)="enviar()">
+          <div class="field">
+            <label for="res-email">Correo electrónico</label>
+            <input
+              id="res-email"
+              class="input"
+              type="email"
+              name="email"
+              [ngModel]="email"
+              (ngModelChange)="email = $event"
+              autocomplete="email"
+              readonly
+            />
+          </div>
+
+          <div class="field">
+            <label for="res-password">Nueva contraseña</label>
+            <input
+              id="res-password"
+              class="input"
+              type="password"
+              name="password"
+              [(ngModel)]="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="res-password2">Repetir contraseña</label>
+            <input
+              id="res-password2"
+              class="input"
+              type="password"
+              name="password2"
+              [(ngModel)]="passwordConfirmation"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando…' : 'Restablecer contraseña' }}
+          </button>
+        </form>
+
+        <div class="auth-links">
+          <a routerLink="/ingresar">Volver a ingresar</a>
+        </div>
+      }
+    </section>
+  </div>
+</div>

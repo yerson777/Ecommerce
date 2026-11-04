@@ -27,12 +27,13 @@
 
     <div class="columnas">
       <div class="col col-marca">
-        @if (config.logoUrl(); as logo) {
-          <img class="marca-logo" [src]="logo" [alt]="config.nombre()" />
-        } @else {
-          @let marca = config.marca();
-          <span class="marca">{{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}</span>
-        }
+        @let marca = config.marca();
+        <span class="marca">
+          @if (config.logoUrl(); as logo) {
+            <img class="marca-logo" [src]="logo" [alt]="config.nombre()" />
+          }
+          {{ marca.principal }}@if (marca.secundaria) {<span>{{ marca.secundaria }}</span>}
+        </span>
         <p class="muted">
           Prendas únicas seleccionadas a mano, con moda coreana y americana que
           no se repite.
@@ -115,7 +116,7 @@
         <ul class="lista-contacto">
           <li>
             <a [href]="config.whatsappUrl()" target="_blank" rel="noopener">
-              WhatsApp: {{ telefono() }}
+              WhatsApp: {{ whatsappNumero() }}
             </a>
           </li>
           <li><a [href]="'mailto:' + correo()">{{ correo() }}</a></li>

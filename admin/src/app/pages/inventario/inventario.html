@@ -233,25 +233,25 @@
               <tbody>
                 @for (producto of page.data; track producto.id) {
                   <tr>
-                    <td class="mono">{{ producto.codigo }}</td>
-                    <td>
+                    <td class="mono" data-label="Código">{{ producto.codigo }}</td>
+                    <td data-label="Nombre">
                       <strong>{{ producto.nombre }}</strong>
                       @if (!producto.publicado) {
                         <app-badge tone="neutral">Oculta</app-badge>
                       }
                     </td>
-                    <td>{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
-                    <td>{{ moneda(producto.precio) }}</td>
-                    <td>{{ producto.dias_en_inventario ?? '—' }}</td>
-                    <td><app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge></td>
-                    <td>
+                    <td data-label="Categoría · Talla">{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
+                    <td data-label="Precio">{{ moneda(producto.precio) }}</td>
+                    <td data-label="Días">{{ producto.dias_en_inventario ?? '—' }}</td>
+                    <td data-label="Estado"><app-badge [tone]="tonoEstado(producto.estado)">{{ etiquetaEstado(producto.estado) }}</app-badge></td>
+                    <td data-label="Verificada">
                       @if (producto.verificada) {
                         <app-badge tone="success">Verificada</app-badge>
                       } @else {
                         <app-badge tone="warning">Pendiente</app-badge>
                       }
                     </td>
-                    <td>
+                    <td data-label="Acciones">
                       <div class="actions">
                         <button type="button" class="btn btn-ghost btn-sm" (click)="solicitarVerificar(producto)">
                           {{ producto.verificada ? 'Quitar verificación' : 'Verificar' }}
@@ -334,17 +334,17 @@
               <tbody>
                 @for (producto of page.data; track producto.id) {
                   <tr>
-                    <td class="mono">{{ producto.codigo }}</td>
-                    <td><strong>{{ producto.nombre }}</strong></td>
-                    <td>{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
-                    <td>{{ moneda(producto.precio) }}</td>
-                    <td>{{ producto.dias_en_inventario ?? '—' }}</td>
-                    <td>
+                    <td class="mono" data-label="Código">{{ producto.codigo }}</td>
+                    <td data-label="Nombre"><strong>{{ producto.nombre }}</strong></td>
+                    <td data-label="Categoría · Talla">{{ (producto.categoria?.nombre ?? '—') + ' · ' + (producto.talla?.nombre ?? '—') }}</td>
+                    <td data-label="Precio">{{ moneda(producto.precio) }}</td>
+                    <td data-label="Días">{{ producto.dias_en_inventario ?? '—' }}</td>
+                    <td data-label="Publicado">
                       <app-badge [tone]="producto.publicado ? 'info' : 'neutral'">
                         {{ producto.publicado ? 'Publicada' : 'Oculta' }}
                       </app-badge>
                     </td>
-                    <td>
+                    <td data-label="Acciones">
                       <div class="actions">
                         <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPrecio(producto)">Editar precio</button>
                         <button type="button" class="btn btn-ghost btn-sm" (click)="cambiarPublicado(producto)">

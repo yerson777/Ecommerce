@@ -46,11 +46,11 @@
             <tbody>
               @for (c of d.topClientes; track c.cliente_id) {
                 <tr>
-                  <td>{{ c.nombre }}</td>
-                  <td>{{ c.telefono ?? '—' }}</td>
-                  <td>{{ c.total_pedidos }}</td>
-                  <td><strong>{{ moneda(c.total_comprado) }}</strong></td>
-                  <td>{{ c.ultimo_pedido ?? '—' }}</td>
+                  <td data-label="Cliente">{{ c.nombre }}</td>
+                  <td data-label="Teléfono">{{ c.telefono ?? '—' }}</td>
+                  <td data-label="Pedidos">{{ c.total_pedidos }}</td>
+                  <td data-label="Total comprado"><strong>{{ moneda(c.total_comprado) }}</strong></td>
+                  <td data-label="Último pedido">{{ c.ultimo_pedido ?? '—' }}</td>
                 </tr>
               }
             </tbody>

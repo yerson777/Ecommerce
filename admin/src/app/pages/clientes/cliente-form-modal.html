@@ -8,21 +8,6 @@
       <div class="error-banner">{{ errorBanner() }}</div>
     }
 
-    @if (avisoDuplicado(); as aviso) {
-      <div class="aviso-duplicado">
-        <div class="aviso-texto">
-          <strong>Posible cliente duplicado.</strong>
-          <span>{{ aviso }}</span>
-        </div>
-        <div class="aviso-acciones">
-          <button type="button" class="btn btn-ghost btn-sm" (click)="descartarAviso()">Revisar</button>
-          <button type="button" class="btn btn-primary btn-sm" (click)="confirmarDuplicado()" [disabled]="guardando()">
-            Guardar de todos modos
-          </button>
-        </div>
-      </div>
-    }
-
     <div class="form-grid">
       <div class="field field-full">
         <label>Nombre *</label>

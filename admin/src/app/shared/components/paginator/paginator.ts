@@ -11,7 +11,7 @@ export class PaginatorComponent {
   readonly page = input(1);
   readonly lastPage = input(1);
   readonly total = input(0);
-  readonly perPage = input(15);
+  readonly perPage = input(10);
 
   readonly pageChange = output<number>();
 

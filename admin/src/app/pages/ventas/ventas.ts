@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CategoriaRef, Producto } from '../../core/models/producto';
@@ -84,7 +85,7 @@ export class VentasComponent implements OnInit {
   readonly anulando = signal<Venta | null>(null);
   readonly anulandoProceso = signal(false);
 
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -306,22 +307,13 @@ export class VentasComponent implements OnInit {
     return TONO_ESTADO_VENTA[estado as keyof typeof TONO_ESTADO_VENTA] ?? 'neutral';
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   descuentoPositivo(descuento: string | number | null | undefined): boolean {
     return parseFloat(String(descuento ?? '0')) > 0;
   }
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 
   formatearFechaHora(fecha: string | null | undefined): string {
     if (!fecha) {

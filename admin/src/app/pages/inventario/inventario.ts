@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InventarioResumen } from '../../core/models/dashboard';
@@ -79,7 +80,7 @@ export class InventarioComponent implements OnInit {
   });
 
   readonly pagina = signal(1);
-  readonly perPage = signal(20);
+  readonly perPage = signal(10);
   readonly resultados = signal<Paginated<Producto> | null>(null);
   readonly cargandoListado = signal(false);
 
@@ -442,8 +443,5 @@ export class InventarioComponent implements OnInit {
     return lista.reduce((acc, item) => acc + item.total, 0);
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 }

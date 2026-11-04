@@ -2,9 +2,6 @@
 
 return [
 
-    /* Rutas a las que aplica CORS. Las rutas api/* ya las incluye el paquete.
-    'paths' => ['api/*', 'sanctum/csrf-cookie'], */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],

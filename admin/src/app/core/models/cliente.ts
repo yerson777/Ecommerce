@@ -23,6 +23,9 @@ export interface Cliente {
   bloqueado?: boolean;
   motivo_bloqueo?: string | null;
   es_prueba?: boolean;
+  tiene_cuenta?: boolean;
+  email_verificado?: boolean;
+  ultimo_acceso_at?: string | null;
   es_duplicado?: boolean;
   pedidos_count?: number;
   compras_count?: number;
@@ -38,7 +41,7 @@ export interface Cliente {
   created_at?: string;
 }
 
-export type ClienteFiltro = '' | 'nuevos' | 'recurrentes' | 'pendientes' | 'bloqueados';
+export type ClienteFiltro = '' | 'nuevos' | 'recurrentes' | 'pendientes' | 'bloqueados' | 'con_cuenta';
 
 export interface ClienteFiltros {
   busqueda?: string;
@@ -57,7 +60,6 @@ export interface ClientePayload {
   bloqueado?: boolean;
   motivo_bloqueo?: string | null;
   es_prueba?: boolean;
-  confirmar_duplicado?: boolean;
 }
 
 export interface ClienteDuplicadoRef {
@@ -81,4 +83,5 @@ export const ETIQUETA_FILTRO_CLIENTE: Record<Exclude<ClienteFiltro, ''>, string>
   recurrentes: 'Recurrentes',
   pendientes: 'Con pendientes',
   bloqueados: 'Bloqueados',
+  con_cuenta: 'Con cuenta',
 };

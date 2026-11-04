@@ -1,4 +1,10 @@
+/**
+ * Configuración de PRODUCCIÓN (la usa `ng build`).
+ *
+ * Si el backend vive en otro dominio, reemplazá '/api' por la URL completa,
+ * por ejemplo: 'https://api.tudominio.com/api'.
+ */
 export const environment = {
-  production: false,
-  apiUrl: 'http://127.0.0.1:8000/api',
+  production: true,
+  apiUrl: '/api',
 };

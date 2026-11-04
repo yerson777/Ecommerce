@@ -93,19 +93,19 @@
             <tbody>
               @for (devolucion of page.data; track devolucion.id) {
                 <tr>
-                  <td class="mono">{{ numeroVenta(devolucion) }}</td>
-                  <td class="mono">{{ numeroPedido(devolucion) }}</td>
-                  <td>{{ nombreCliente(devolucion) }}</td>
-                  <td>
+                  <td class="mono" data-label="Venta">{{ numeroVenta(devolucion) }}</td>
+                  <td class="mono" data-label="Pedido">{{ numeroPedido(devolucion) }}</td>
+                  <td data-label="Cliente">{{ nombreCliente(devolucion) }}</td>
+                  <td data-label="Prenda(s)">
                     <button type="button" class="link-btn" (click)="verDetalle(devolucion)">
                       {{ resumenPrendas(devolucion) }}
                     </button>
                   </td>
-                  <td>{{ etiquetaTipo(devolucion) }}</td>
-                  <td>{{ moneda(devolucion.monto_reembolsado) }}</td>
-                  <td>{{ formatearFecha(devolucion.created_at) }}</td>
-                  <td><app-badge [tone]="tonoEstado(devolucion)">{{ etiquetaEstado(devolucion) }}</app-badge></td>
-                  <td>
+                  <td data-label="Tipo">{{ etiquetaTipo(devolucion) }}</td>
+                  <td data-label="Monto">{{ moneda(devolucion.monto_reembolsado) }}</td>
+                  <td data-label="Registrada">{{ formatearFecha(devolucion.created_at) }}</td>
+                  <td data-label="Estado"><app-badge [tone]="tonoEstado(devolucion)">{{ etiquetaEstado(devolucion) }}</app-badge></td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-ghost btn-sm" (click)="imprimir(devolucion)">Imprimir</button>
                       @if (puedeAprobar(devolucion)) {
@@ -185,9 +185,9 @@
           <tbody>
             @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
               <tr>
-                <td>{{ nombrePrenda(prenda) }}</td>
-                <td>{{ moneda(prenda.precio_unitario) }}</td>
-                <td>{{ prenda.reingresa === false ? 'No (dañada)' : 'Sí' }}</td>
+                <td data-label="Prenda">{{ nombrePrenda(prenda) }}</td>
+                <td data-label="Precio">{{ moneda(prenda.precio_unitario) }}</td>
+                <td data-label="Reingresa">{{ prenda.reingresa === false ? 'No (dañada)' : 'Sí' }}</td>
               </tr>
             } @empty {
               <tr><td colspan="3">Sin prendas registradas.</td></tr>
@@ -392,9 +392,9 @@
         <tbody>
           @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
             <tr>
-              <td>{{ nombrePrenda(prenda) }}</td>
-              <td>{{ moneda(prenda.precio_unitario) }}</td>
-              <td>{{ prenda.reingresa === false ? 'No' : 'Sí' }}</td>
+              <td data-label="Prenda">{{ nombrePrenda(prenda) }}</td>
+              <td data-label="Precio">{{ moneda(prenda.precio_unitario) }}</td>
+              <td data-label="Reingresa">{{ prenda.reingresa === false ? 'No' : 'Sí' }}</td>
             </tr>
           } @empty {
             <tr><td colspan="3">Sin prendas registradas.</td></tr>

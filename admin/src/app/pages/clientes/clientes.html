@@ -76,11 +76,15 @@
             <tbody>
               @for (cliente of page.data; track cliente.id) {
                 <tr>
-                  <td>
+                  <td data-label="Cliente">
                     <div class="cliente-nombre">
                       {{ cliente.nombre }}
                       @if (cliente.bloqueado) {
                         <app-badge tone="danger">Bloqueado</app-badge>
+                      } @else if (cliente.tiene_cuenta) {
+                        <app-badge tone="success">Cuenta activa</app-badge>
+                      } @else {
+                        <app-badge tone="neutral">Sin cuenta</app-badge>
                       }
                       @if (cliente.es_duplicado) {
                         <app-badge tone="warning">Duplicado</app-badge>
@@ -89,12 +93,13 @@
                     @if (cliente.email) {
                       <div class="muted">{{ cliente.email }}</div>
                     }
+                    <div class="muted">Registro: {{ formatearFecha(cliente.created_at) }}</div>
                   </td>
-                  <td class="muted">{{ cliente.telefono ?? '—' }}</td>
-                  <td class="muted">{{ cliente.ciudad ?? '—' }}</td>
-                  <td>{{ cliente.pedidos_count ?? 0 }}</td>
-                  <td>{{ moneda(cliente.total_comprado) }}</td>
-                  <td class="mono">
+                  <td class="muted" data-label="Teléfono">{{ cliente.telefono ?? '—' }}</td>
+                  <td class="muted" data-label="Ciudad">{{ cliente.ciudad ?? '—' }}</td>
+                  <td data-label="Pedidos">{{ cliente.pedidos_count ?? 0 }}</td>
+                  <td data-label="Total comprado">{{ moneda(cliente.total_comprado) }}</td>
+                  <td class="mono" data-label="Último pedido">
                     @if (cliente.ultimo_pedido) {
                       <span class="mono">{{ cliente.ultimo_pedido.numero_pedido }}</span>
                       <div class="muted">{{ formatearFecha(cliente.ultimo_pedido.fecha_pedido) }}</div>
@@ -102,7 +107,7 @@
                       <span class="muted">—</span>
                     }
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     @if (cliente.ultimo_pedido) {
                       <app-badge [tone]="tonoEstado(cliente.ultimo_pedido.estado)">
                         {{ etiquetaEstado(cliente.ultimo_pedido.estado) }}
@@ -111,7 +116,7 @@
                       <app-badge tone="neutral">Sin pedidos</app-badge>
                     }
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="actions">
                       <button type="button" class="btn btn-outline btn-sm" (click)="verDetalle(cliente)">
                         Ver
@@ -172,7 +177,14 @@
               <app-badge tone="neutral">{{ detalle.ciudad }}</app-badge>
             }
             @if (detalle.bloqueado) {
-              <app-badge tone="danger">Bloqueado</app-badge>
+              <app-badge tone="danger">{{ detalle.tiene_cuenta ? 'Cuenta bloqueada' : 'Bloqueado' }}</app-badge>
+            } @else if (detalle.tiene_cuenta) {
+              <app-badge tone="success">Cuenta activa</app-badge>
+            } @else {
+              <app-badge tone="neutral">Sin cuenta</app-badge>
+            }
+            @if (detalle.email_verificado) {
+              <app-badge tone="info">Email verificado</app-badge>
             }
             @if (detalle.es_prueba) {
               <app-badge tone="warning">Prueba</app-badge>
@@ -193,6 +205,16 @@
             <span class="muted-label">Último pedido</span>
             <div>{{ formatearFecha(detalle.fecha_ultimo_pedido) }}</div>
           </div>
+          <div>
+            <span class="muted-label">Registro</span>
+            <div>{{ formatearFecha(detalle.created_at) }}</div>
+          </div>
+          @if (detalle.ultimo_acceso_at) {
+            <div>
+              <span class="muted-label">Último acceso</span>
+              <div>{{ formatearFecha(detalle.ultimo_acceso_at) }}</div>
+            </div>
+          }
           @if (whatsapp(detalle)) {
             <div>
               <span class="muted-label">Contacto</span>
@@ -267,24 +289,28 @@
                     <th>Talla</th>
                     <th>Precio pagado</th>
                     <th>Estado</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (pedido of detalle.pedidos ?? []; track pedido.id) {
                     @for (item of pedido.items ?? []; track item.id) {
                       <tr>
-                        <td class="mono">{{ pedido.numero_pedido }}</td>
-                        <td>{{ formatearFecha(pedido.fecha_pedido) }}</td>
-                        <td>
+                        <td class="mono" data-label="Pedido">{{ pedido.numero_pedido }}</td>
+                        <td data-label="Fecha">{{ formatearFecha(pedido.fecha_pedido) }}</td>
+                        <td data-label="Producto">
                           <div class="item-nombre">{{ item.producto_nombre ?? 'Prenda' }}</div>
                           <div class="muted">{{ item.producto_codigo ?? '' }}</div>
                         </td>
-                        <td>{{ item.producto_talla ?? '—' }}</td>
-                        <td>{{ moneda(item.precio_unitario) }}</td>
-                        <td>
+                        <td data-label="Talla">{{ item.producto_talla ?? '—' }}</td>
+                        <td data-label="Precio pagado">{{ moneda(item.precio_unitario) }}</td>
+                        <td data-label="Estado">
                           <app-badge [tone]="tonoEstado(pedido.estado)">
                             {{ etiquetaEstado(pedido.estado) }}
                           </app-badge>
+                        </td>
+                        <td data-label="Acciones">
+                          <a class="btn btn-ghost btn-sm" routerLink="/pedidos">Ver en pedidos</a>
                         </td>
                       </tr>
                     }
@@ -312,11 +338,11 @@
                 <tbody>
                   @for (venta of detalle.ventas ?? []; track venta.id) {
                     <tr>
-                      <td class="mono">{{ venta.numero_venta }}</td>
-                      <td>{{ formatearFecha(venta.fecha_venta) }}</td>
-                      <td class="muted">{{ venta.metodo_pago ?? '—' }}</td>
-                      <td>{{ moneda(venta.total) }}</td>
-                      <td>
+                      <td class="mono" data-label="Venta">{{ venta.numero_venta }}</td>
+                      <td data-label="Fecha">{{ formatearFecha(venta.fecha_venta) }}</td>
+                      <td class="muted" data-label="Método de pago">{{ venta.metodo_pago ?? '—' }}</td>
+                      <td data-label="Total">{{ moneda(venta.total) }}</td>
+                      <td data-label="Estado">
                         <app-badge [tone]="tonoVenta(venta.estado)">
                           {{ etiquetaVenta(venta.estado) }}
                         </app-badge>
@@ -345,13 +371,13 @@
                 <tbody>
                   @for (reserva of detalle.reservas ?? []; track reserva.id) {
                     <tr>
-                      <td>
+                      <td data-label="Prenda">
                         <div class="item-nombre">{{ reserva.producto?.nombre ?? 'Prenda' }}</div>
                         <div class="muted">{{ reserva.producto?.codigo ?? '' }}</div>
                       </td>
-                      <td class="muted">{{ formatearFecha(reserva.vence_en) }}</td>
-                      <td class="muted">{{ formatearFecha(reserva.created_at) }}</td>
-                      <td>
+                      <td class="muted" data-label="Vence">{{ formatearFecha(reserva.vence_en) }}</td>
+                      <td class="muted" data-label="Creada">{{ formatearFecha(reserva.created_at) }}</td>
+                      <td data-label="Estado">
                         <app-badge [tone]="tonoReserva(reserva.estado)">
                           {{ etiquetaReserva(reserva.estado) }}
                         </app-badge>
@@ -381,11 +407,11 @@
                 <tbody>
                   @for (devolucion of detalle.devoluciones ?? []; track devolucion.id) {
                     <tr>
-                      <td class="mono">{{ devolucion.pedido?.numero_pedido ?? '—' }}</td>
-                      <td>{{ formatearFecha(devolucion.devuelto_en ?? devolucion.created_at) }}</td>
-                      <td class="muted">{{ devolucion.motivo }}</td>
-                      <td>{{ moneda(devolucion.monto_reembolsado) }}</td>
-                      <td>
+                      <td class="mono" data-label="Pedido">{{ devolucion.pedido?.numero_pedido ?? '—' }}</td>
+                      <td data-label="Fecha">{{ formatearFecha(devolucion.devuelto_en ?? devolucion.created_at) }}</td>
+                      <td class="muted" data-label="Motivo">{{ devolucion.motivo }}</td>
+                      <td data-label="Reembolsado">{{ moneda(devolucion.monto_reembolsado) }}</td>
+                      <td data-label="Estado">
                         <app-badge [tone]="tonoDevolucion(devolucion.estado)">
                           {{ etiquetaDevolucion(devolucion.estado) }}
                         </app-badge>

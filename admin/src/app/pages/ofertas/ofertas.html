@@ -70,28 +70,28 @@
           <tbody>
             @for (oferta of ofertas(); track oferta.id) {
               <tr>
-                <td><strong>{{ oferta.nombre }}</strong></td>
-                <td>
+                <td data-label="Nombre"><strong>{{ oferta.nombre }}</strong></td>
+                <td data-label="Descuento">
                   <app-badge [tone]="oferta.tipo === 'porcentaje' ? 'primary' : 'info'">
                     {{ valorTexto(oferta) }}
                   </app-badge>
                 </td>
-                <td class="muted">{{ alanceTexto(oferta) }}</td>
-                <td class="muted nowrap">
+                <td class="muted" data-label="Alcance">{{ alanceTexto(oferta) }}</td>
+                <td class="muted nowrap" data-label="Vigencia">
                   {{ oferta.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
                   →
                   {{ oferta.fecha_fin | date: 'dd/MM/yy HH:mm' }}
                 </td>
-                <td class="muted">
+                <td class="muted" data-label="Cupón">
                   {{ oferta.permitir_cupon ? 'Acumulable' : 'No acumula' }}
                 </td>
-                <td>
+                <td data-label="Estado">
                   <app-badge [tone]="tonosEstado[oferta.estado]">
                     {{ etiquetasEstado[oferta.estado] }}
                   </app-badge>
                 </td>
-                <td class="muted">{{ oferta.ventas_count }}</td>
-                <td class="align-right">
+                <td class="muted" data-label="Ventas">{{ oferta.ventas_count }}</td>
+                <td class="align-right" data-label="Acciones">
                   <div class="row-actions">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="abrirEditar(oferta)">
                       Editar

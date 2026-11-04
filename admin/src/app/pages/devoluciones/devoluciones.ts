@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Paginated } from '../../core/models/paginated';
@@ -101,7 +102,7 @@ export class DevolucionesComponent implements OnInit {
   readonly detalle = signal<Devolucion | null>(null);
 
   readonly pagina = signal(1);
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   private ventaInicial: number | null = null;
 
@@ -535,10 +536,7 @@ export class DevolucionesComponent implements OnInit {
     return prenda.nombre ?? prenda.codigo ?? `#${prenda.producto_id}`;
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   formatearFecha(fecha: string | null | undefined): string {
     if (!fecha) {

@@ -5,6 +5,7 @@ import {
   OnInit,
   Signal,
   effect,
+  inject,
   signal,
   viewChild,
 } from '@angular/core';
@@ -19,6 +20,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService, CartItem } from '../../core/services/cart.service';
+import { ClienteAuthService } from '../../core/services/cliente-auth.service';
 import { CheckoutPayload, MetodoEntrega, MetodoPago } from '../../core/models/pedido';
 import { ApiError } from '../../core/models/api-response';
 import { formatearPrecio } from '../../core/utils/precio';
@@ -36,6 +38,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private readonly cartService: CartService;
   readonly items: Signal<CartItem[]>;
   readonly subtotal: Signal<number>;
+
+  readonly auth = inject(ClienteAuthService);
 
   readonly metodosEntrega = signal<MetodoEntrega[]>([]);
   readonly metodosPago = signal<MetodoPago[]>([]);
@@ -98,6 +102,21 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       this.router.navigate(['/']);
       return;
     }
+
+    // Con sesión iniciada, autocompleta los datos de entrega. El backend
+    // asocia el pedido a la cuenta a partir del token; como invitado todo
+    // sigue funcionando igual.
+    const cliente = this.auth.cliente();
+    if (cliente) {
+      this.form.patchValue({
+        nombre: cliente.nombre,
+        telefono: cliente.telefono ?? '',
+        email: cliente.email,
+        ciudad: cliente.ciudad ?? '',
+        direccion: cliente.direccion ?? '',
+      });
+    }
+
     this.catalogo.metodosEntrega().subscribe({
       next: (res) => this.metodosEntrega.set(res.data ?? []),
     });

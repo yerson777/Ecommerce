@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
@@ -71,7 +72,9 @@ class AuthApiTest extends TestCase
     {
         $user = User::factory()->create(['email' => 'admin@everly.test']);
 
-        $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/admin/auth/me');
+        Sanctum::actingAs($user, ['admin']);
+
+        $response = $this->getJson('/api/v1/admin/auth/me');
 
         $response
             ->assertStatus(200)

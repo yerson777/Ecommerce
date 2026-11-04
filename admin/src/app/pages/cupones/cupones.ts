@@ -99,7 +99,7 @@ export class CuponesComponent implements OnInit {
   readonly resultados = signal<Paginated<Cupon> | null>(null);
   readonly cargando = signal(true);
   readonly pagina = signal(1);
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   readonly categorias = signal<CategoriaRef[]>([]);
 

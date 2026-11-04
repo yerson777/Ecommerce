@@ -511,11 +511,46 @@
 /* ---------------- Escritorio (>=1024px): igual que ahora ---------------- */
 
 /* ---------------- Evitar scroll horizontal de página ---------------- */
-.shell,
+/* `clip` recorta igual que `hidden`, pero NO crea un contenedor de scroll,
+   por lo que no rompe el `position: sticky` del sidebar. */
+.shell {
+  min-width: 0;
+  overflow-x: clip;
+}
+
 .main,
 .content {
   min-width: 0;
   overflow-x: hidden;
+}
+
+/* ---------------- Sidebar anclado al viewport (>=768px) ----------------
+   El sidebar acompaña el scroll, ocupa siempre toda la altura y su menú
+   hace scroll internamente mientras el perfil/cerrar sesión queda abajo. */
+@media (min-width: 768px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .brand {
+    flex: none;
+  }
+
+  .nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .user-card {
+    flex: none;
+    margin-top: auto;
+  }
 }
 
 table {

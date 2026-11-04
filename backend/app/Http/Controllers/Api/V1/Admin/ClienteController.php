@@ -92,6 +92,7 @@ class ClienteController extends Controller
                         Pedido::ESTADO_CONFIRMADO,
                     ])),
                     'bloqueados' => $query->where('clientes.bloqueado', true),
+                    'con_cuenta' => $query->whereNotNull('clientes.password'),
                     default => null,
                 };
             })
@@ -112,15 +113,17 @@ class ClienteController extends Controller
     {
         $datos = $request->validated();
 
-        if (! ($datos['confirmar_duplicado'] ?? false)) {
-            $coincidencias = $this->buscarCoincidencias(
+        $coincidencias = $this->buscarCoincidencias(
+            $datos['telefono'] ?? null,
+            $datos['email'] ?? null
+        );
+
+        if ($coincidencias->isNotEmpty()) {
+            return $this->respuestaDuplicado(
+                $coincidencias,
                 $datos['telefono'] ?? null,
                 $datos['email'] ?? null
             );
-
-            if ($coincidencias->isNotEmpty()) {
-                return $this->respuestaDuplicado($coincidencias);
-            }
         }
 
         $cliente = Cliente::create($datos);
@@ -197,19 +200,32 @@ class ClienteController extends Controller
         $cliente = Cliente::findOrFail($id);
         $datos = $request->validated();
 
-        if (! ($datos['confirmar_duplicado'] ?? false)) {
-            $coincidencias = $this->buscarCoincidencias(
-                $datos['telefono'] ?? $cliente->telefono,
-                $datos['email'] ?? $cliente->email,
-                $cliente->id
-            );
+        // Solo valida duplicados cuando cambian realmente el correo o el
+        // teléfono. Así editar otros datos o bloquear/desbloquear un cliente
+        // que ya era duplicado antes de esta regla sigue funcionando.
+        $telefono = $datos['telefono'] ?? $cliente->telefono;
+        $email = $datos['email'] ?? $cliente->email;
+
+        $cambiaTelefono = array_key_exists('telefono', $datos)
+            && Contacto::normalizarTelefono($telefono) !== $cliente->telefono_normalizado;
+        $cambiaEmail = array_key_exists('email', $datos)
+            && Contacto::normalizarEmail($email) !== Contacto::normalizarEmail($cliente->email);
+
+        if ($cambiaTelefono || $cambiaEmail) {
+            $coincidencias = $this->buscarCoincidencias($telefono, $email, $cliente->id);
 
             if ($coincidencias->isNotEmpty()) {
-                return $this->respuestaDuplicado($coincidencias);
+                return $this->respuestaDuplicado($coincidencias, $telefono, $email);
             }
         }
 
         $cliente->update($datos);
+
+        // Al bloquear una cuenta se revocan sus tokens para cortar la sesión
+        // abierta en la tienda. Los pedidos y ventas no se modifican.
+        if (array_key_exists('bloqueado', $datos) && filter_var($datos['bloqueado'], FILTER_VALIDATE_BOOL)) {
+            $cliente->tokens()->delete();
+        }
 
         return Api::resource(new ClienteResource($cliente), 'Cliente actualizado correctamente.');
     }
@@ -431,17 +447,44 @@ class ClienteController extends Controller
             ->get();
     }
 
-    private function respuestaDuplicado(Collection $coincidencias)
+    private function respuestaDuplicado(Collection $coincidencias, ?string $telefono = null, ?string $email = null)
     {
-        $mensaje = 'Ya existe un cliente con ese teléfono o correo: '
-            .$coincidencias->pluck('nombre')->implode(', ')
-            .'.';
+        $tel = Contacto::normalizarTelefono($telefono);
+        $mail = Contacto::normalizarEmail($email);
 
-        return Api::error($mensaje, 422, [
-            'telefono' => [$mensaje],
-            'email' => [$mensaje],
-            'confirmar_duplicado' => [$mensaje],
-        ]);
+        $errores = [];
+        $partes = [];
+
+        if ($tel && $coincidencias->contains(fn (Cliente $c) => $c->telefono_normalizado === $tel)) {
+            $errores['telefono'] = ['Ese teléfono ya está registrado con otro cliente.'];
+            $partes[] = 'teléfono';
+        }
+
+        if ($mail && $coincidencias->contains(fn (Cliente $c) => Contacto::normalizarEmail($c->email) === $mail)) {
+            $errores['email'] = ['Ese correo ya está registrado con otro cliente.'];
+            $partes[] = 'correo';
+        }
+
+        $mensaje = match (true) {
+            count($partes) === 2 => 'Ese correo y ese teléfono ya fueron usados por otro cliente.',
+            $partes === ['correo'] => 'Ese correo ya fue usado por otro cliente.',
+            $partes === ['teléfono'] => 'Ese teléfono ya fue usado por otro cliente.',
+            default => 'Esos datos ya fueron usados por otro cliente.',
+        };
+
+        $nombres = $coincidencias->pluck('nombre')->filter()->unique()->take(3)->implode(', ');
+        if ($nombres !== '') {
+            $mensaje .= ' Coincide con: '.$nombres.'.';
+        }
+
+        if ($errores === []) {
+            $errores = [
+                'email' => [$mensaje],
+                'telefono' => [$mensaje],
+            ];
+        }
+
+        return Api::error($mensaje, 422, $errores);
     }
 
     private function generarCsv(array $headers, array $rows): string

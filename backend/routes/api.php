@@ -24,8 +24,10 @@ use App\Http\Controllers\Api\V1\Admin\ReporteController;
 use App\Http\Controllers\Api\V1\Admin\ReservaController;
 use App\Http\Controllers\Api\V1\Admin\UsuarioController;
 use App\Http\Controllers\Api\V1\Admin\VentaController;
+use App\Http\Controllers\Api\V1\Store\AuthController as StoreAuthController;
 use App\Http\Controllers\Api\V1\Store\BannerController;
 use App\Http\Controllers\Api\V1\Store\CategoriaController;
+use App\Http\Controllers\Api\V1\Store\MiPedidoController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
 use App\Http\Controllers\Api\V1\Store\ContactoController;
 use App\Http\Controllers\Api\V1\Store\ConfiguracionController as StoreConfiguracionController;
@@ -92,6 +94,34 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('/contacto', [ContactoController::class, 'store'])
             ->middleware('throttle:5,1')
             ->name('contacto.store');
+
+        /* ---- Cuentas de cliente (opcionales) ---- */
+        Route::prefix('auth')->name('auth.')->group(function () {
+            Route::post('/registro', [StoreAuthController::class, 'registro'])
+                ->middleware('throttle:registro')
+                ->name('registro');
+            Route::post('/login', [StoreAuthController::class, 'login'])
+                ->middleware('throttle:login')
+                ->name('login');
+            Route::post('/recuperar', [StoreAuthController::class, 'recuperar'])
+                ->middleware('throttle:recuperar')
+                ->name('recuperar');
+            Route::post('/restablecer', [StoreAuthController::class, 'restablecer'])
+                ->middleware('throttle:recuperar')
+                ->name('restablecer');
+
+            Route::middleware(['auth:sanctum', 'abilities:cliente', 'cliente'])->group(function () {
+                Route::post('/logout', [StoreAuthController::class, 'logout'])->name('logout');
+                Route::get('/perfil', [StoreAuthController::class, 'perfil'])->name('perfil');
+                Route::put('/perfil', [StoreAuthController::class, 'actualizarPerfil'])->name('perfil.update');
+                Route::put('/password', [StoreAuthController::class, 'cambiarPassword'])->name('password.update');
+            });
+        });
+
+        Route::middleware(['auth:sanctum', 'abilities:cliente', 'cliente'])->group(function () {
+            Route::get('/mis-pedidos', [MiPedidoController::class, 'index'])->name('mis-pedidos.index');
+            Route::get('/mis-pedidos/{numero}', [MiPedidoController::class, 'show'])->name('mis-pedidos.show');
+        });
     });
 
     /* ====================== ADMIN (autenticado) ====================== */
@@ -101,7 +131,7 @@ Route::group(['prefix' => 'v1'], function () {
             ->middleware('throttle:login')
             ->name('auth.login');
 
-        Route::middleware(['auth:sanctum'])->group(function () {
+        Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
             Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
             Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
 
@@ -124,7 +154,7 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         // ==== Módulos operativos (super_admin, admin y vendedor) ====
-        Route::middleware(['auth:sanctum', 'role:super_admin,admin,vendedor'])->group(function () {
+        Route::middleware(['auth:sanctum', 'abilities:admin', 'role:super_admin,admin,vendedor'])->group(function () {
             Route::get('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'index'])->name('productos.index');
             Route::post('/productos', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'store'])->name('productos.store');
             Route::get('/productos/exportar', [App\Http\Controllers\Api\V1\Admin\ProductoController::class, 'exportar'])->name('productos.exportar');
@@ -240,7 +270,7 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         // ==== Módulos financieros (super_admin y admin) ====
-        Route::middleware(['auth:sanctum', 'role:super_admin,admin'])->group(function () {
+        Route::middleware(['auth:sanctum', 'abilities:admin', 'role:super_admin,admin'])->group(function () {
             // ==== Cupones (promociones) ====
             Route::get('/cupones', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'index'])->name('cupones.index');
             Route::post('/cupones', [App\Http\Controllers\Api\V1\Admin\CuponController::class, 'store'])->name('cupones.store');
@@ -333,7 +363,7 @@ Route::group(['prefix' => 'v1'], function () {
         });
 
         // ==== Gestión de usuarios (solo super_admin) ====
-        Route::middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
+        Route::middleware(['auth:sanctum', 'abilities:admin', 'role:super_admin'])->group(function () {
             Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
             Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
             Route::get('/usuarios/{id}', [UsuarioController::class, 'show'])->name('usuarios.show');
@@ -346,4 +376,4 @@ Route::group(['prefix' => 'v1'], function () {
 // Ruta de verificación histórica (auth:sanctum)
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'abilities:admin']);

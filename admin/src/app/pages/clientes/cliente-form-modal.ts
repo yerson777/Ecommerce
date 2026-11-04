@@ -50,10 +50,7 @@ export class ClienteFormModalComponent implements OnInit {
   esEdicion = false;
   readonly guardando = signal(false);
   readonly errorBanner = signal<string | null>(null);
-  readonly avisoDuplicado = signal<string | null>(null);
   readonly errores = signal<Record<string, string[]> | null>(null);
-
-  private confirmadoDuplicado = false;
 
   ngOnInit(): void {
     const actual = this.cliente();
@@ -76,7 +73,7 @@ export class ClienteFormModalComponent implements OnInit {
     return this.errores()?.[campo]?.[0];
   }
 
-  guardar(confirmar = false): void {
+  guardar(): void {
     const f = this.forma;
 
     if (!f.nombre.trim()) {
@@ -97,10 +94,6 @@ export class ClienteFormModalComponent implements OnInit {
       es_prueba: f.es_prueba,
     };
 
-    if (confirmar || this.confirmadoDuplicado) {
-      data.confirmar_duplicado = true;
-    }
-
     this.guardando.set(true);
     this.errorBanner.set(null);
     this.errores.set(null);
@@ -119,26 +112,10 @@ export class ClienteFormModalComponent implements OnInit {
       },
       error: (err: ApiError) => {
         this.guardando.set(false);
-
-        if (err.status === 422 && err.errors?.['confirmar_duplicado']) {
-          this.avisoDuplicado.set(err.message);
-          return;
-        }
-
         this.errorBanner.set(err.message ?? 'No se pudo guardar el cliente.');
         this.errores.set(err.errors ?? null);
       },
     });
-  }
-
-  confirmarDuplicado(): void {
-    this.confirmadoDuplicado = true;
-    this.avisoDuplicado.set(null);
-    this.guardar(true);
-  }
-
-  descartarAviso(): void {
-    this.avisoDuplicado.set(null);
   }
 
   eliminar(): void {

@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiResponse } from '../../core/models/api-response';
 import { Paginated } from '../../core/models/paginated';
@@ -89,7 +90,7 @@ export class ReservasComponent implements OnInit {
   readonly liberarObjetivo = signal<Reserva | null>(null);
   readonly liberando = signal(false);
 
-  readonly perPage = 15;
+  readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -352,10 +353,7 @@ export class ReservasComponent implements OnInit {
     return `${producto.nombre}${talla}`;
   }
 
-  moneda(valor: string | number | null | undefined): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '0'));
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
   formatearFecha(fecha: string | null | undefined): string {
     if (!fecha) {

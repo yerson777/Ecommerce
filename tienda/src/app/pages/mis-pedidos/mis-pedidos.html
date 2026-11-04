@@ -1,0 +1,85 @@
+<div class="page auth-page">
+  <div class="container">
+    <header class="hero-pagina">
+      <span class="etiqueta">Mi cuenta</span>
+      <h1 class="titulo">Mis pedidos</h1>
+      <p class="bajada">Revisá el estado, lo pagado y el saldo de tus compras.</p>
+    </header>
+
+    @if (error()) {
+      <div class="error">{{ error() }}</div>
+    }
+
+    @if (cargando()) {
+      <p class="texto-sesion">Cargando pedidos…</p>
+    } @else if (pedidos().length === 0) {
+      <section class="card auth-card vacio">
+        <p class="texto-sesion">Todavía no tenés pedidos con esta cuenta.</p>
+        <a class="btn btn-primary" routerLink="/catalogo">Ver catálogo</a>
+      </section>
+    } @else {
+      <div class="pedidos-lista">
+        @for (pedido of pedidos(); track pedido.numero_pedido) {
+          <article class="card pedido-card">
+            <div class="pedido-cabecera">
+              <div>
+                <div class="pedido-numero">Pedido {{ pedido.numero_pedido }}</div>
+                <div class="pedido-fecha">{{ formatearFecha(pedido.fecha_pedido) }}</div>
+              </div>
+              <span [class]="'estado-badge estado--' + pedido.estado">
+                {{ etiquetaEstado(pedido.estado) }}
+              </span>
+            </div>
+
+            <div class="pedido-datos">
+              <div class="pedido-dato">
+                <span class="etq">Total</span>
+                <span class="val">{{ formatearPrecio(pedido.total) }}</span>
+              </div>
+              <div class="pedido-dato">
+                <span class="etq">Pagado</span>
+                <span class="val">{{ formatearPrecio(pedido.total_pagado) }}</span>
+              </div>
+              <div class="pedido-dato">
+                <span class="etq">Saldo</span>
+                <span class="val">{{ formatearPrecio(pedido.saldo) }}</span>
+              </div>
+              <div class="pedido-dato">
+                <span class="etq">Pago</span>
+                <span class="val">{{ etiquetaPago(pedido.estado_pago) }}</span>
+              </div>
+            </div>
+
+            <div class="pedido-acciones">
+              <a class="btn btn-outline btn-sm" [routerLink]="['/mis-pedidos', pedido.numero_pedido]">
+                Ver detalle
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+
+      @if (ultimaPagina() > 1) {
+        <div class="paginador-pedidos">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            (click)="irA(pagina() - 1)"
+            [disabled]="pagina() <= 1"
+          >
+            Anterior
+          </button>
+          <span class="muted">Página {{ pagina() }} de {{ ultimaPagina() }}</span>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            (click)="irA(pagina() + 1)"
+            [disabled]="pagina() >= ultimaPagina()"
+          >
+            Siguiente
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

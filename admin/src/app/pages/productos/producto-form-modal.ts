@@ -1,4 +1,5 @@
 import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import {
@@ -290,18 +291,9 @@ export class ProductoFormModalComponent implements OnInit {
     return TONO_ESTADO[estado as keyof typeof TONO_ESTADO] ?? 'neutral';
   }
 
-  moneda(valor: string | number): string {
-    const numero = typeof valor === 'number' ? valor : parseFloat(valor);
-    return `Bs ${Number.isNaN(numero) ? '0.00' : numero.toFixed(2)}`;
-  }
+  readonly moneda = formatearMoneda;
 
-  formatearFecha(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return '—';
-    }
-    const [anio, mes, dia] = fecha.slice(0, 10).split('-').map((n) => Number(n));
-    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR');
-  }
+  readonly formatearFecha = formatearFechaCompartida;
 
   cerrar(): void {
     this.limpiarPreviews();
