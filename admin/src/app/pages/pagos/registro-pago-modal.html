@@ -168,7 +168,7 @@
       </div>
     </div>
 
-    <div class="form-actions">
+    <div class="form-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando()">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
         {{ guardando() ? 'Registrando…' : 'Registrar pago' }}

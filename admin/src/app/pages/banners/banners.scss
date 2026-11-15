@@ -79,11 +79,26 @@
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
-.preview-img {
-  width: 120px;
-  height: 68px;
+.preview-banner {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  display: block;
+  background: var(--bg);
+}
+
+.preview-banner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
 }
 
 .switch {
@@ -107,6 +122,33 @@
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.25rem;
+}
+
+.aviso-medida {
+  margin: 0.4rem 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.aviso-medida--success {
+  color: var(--success-dark, #14603c);
+  background: #e3f5ec;
+}
+
+.aviso-medida--warning {
+  color: var(--amber-dark, #8a5200);
+  background: #fdf0dc;
+}
+
+.aviso-medida--danger {
+  color: var(--red-strong, #a32a1f);
+  background: #fdecea;
 }
 
 /* Acciones del listado (inicio y catalogo): contraste en escritorio y tarjetas moviles. */

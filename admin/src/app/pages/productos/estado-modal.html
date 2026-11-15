@@ -47,7 +47,7 @@
   </div>
 }
 
-<div class="modal-actions">
+<div class="modal-actions" modal-footer>
   <button type="button" class="btn btn-ghost" (click)="cerrado.emit()" [disabled]="guardando()">Cancelar</button>
   <button type="button" class="btn btn-primary" (click)="confirmar()" [disabled]="guardando()">
     {{ guardando() ? 'Procesando…' : esReservar() ? 'Reservar prenda' : 'Registrar venta' }}

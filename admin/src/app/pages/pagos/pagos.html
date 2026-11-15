@@ -257,6 +257,7 @@
             <span class="muted-label">Comprobante</span>
             @if (detalle.comprobante) {
               <a class="link" (click)="verComprobante(detalle.comprobante!, detalle.id)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
                 {{ detalle.comprobante.nombre }}
               </a>
             } @else {
@@ -312,7 +313,10 @@
                       </td>
                       <td data-label="Comprobante">
                         @if (historial.comprobante) {
-                          <a class="link" (click)="verComprobante(historial.comprobante!, historial.id)">Ver</a>
+                          <a class="link" (click)="verComprobante(historial.comprobante!, historial.id)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Ver
+                          </a>
                         } @else {
                           <label class="btn btn-outline btn-sm upload-btn">
                             @if (adjuntandoId === historial.id) {
@@ -384,7 +388,7 @@
         <label>Motivo de anulación (opcional)</label>
         <input class="input" [(ngModel)]="motivoAnular" placeholder="Motivo..." />
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="cancelarTransicion()">Cancelar</button>
         <button type="button" class="btn btn-danger" (click)="anularPago()" [disabled]="transicionando">Anular pago</button>
       </div>

@@ -198,7 +198,7 @@
       </div>
     </div>
 
-    <div class="actions end">
+    <div class="actions end" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
         {{ guardando() ? 'Guardando…' : 'Guardar' }}
@@ -222,7 +222,7 @@
         }
       </select>
     </div>
-    <div class="actions end">
+    <div class="actions end" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarMover()">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="confirmarMover()" [disabled]="destinoMover == null">
         Mover prendas

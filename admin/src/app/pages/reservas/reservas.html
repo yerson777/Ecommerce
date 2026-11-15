@@ -173,7 +173,7 @@
         <div class="error-box">{{ crear().error }}</div>
       }
 
-      <div class="modal-actions">
+      <div class="modal-actions" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="cerrarCrear()" [attr.disabled]="crear().guardando ? '' : null">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="crearReserva()" [attr.disabled]="crear().guardando ? '' : null">
           {{ crear().guardando ? 'Reservando…' : 'Reservar prenda' }}
@@ -217,7 +217,7 @@
         <div class="error-box">{{ convertir().error }}</div>
       }
 
-      <div class="modal-actions">
+      <div class="modal-actions" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="cerrarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="confirmarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">
           {{ convertir().guardando ? 'Procesando…' : 'Confirmar venta' }}

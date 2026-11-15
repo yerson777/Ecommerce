@@ -110,7 +110,7 @@ export class BannersComponent implements OnInit {
       ? `Tamaño recomendado: ${m.ancho}×${m.alto} px (proporción 5:4)`
       : `Medida recomendada: ${m.ancho}×${m.alto} px (proporción 21:9)`;
   });
-  readonly avisoProporcion = signal<string | null>(null);
+  readonly avisoMedida = signal<{ tipo: 'success' | 'warning' | 'danger'; icono: string; texto: string } | null>(null);
 
   readonly banners = signal<Banner[]>([]);
   readonly cargando = signal(true);
@@ -192,6 +192,10 @@ export class BannersComponent implements OnInit {
     if (banner.enlace_tipo === 'producto' && banner.enlace_id) {
       this.cargarProductoDestino(banner.enlace_id);
     }
+
+    if (banner.url) {
+      this.verificarProporcion(banner.url);
+    }
   }
 
   cerrarModal(): void {
@@ -201,7 +205,7 @@ export class BannersComponent implements OnInit {
     this.resultadosBusqueda.set([]);
     this.busquedaProducto.set('');
     this.previewArchivo.set(null);
-    this.avisoProporcion.set(null);
+    this.avisoMedida.set(null);
   }
 
   onArchivoSeleccionado(event: Event): void {
@@ -226,17 +230,41 @@ export class BannersComponent implements OnInit {
       const m = this.medida();
       const esperada = m.ancho / m.alto;
       const real = imagen.naturalWidth / imagen.naturalHeight;
+      const proporcionCorrecta = Math.abs(real - esperada) / esperada <= 0.03;
+      const mitadAncho = m.ancho / 2;
+      const w = imagen.naturalWidth;
+      const h = imagen.naturalHeight;
 
-      if (Math.abs(real - esperada) / esperada > 0.05) {
-        this.avisoProporcion.set(
-          `Se recortará un poco. Medida recomendada: ${m.ancho}×${m.alto} px`,
-        );
+      if (!proporcionCorrecta) {
+        if (w < mitadAncho) {
+          this.avisoMedida.set({
+            tipo: 'danger',
+            icono: '⚠',
+            texto: `Imagen demasiado pequeña (${w}×${h} px). Se verá borrosa o cortada. Recomendado: ${m.ancho}×${m.alto} px`,
+          });
+        } else {
+          this.avisoMedida.set({
+            tipo: 'warning',
+            icono: '⚠',
+            texto: `La imagen se recortará un poco en la tienda (${w}×${h} px). Recomendado: ${m.ancho}×${m.alto} px (proporción ${m.proporcion})`,
+          });
+        }
+      } else if (w < m.ancho) {
+        this.avisoMedida.set({
+          tipo: 'warning',
+          icono: '⚠',
+          texto: `La imagen es pequeña (${w}×${h} px). Puede verse borrosa. Recomendado: ${m.ancho}×${m.alto} px`,
+        });
       } else {
-        this.avisoProporcion.set('✓ Medida correcta');
+        this.avisoMedida.set({
+          tipo: 'success',
+          icono: '✓',
+          texto: `✓ Medida correcta (${w}×${h} px)`,
+        });
       }
     };
     imagen.onerror = () => {
-      this.avisoProporcion.set(null);
+      this.avisoMedida.set(null);
     };
     imagen.src = url;
   }
@@ -500,7 +528,7 @@ export class BannersComponent implements OnInit {
       archivo: null,
     };
     this.previewArchivo.set(null);
-    this.avisoProporcion.set(null);
+    this.avisoMedida.set(null);
     this.errorFormulario.set('');
   }
 }

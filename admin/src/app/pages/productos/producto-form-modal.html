@@ -182,7 +182,7 @@
       }
     </div>
 
-    <div class="form-actions">
+    <div class="form-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando()">Cancelar</button>
       @if (!esEdicion) {
         <button type="button" class="btn btn-outline" (click)="guardar(true)" [disabled]="guardando()">
@@ -275,7 +275,7 @@
           </div>
         }
 
-        <div class="form-actions">
+        <div class="form-actions" modal-footer>
           <button type="button" class="btn btn-primary" (click)="cerrar()">Cerrar</button>
         </div>
       </div>

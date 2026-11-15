@@ -162,15 +162,17 @@
           <div class="preview-banner" [style.aspect-ratio]="medida().aspecto">
             <img [src]="preview" [alt]="form.titulo || 'Banner'" />
           </div>
+          @if (avisoMedida(); as aviso) {
+            <p class="aviso-medida aviso-medida--{{ aviso.tipo }}">
+              {{ aviso.icono }} {{ aviso.texto }}
+            </p>
+          }
           <label class="btn btn-outline btn-sm file-label">
             Cambiar imagen
             <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" />
           </label>
+          <p class="muted-hint">{{ textoMedida() }}</p>
         </div>
-        <p class="muted-hint">{{ textoMedida() }}</p>
-        @if (avisoProporcion()) {
-          <p class="aviso-proporcion">{{ avisoProporcion() }}</p>
-        }
       } @else {
         <label class="btn btn-primary file-btn">
           Elegir imagen…
@@ -274,7 +276,7 @@
         </label>
       </div>
 
-      <div class="actions-right">
+      <div class="actions-right" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
           {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}

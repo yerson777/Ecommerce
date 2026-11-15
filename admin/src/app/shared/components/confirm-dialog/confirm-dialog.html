@@ -1,7 +1,7 @@
 <app-modal [title]="title()" [closable]="true" (closed)="cancel.emit()">
   <p class="message">{{ message() }}</p>
 
-  <div class="dialog-actions">
+  <div class="dialog-actions" modal-footer>
     <button type="button" class="btn btn-ghost" (click)="cancel.emit()">{{ cancelLabel() }}</button>
     <button
       type="button"

@@ -206,7 +206,7 @@
         </table>
       </div>
 
-      <div class="modal-actions">
+      <div class="modal-actions" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="imprimir(devolucion)">Imprimir comprobante</button>
         <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
       </div>
@@ -330,7 +330,7 @@
         <div class="error-box">{{ registrar().error }}</div>
       }
 
-      <div class="modal-actions">
+      <div class="modal-actions" modal-footer>
         <button type="button" class="btn btn-ghost" (click)="cerrarRegistrar()" [attr.disabled]="registrar().guardando ? '' : null">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="registrarDevolucion()" [attr.disabled]="registrar().guardando ? '' : null">
           {{ registrar().guardando ? 'Registrando…' : 'Registrar devolución' }}

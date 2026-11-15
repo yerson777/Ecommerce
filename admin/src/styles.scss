@@ -599,6 +599,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 /* ---------- Ficha de detalle (modales Ver) ---------- */
@@ -1205,4 +1206,364 @@ app-inventario .tab.tab:hover:not(.tab--active),
 app-tallas-marcas .tab.tab:hover:not(.tab--active) {
   background: var(--lilac-hover);
   color: var(--violet-dark);
+}
+
+app-modal .modal > .modal-body {
+  overscroll-behavior: contain;
+}
+
+app-modal .modal > .modal-body > .stack,
+app-modal .modal > .modal-body > .detalle {
+  gap: 1rem;
+}
+
+app-modal .modal > .modal-body .subtitle,
+app-modal .modal > .modal-body .section-title {
+  margin: 0 0 0.7rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+app-modal .modal > .modal-body .detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+app-modal .modal > .modal-body .detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--primary-soft);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary-light) 55%, white);
+}
+
+app-modal .modal > .modal-body .detail-grid > div > div:not(.muted),
+app-modal .modal > .modal-body .detail-grid > div > span:not(.muted-label) {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+app-modal .modal > .modal-body .detail-grid .muted-label,
+app-modal .modal > .modal-body .ficha-label {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+app-modal .modal > .modal-body .ficha {
+  padding: 1rem;
+  border: 1px solid var(--primary-soft);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary-light) 55%, white);
+}
+
+app-modal .modal > .modal-body .ficha > div {
+  padding: 0.35rem 0;
+}
+
+app-modal .modal > .modal-body .detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+app-modal .modal > .modal-body .detalle-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--primary-soft);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary-light) 55%, white);
+}
+
+app-modal .modal > .modal-body .detalle-grid > div > .muted-label,
+app-modal .modal > .modal-body .detalle-grid > div > .muted {
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+app-modal .modal > .modal-body .detalle-grid > div > strong,
+app-modal .modal > .modal-body .detalle-grid > div > span:not(.muted-label):not(.muted) {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+app-modal .modal > .modal-body .detalle-head {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--primary-soft);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary-light) 55%, white);
+}
+
+app-modal .modal > .modal-body .badge {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(33, 30, 38, 0.08);
+}
+
+app-modal .modal > .modal-body .badge--neutral {
+  background: var(--lilac);
+  color: var(--violet-dark);
+}
+
+app-modal .modal > .modal-body .badge--primary {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+app-modal .modal > .modal-body .badge--success {
+  background: color-mix(in srgb, var(--success) 22%, white);
+  color: var(--success-dark);
+}
+
+app-modal .modal > .modal-body .badge--warning {
+  background: var(--amber-soft);
+  color: var(--amber-dark);
+}
+
+app-modal .modal > .modal-body .badge--danger {
+  background: var(--red-soft);
+  color: var(--red-strong);
+}
+
+app-modal .modal > .modal-body .badge--info {
+  background: color-mix(in srgb, var(--info) 20%, white);
+  color: var(--info);
+}
+
+app-modal .modal > .modal-body .modal-badge-label {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+app-modal .modal > .modal-body a:not(.btn):not(.whatsapp-link) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+app-modal .modal > .modal-body a:not(.btn):not(.whatsapp-link):hover {
+  background: var(--primary-soft-hover);
+  text-decoration: none;
+}
+
+app-modal .modal > .modal-body a:not(.btn):not(.whatsapp-link) svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+app-modal .modal > .modal-body .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+app-modal .modal > .modal-body .table th {
+  padding: 0.65rem 0.75rem;
+  background: var(--primary-light);
+  border-bottom: 1px solid var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+app-modal .modal > .modal-body .table td {
+  padding: 0.65rem 0.75rem;
+  vertical-align: middle;
+}
+
+app-modal .modal > .modal-body .table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--primary-light) 28%, white);
+}
+
+app-modal .modal > .modal-body .table tbody tr:hover {
+  background: color-mix(in srgb, var(--primary-light) 55%, white);
+}
+
+app-modal .modal > .modal-body .table td[data-label='Precio'],
+app-modal .modal > .modal-body .table td[data-label='Costo'],
+app-modal .modal > .modal-body .table td[data-label='Costo asignado'],
+app-modal .modal > .modal-body .table td[data-label='Precio lista'],
+app-modal .modal > .modal-body .table td[data-label='Ganancia'],
+app-modal .modal > .modal-body .table td[data-label='Ganancia potencial'],
+app-modal .modal > .modal-body .table td[data-label='Monto'],
+app-modal .modal > .modal-body .table td[data-label='Subtotal'],
+app-modal .modal > .modal-body .table td[data-label='Total'],
+app-modal .modal > .modal-body .table td[data-label='Saldo pendiente'] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+app-modal .modal > .modal-body .table td[data-label='Ganancia'],
+app-modal .modal > .modal-body .table td[data-label='Ganancia potencial'] {
+  color: var(--success-dark);
+  font-weight: 700;
+}
+
+app-modal .modal > .modal-body .thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg);
+}
+
+app-modal .modal > .modal-body .thumb--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+app-modal .modal > .modal-body .totals {
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 55%, white);
+}
+
+app-modal .modal > .modal-body .totals > .row-between {
+  color: var(--text);
+  font-size: 13px;
+}
+
+app-modal .modal > .modal-body .totals > .row-between > span:last-child {
+  color: var(--text);
+  font-weight: 600;
+}
+
+app-modal .modal > .modal-body .totals > .row-between.total-row {
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+app-modal .modal > .modal-body .totals > .row-between.total-row > span {
+  color: #fff;
+  font-weight: 800;
+}
+
+app-modal .modal > .modal-body .field label {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+app-modal .modal > .modal-body .input,
+app-modal .modal > .modal-body .select,
+app-modal .modal > .modal-body .textarea {
+  border-color: var(--lilac-border);
+}
+
+app-modal .modal > .modal-body .input:focus,
+app-modal .modal > .modal-body .select:focus,
+app-modal .modal > .modal-body .textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+app-modal .modal > .modal-body .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+
+app-modal .modal-footer .modal-actions,
+app-modal .modal-footer .form-actions,
+app-modal .modal-footer .actions-right,
+app-modal .modal-footer .actions.end,
+app-modal .modal-footer .dialog-actions,
+app-modal .modal-footer [modal-footer] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+app-modal .modal-footer .modal-actions .btn,
+app-modal .modal > .modal-body .form-actions .btn,
+app-modal .modal > .modal-body .actions-right .btn,
+app-modal .modal > .modal-body .actions.end .btn,
+app-modal .modal > .modal-body .dialog-actions .btn,
+app-modal .modal > .modal-body .modal-footer .btn {
+  min-width: 96px;
+  box-shadow: var(--shadow-sm);
+}
+
+app-modal .modal-footer .modal-actions .btn-ghost,
+app-modal .modal-footer .form-actions .btn-ghost,
+app-modal .modal-footer .actions-right .btn-ghost,
+app-modal .modal-footer .actions.end .btn-ghost,
+app-modal .modal-footer .dialog-actions .btn-ghost,
+app-modal .modal-footer [modal-footer] .btn-ghost,
+app-modal .modal-footer .modal-actions .btn:not([class*='btn-']),
+app-modal .modal-footer .form-actions .btn:not([class*='btn-']),
+app-modal .modal-footer .actions-right .btn:not([class*='btn-']),
+app-modal .modal-footer .actions.end .btn:not([class*='btn-']),
+app-modal .modal-footer .dialog-actions .btn:not([class*='btn-']),
+app-modal .modal-footer [modal-footer] .btn:not([class*='btn-']) {
+  background: var(--lilac);
+  border-color: var(--lilac-border);
+  color: var(--violet-dark);
+}
+
+app-modal .modal-footer .modal-actions .btn-danger,
+app-modal .modal-footer .form-actions .btn-danger,
+app-modal .modal-footer .actions-right .btn-danger,
+app-modal .modal-footer .actions.end .btn-danger,
+app-modal .modal-footer .dialog-actions .btn-danger,
+app-modal .modal-footer [modal-footer] .btn-danger {
+  background: var(--red-soft);
+  border-color: var(--red-strong);
+  color: var(--red-strong);
 }

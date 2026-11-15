@@ -412,7 +412,7 @@
       <label>Precio de venta (Bs)</label>
       <input class="input" type="number" min="0" step="0.01" [(ngModel)]="precioNuevo" name="precio" />
     </div>
-    <div class="actions end">
+    <div class="actions end" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarPrecio()">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="guardarPrecio()" [disabled]="guardandoPrecio">
         {{ guardandoPrecio ? 'Guardando…' : 'Guardar' }}
@@ -436,7 +436,7 @@
         }
       </select>
     </div>
-    <div class="actions end">
+    <div class="actions end" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="revisionAbierta = false">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="ejecutarRevision()" [disabled]="ejecutandoRevision">
         {{ ejecutandoRevision ? 'Iniciando…' : 'Iniciar revisión' }}

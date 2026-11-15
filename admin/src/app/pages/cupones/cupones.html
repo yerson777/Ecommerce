@@ -294,7 +294,7 @@
       </div>
     </div>
 
-    <div class="modal-actions">
+    <div class="modal-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
       <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
         @if (guardando()) {
@@ -374,9 +374,11 @@
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
-      </div>
+      <ng-container modal-footer>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+        </div>
+      </ng-container>
     }
   </app-modal>
 }
