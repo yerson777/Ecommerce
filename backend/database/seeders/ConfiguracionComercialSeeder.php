@@ -28,6 +28,20 @@ class ConfiguracionComercialSeeder extends Seeder
             ->whereNotIn('nombre', $nombresPago)
             ->update(['activo' => false]);
 
+        // Datos bancarios de la cuenta para el método "Transferencia". Solo se
+        // completan si están vacíos para no pisar lo que se haya editado desde
+        // el panel de configuración.
+        $transferencia = MetodoPago::query()->where('codigo', 'transferencia')->first();
+        if ($transferencia) {
+            $transferencia->fill([
+                'titular' => $transferencia->titular ?: 'Yerson Gutierrez Choque',
+                'banco' => $transferencia->banco ?: 'BNB (Banco Nacional de Bolivia)',
+                'numero_cuenta' => $transferencia->numero_cuenta ?: '3503218452',
+                'instrucciones' => $transferencia->instrucciones
+                    ?: 'Transferí a la cuenta indicada y adjuntá la foto del comprobante para confirmar tu pedido.',
+            ])->save();
+        }
+
         $metodosEntrega = [
             ['nombre' => 'Retiro presencial (plaza Corazonistas)', 'costo' => 0, 'orden' => 0, 'modalidad' => 'recojo'],
             ['nombre' => 'Envío por Yango desde la plaza Corazonistas', 'costo' => 0, 'orden' => 1, 'modalidad' => 'ciudad'],

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { BannerPublico } from '../models/banner';
+import { BannerPublico, UbicacionBanner } from '../models/banner';
 import { CatalogoService } from './catalogo.service';
 
 const INTERVALO_MS = 5000;
@@ -16,9 +16,9 @@ export class BannerCarouselService {
   private autoplay?: ReturnType<typeof setInterval>;
   private autoplayPermitido = true;
 
-  cargar(opciones: { autoplayPermitido?: boolean } = {}): void {
+  cargar(opciones: { autoplayPermitido?: boolean; ubicacion?: UbicacionBanner } = {}): void {
     this.autoplayPermitido = opciones.autoplayPermitido ?? true;
-    this.catalogo.banners().subscribe({
+    this.catalogo.banners(opciones.ubicacion).subscribe({
       next: (res) => {
         this.banners.set(res.data ?? []);
         this.activo.set(0);

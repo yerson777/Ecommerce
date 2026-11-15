@@ -44,16 +44,16 @@
 }
 
 .modal-close {
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
+  border: 1px solid var(--lilac-border);
+  background: var(--lilac);
+  color: var(--violet-dark);
   font-size: 14px;
   padding: 0.25rem 0.4rem;
   border-radius: 6px;
 
   &:hover {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--lilac-hover);
+    color: var(--violet-dark);
   }
 }
 

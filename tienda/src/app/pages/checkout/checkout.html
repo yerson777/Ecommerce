@@ -106,11 +106,30 @@
             </div>
           </div>
 
-          <div class="qr-bloque" *ngIf="pagoEsQR()">
-            <img class="qr-imagen" [src]="qrImagenActual()" alt="Código QR de pago Everly" />
-            <p class="qr-pagar">Pagar a: {{ titularPago() }}</p>
-            <p class="qr-texto">{{ instruccionesPago() }}</p>
-            <button type="button" class="btn btn-outline btn-sm" (click)="descargarQR()">Descargar QR</button>
+          <div class="qr-bloque" *ngIf="pagoRequiereComprobante()">
+            <!-- Datos del método de pago -->
+            <ng-container *ngIf="pagoEsQR()">
+              <img class="qr-imagen" [src]="qrImagenActual()" alt="Código QR de pago Everly" />
+              <p class="qr-pagar">Pagar a: {{ titularPago() }}</p>
+              <p class="qr-texto">{{ instruccionesPago() }}</p>
+              <button type="button" class="btn btn-outline btn-sm" (click)="descargarQR()">Descargar QR</button>
+            </ng-container>
+
+            <ng-container *ngIf="pagoEsTransferencia()">
+              <h3 class="pago-titulo">Transferencia bancaria</h3>
+              <p class="qr-texto">{{ instruccionesPago() }}</p>
+              <dl class="pago-datos transferencia-datos" *ngIf="datosTransferencia().length > 0">
+                <div class="pago-dato" *ngFor="let dato of datosTransferencia()">
+                  <dt>{{ dato.etiqueta }}</dt>
+                  <dd>{{ dato.valor }}</dd>
+                </div>
+              </dl>
+              <button type="button" class="btn btn-outline btn-sm" (click)="copiarCuenta()">
+                {{ cuentaCopiada() ? '✔ Número de cuenta copiado' : 'Copiar número de cuenta' }}
+              </button>
+            </ng-container>
+
+            <!-- Comprobante: mismo bloque para QR y Transferencia -->
             <div class="field qr-adjuntar">
               <label for="comprobante">Foto del comprobante *</label>
 
@@ -165,7 +184,7 @@
             </p>
           </div>
 
-          <div class="pago-bloque" *ngIf="metodoPagoSeleccionado() && !pagoEsQR()">
+          <div class="pago-bloque" *ngIf="metodoPagoSeleccionado() && !pagoEsQR() && !pagoEsTransferencia()">
             <h3 class="pago-titulo">{{ metodoPagoSeleccionado()?.nombre }}</h3>
             <p class="qr-texto">
               {{
@@ -245,7 +264,7 @@
         <button
           class="btn btn-primary btn-lg btn-block"
           style="margin-top: 1rem"
-          [disabled]="enviando() || items().length === 0 || (pagoEsQR() && !comprobante())"
+          [disabled]="enviando() || items().length === 0 || (pagoRequiereComprobante() && !comprobante())"
           (click)="enviar()"
         >
           {{ enviando() ? 'Procesando…' : 'Confirmar pedido' }}

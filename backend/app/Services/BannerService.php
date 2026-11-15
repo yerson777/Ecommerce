@@ -65,11 +65,13 @@ class BannerService
                 )
                 : null;
 
-            $orden = (int) Banner::max('orden');
+            $ubicacion = $datos['ubicacion'] ?? Banner::UBICACION_INICIO;
+            $orden = (int) Banner::where('ubicacion', $ubicacion)->max('orden');
 
             return Banner::create([
                 'ruta' => $ruta,
                 ...$datos,
+                'ubicacion' => $ubicacion,
                 'ruta_movil' => $rutaMovil,
                 'orden' => $datos['orden'] ?? ($orden + 1),
             ]);
@@ -145,22 +147,30 @@ class BannerService
 
     /**
      * Reordena los banners a partir de una secuencia de ids.
-     * La secuencia recibida debe contener exactamente todos los banners.
+     * La secuencia recibida debe contener banners existentes y sin repetir.
+     * Si se indica una ubicación, todos los ids deben pertenecer a ella.
      *
      * @param  array<int, int>  $ids
      *
-     * @throws ValidationException si la secuencia no coincide con los banners.
+     * @throws ValidationException si la secuencia contiene ids inválidos.
      */
-    public function reordenar(array $ids): void
+    public function reordenar(array $ids, ?string $ubicacion = null): void
     {
-        DB::transaction(function () use ($ids) {
-            $idsValidos = Banner::orderBy('orden')->orderBy('id')->pluck('id')->all();
+        DB::transaction(function () use ($ids, $ubicacion) {
+            $ids = array_values($ids);
 
-            if (count($ids) !== count($idsValidos)
-                || array_diff($ids, $idsValidos)
-                || array_diff($idsValidos, $ids)) {
+            $consulta = Banner::query();
+
+            if ($ubicacion !== null) {
+                $consulta->where('ubicacion', $ubicacion);
+            }
+
+            $idsValidos = $consulta->whereIn('id', $ids)->pluck('id')->all();
+
+            if (count($ids) !== count(array_unique($ids))
+                || count($ids) !== count($idsValidos)) {
                 throw ValidationException::withMessages([
-                    'ordenes' => 'La secuencia debe contener exactamente todos los banners.',
+                    'ordenes' => 'La secuencia contiene banners inválidos.',
                 ]);
             }
 
@@ -175,11 +185,12 @@ class BannerService
      * secuencia del admin. Los rangos de fecha son opcionales: un null
      * significa sin límite de ese lado.
      */
-    public function activos(): Collection
+    public function activos(?string $ubicacion = null): Collection
     {
         $ahora = now();
 
         return Banner::query()
+            ->when($ubicacion !== null, fn ($query) => $query->where('ubicacion', $ubicacion))
             ->where('activo', true)
             ->where(function ($query) use ($ahora) {
                 $query->whereNull('fecha_inicio')->orWhere('fecha_inicio', '<=', $ahora);

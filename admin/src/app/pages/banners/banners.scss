@@ -109,6 +109,25 @@
   margin-top: 0.25rem;
 }
 
+/* Acciones del listado (inicio y catalogo): contraste en escritorio y tarjetas moviles. */
+:host :is(.table-wrap, .report-table-wrap) > .table > tbody > tr > td:has(> .actions) > .actions {
+  > .btn {
+    opacity: 1;
+  }
+
+  > .btn.danger {
+    border: 1px solid var(--red-strong);
+    background: var(--red-soft);
+    color: var(--red-strong);
+
+    &:hover:not(:disabled) {
+      background: var(--red-soft-hover);
+      border-color: var(--red-strong);
+      color: var(--red-strong);
+    }
+  }
+}
+
 .drag-hint {
   margin: 0 0 0.75rem;
 }

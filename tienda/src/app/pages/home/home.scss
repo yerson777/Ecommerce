@@ -263,6 +263,7 @@ h3 {
 /* ================= BANNER (mismo tratamiento que pages/catalogo) ================= */
 .carrusel {
   position: relative;
+  aspect-ratio: 5 / 4;
   overflow: hidden;
   border-radius: var(--radius);
   background: var(--surface);
@@ -271,6 +272,7 @@ h3 {
 
 .carrusel-pista {
   display: flex;
+  height: 100%;
   transition: transform 500ms ease;
 }
 
@@ -278,6 +280,7 @@ h3 {
   position: relative;
   flex: 0 0 100%;
   min-width: 100%;
+  height: 100%;
   display: block;
   margin: 0;
   padding: 0;
@@ -287,6 +290,11 @@ h3 {
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.carrusel-slide picture {
+  display: block;
+  height: 100%;
 }
 
 .carrusel-slide:disabled {
@@ -301,10 +309,16 @@ h3 {
 .carrusel-img {
   display: block;
   width: 100%;
-  height: clamp(200px, 34vw, 400px);
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   object-position: center;
   background: var(--surface);
+}
+
+@media (max-width: 768px) {
+  .carrusel-img {
+    object-fit: contain;
+  }
 }
 
 .carrusel-texto {

@@ -49,7 +49,7 @@
 
       <div class="hero-visual" data-hero>
         @if (carrusel.banners().length > 0) {
-          <div class="carrusel">
+          <div class="carrusel" [style.aspect-ratio]="medida.aspecto">
             <div
               class="carrusel-pista"
               [style.transform]="'translateX(-' + carrusel.activo() * 100 + '%)'"

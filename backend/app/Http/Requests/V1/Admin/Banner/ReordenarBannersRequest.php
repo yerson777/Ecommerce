@@ -3,6 +3,8 @@
 namespace App\Http\Requests\V1\Admin\Banner;
 
 use App\Http\Requests\V1\ApiFormRequest;
+use App\Models\Banner;
+use Illuminate\Validation\Rule;
 
 /**
  * Reordenar banners del carrusel.
@@ -16,6 +18,7 @@ class ReordenarBannersRequest extends ApiFormRequest
         return [
             'ordenes' => ['required', 'array', 'min:1'],
             'ordenes.*' => ['required', 'integer'],
+            'ubicacion' => ['sometimes', 'nullable', Rule::in(Banner::UBICACIONES)],
         ];
     }
 

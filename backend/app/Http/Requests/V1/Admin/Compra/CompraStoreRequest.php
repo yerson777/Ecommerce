@@ -18,7 +18,7 @@ class CompraStoreRequest extends ApiFormRequest
             'nota' => ['nullable', 'string', 'max:2000'],
             'productos' => ['present', 'array'],
             'productos.*.producto_id' => ['required', 'integer', 'distinct', 'exists:productos,id'],
-            'productos.*.costo_asignado' => ['sometimes', 'numeric', 'min:0', 'max:100000000'],
+            'productos.*.costo_asignado' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100000000'],
         ];
     }
 

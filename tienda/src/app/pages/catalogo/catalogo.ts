@@ -5,6 +5,7 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService } from '../../core/services/cart.service';
 import { CartToastService } from '../../core/services/cart-toast.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
+import { MEDIDAS_BANNER } from '../../core/models/banner';
 import { ProductoPublico, CategoriaRef, TallaRef } from '../../core/models/producto';
 import { OfertaPublica } from '../../core/models/oferta';
 import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
@@ -25,6 +26,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly tallas = signal<TallaRef[]>([]);
 
   readonly carrusel = inject(BannerCarouselService);
+  readonly medida = MEDIDAS_BANNER.catalogo;
   private readonly cartToast = inject(CartToastService);
 
   readonly formatearPrecio = formatearPrecio;
@@ -53,7 +55,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.leerParametros();
     this.cargarFiltros();
-    this.carrusel.cargar();
+    this.carrusel.cargar({ ubicacion: 'catalogo' });
     this.cargar();
   }
 

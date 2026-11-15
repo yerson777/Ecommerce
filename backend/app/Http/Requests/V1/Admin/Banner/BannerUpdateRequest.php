@@ -52,6 +52,7 @@ class BannerUpdateRequest extends ApiFormRequest
             }],
             'activo' => ['sometimes', 'boolean'],
             'orden' => ['sometimes', 'integer', 'min:0'],
+            'ubicacion' => ['sometimes', Rule::in(Banner::UBICACIONES)],
         ];
     }
 

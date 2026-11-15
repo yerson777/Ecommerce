@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, OnInit, signal, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container';
@@ -18,6 +18,8 @@ export class LayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly config = inject(ConfiguracionService);
+
+  private readonly sidebar = viewChild<ElementRef<HTMLElement>>('sidebar');
 
   readonly usuario = this.auth.usuario;
   readonly menuAbierto = signal(false);
@@ -59,6 +61,11 @@ export class LayoutComponent implements OnInit {
     if (!this.usuario()) {
       this.auth.cargarUsuario();
     }
+
+    // Abre el grupo que corresponde a la ruta activa al entrar. En móvil
+    // (<768px) no se expande ningún grupo: los ítems activos siguen
+    // resaltados por routerLinkActive.
+    this.actualizarGrupoPorRuta(this.router.url);
   }
 
   private actualizarGrupoPorRuta(url: string): void {
@@ -98,6 +105,7 @@ export class LayoutComponent implements OnInit {
   }
 
   toggleGrupo(grupo: string): void {
+    this.quitarFocoDelMenu();
     if (this.grupoAbierto() === grupo) {
       this.grupoAbierto.set(null);
       this.gruposAbiertos.update((estado) => ({ ...estado, [grupo]: false }));
@@ -115,7 +123,28 @@ export class LayoutComponent implements OnInit {
 
 
 
+  /**
+   * Quita el foco del elemento clicado dentro del menú. Tras hacer clic con
+   * el mouse el enlace/botón conserva el foco y el `:focus-within` mantenía
+   * el sidebar "medio expandido" (submenú abierto, textos ocultos) aunque el
+   * mouse ya no estuviera encima. Se conserva el foco cuando viene del
+   * teclado (:focus-visible) para no romper la navegación con Tab.
+   */
+  private quitarFocoDelMenu(): void {
+    const aside = this.sidebar()?.nativeElement;
+    const activo = document.activeElement;
+    if (
+      aside &&
+      activo instanceof HTMLElement &&
+      aside.contains(activo) &&
+      !activo.matches(':focus-visible')
+    ) {
+      activo.blur();
+    }
+  }
+
   cerrarMenu(): void {
+    this.quitarFocoDelMenu();
     this.menuAbierto.set(false);
   }
 

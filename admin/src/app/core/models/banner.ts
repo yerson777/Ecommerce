@@ -1,4 +1,16 @@
+import { MEDIDA_BANNER_INICIO } from '../../../../../shared/banner-medida-inicio';
+import type { MedidaBanner } from '../../../../../shared/banner-medida-inicio';
+
 export type TipoEnlaceBanner = 'ninguno' | 'producto' | 'categoria' | 'oferta' | 'url';
+
+export type UbicacionBanner = 'inicio' | 'catalogo';
+
+export type { MedidaBanner };
+
+export const MEDIDAS_BANNER: Record<UbicacionBanner, MedidaBanner> = {
+  inicio: MEDIDA_BANNER_INICIO,
+  catalogo: { ancho: 2100, alto: 900, aspecto: '21 / 9', proporcion: '21:9' },
+};
 
 export interface Banner {
   id: number;
@@ -32,6 +44,7 @@ export interface BannerPayload {
   sin_imagen_movil?: boolean;
   activo?: boolean;
   orden?: number;
+  ubicacion?: UbicacionBanner;
 }
 
 export const TIPOS_ENLACE_BANNER: TipoEnlaceBanner[] = [

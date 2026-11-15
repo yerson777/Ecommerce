@@ -148,6 +148,7 @@ export class ProductoFormModalComponent implements OnInit {
       descripcion: f.descripcion || null,
       costo: f.costo,
       precio: f.precio,
+      estado: this.esEdicion ? undefined : 'disponible',
       publicado: f.publicado,
       fecha_ingreso: f.fecha_ingreso || null,
     };

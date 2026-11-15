@@ -65,7 +65,7 @@
                 <th>Reservada</th>
                 <th>Fecha límite</th>
                 <th>Estado</th>
-                <th></th>
+                <th class="actions-head">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -98,11 +98,11 @@
                   <td data-label="Acciones">
                     @if (esActiva(reserva)) {
                       <div class="actions">
-                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarConvertir(reserva)">
-                          Convertir en venta
+                        <button type="button" class="btn btn-primary btn-sm btn-icon" title="Convertir en venta" aria-label="Convertir en venta" (click)="solicitarConvertir(reserva)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.4 11.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L22 7H6"/></svg>
                         </button>
-                        <button type="button" class="btn btn-outline btn-sm" (click)="solicitarLiberar(reserva)">
-                          Liberar
+                        <button type="button" class="btn btn-outline btn-sm btn-icon" title="Liberar" aria-label="Liberar reserva" (click)="solicitarLiberar(reserva)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
                         </button>
                       </div>
                     }

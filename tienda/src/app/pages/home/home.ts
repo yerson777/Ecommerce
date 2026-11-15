@@ -15,6 +15,7 @@ import { CartService } from '../../core/services/cart.service';
 import { CartToastService } from '../../core/services/cart-toast.service';
 import { BannerCarouselService } from '../../core/services/banner-carousel.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
+import { MEDIDAS_BANNER } from '../../core/models/banner';
 import { ProductoPublico } from '../../core/models/producto';
 import { formatearPrecio, precioEfectivo, tieneOferta } from '../../core/utils/precio';
 import { esDisponible, estadoTexto, imagenPrincipal } from '../../core/utils/producto';
@@ -150,6 +151,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly carrusel = inject(BannerCarouselService);
   readonly config = inject(ConfiguracionService);
+  readonly medida = MEDIDAS_BANNER.inicio;
   private readonly cartToast = inject(CartToastService);
 
   readonly destacados = signal<ProductoPublico[]>([]);
@@ -167,7 +169,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.carrusel.cargar({ autoplayPermitido: !motionReducido() });
+    this.carrusel.cargar({ autoplayPermitido: !motionReducido(), ubicacion: 'inicio' });
     this.cargarDestacados();
   }
 

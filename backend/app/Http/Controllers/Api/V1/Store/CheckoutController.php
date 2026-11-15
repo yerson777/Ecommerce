@@ -28,7 +28,7 @@ class CheckoutController extends Controller
             $datos['cliente_autenticado_id'] = $clienteAutenticado->id;
         }
 
-        if ($this->esMetodoQr((int) $datos['metodo_pago_id']) && ! $request->hasFile('comprobante')) {
+        if ($this->requiereComprobante((int) $datos['metodo_pago_id']) && ! $request->hasFile('comprobante')) {
             $mensaje = 'Debes adjuntar el comprobante de pago para confirmar tu pedido.';
 
             return Api::error($mensaje, 422, ['comprobante' => [$mensaje]]);
@@ -48,13 +48,24 @@ class CheckoutController extends Controller
         );
     }
 
-    private function esMetodoQr(int $metodoPagoId): bool
+    /**
+     * Métodos de pago que exigen el comprobante de la operación para poder
+     * verificar el pago: QR y Transferencia. El comprobante se valida, guarda
+     * y asocia al pedido igual en ambos casos (mismo campo y mismas reglas).
+     */
+    private function requiereComprobante(int $metodoPagoId): bool
     {
         $metodo = MetodoPago::query()->find($metodoPagoId);
 
-        return $metodo !== null
-            && (mb_strtolower((string) $metodo->codigo) === 'qr'
-                || mb_strtolower($metodo->nombre) === 'qr');
+        if ($metodo === null) {
+            return false;
+        }
+
+        $codigo = mb_strtolower((string) $metodo->codigo);
+        $nombre = mb_strtolower($metodo->nombre);
+
+        return in_array($codigo, ['qr', 'transferencia'], true)
+            || in_array($nombre, ['qr', 'transferencia'], true);
     }
 
     public function metodosEntrega()

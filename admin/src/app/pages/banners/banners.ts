@@ -1,13 +1,16 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { ApiError } from '../../core/models/api-response';
 import {
   Banner,
   BannerPayload,
   ETIQUETA_ENLACE,
+  MEDIDAS_BANNER,
   TIPOS_ENLACE_BANNER,
   TipoEnlaceBanner,
+  UbicacionBanner,
 } from '../../core/models/banner';
 import { CategoriaRef, Producto } from '../../core/models/producto';
 import { Oferta } from '../../core/models/oferta';
@@ -34,8 +37,6 @@ interface Formulario {
   fecha_fin: string;
   activo: boolean;
   archivo: File | null;
-  archivoMovil: File | null;
-  quitarMovil: boolean;
 }
 
 function formularioVacio(): Formulario {
@@ -49,8 +50,6 @@ function formularioVacio(): Formulario {
     fecha_fin: '',
     activo: true,
     archivo: null,
-    archivoMovil: null,
-    quitarMovil: false,
   };
 }
 
@@ -96,6 +95,23 @@ export class BannersComponent implements OnInit {
   readonly etiquetasEnlace = ETIQUETA_ENLACE;
   readonly tiposEnlace = TIPOS_ENLACE_BANNER;
 
+  private readonly route = inject(ActivatedRoute);
+
+  private readonly ubicacionSignal = signal<UbicacionBanner>(
+    (this.route.snapshot.data['ubicacion'] as UbicacionBanner | undefined) ?? 'inicio',
+  );
+  readonly ubicacion = this.ubicacionSignal.asReadonly();
+  readonly medida = computed(() => MEDIDAS_BANNER[this.ubicacionSignal()]);
+  readonly esInicio = computed(() => this.ubicacionSignal() === 'inicio');
+  readonly previewArchivo = signal<string | null>(null);
+  readonly textoMedida = computed(() => {
+    const m = this.medida();
+    return this.esInicio()
+      ? `Tamaño recomendado: ${m.ancho}×${m.alto} px (proporción 5:4)`
+      : `Medida recomendada: ${m.ancho}×${m.alto} px (proporción 21:9)`;
+  });
+  readonly avisoProporcion = signal<string | null>(null);
+
   readonly banners = signal<Banner[]>([]);
   readonly cargando = signal(true);
 
@@ -120,7 +136,11 @@ export class BannersComponent implements OnInit {
   dragIndex: number | null = null;
 
   ngOnInit(): void {
-    this.cargar();
+    this.route.data.subscribe(({ ubicacion }) => {
+      const u = (ubicacion as UbicacionBanner | undefined) ?? 'inicio';
+      this.ubicacionSignal.set(u);
+      this.cargar();
+    });
     this.catalogos.categorias().subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -144,7 +164,7 @@ export class BannersComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
 
-    this.bannersService.listar().subscribe({
+    this.bannersService.listar(this.ubicacion()).subscribe({
       next: (res) => {
         this.cargando.set(false);
         if (res.success && res.data) {
@@ -180,26 +200,49 @@ export class BannersComponent implements OnInit {
     this.productoDestino.set(null);
     this.resultadosBusqueda.set([]);
     this.busquedaProducto.set('');
+    this.previewArchivo.set(null);
+    this.avisoProporcion.set(null);
   }
 
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.form.archivo = input.files?.[0] ?? null;
-    input.value = '';
-  }
-
-  onArchivoMovilSeleccionado(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.form.archivoMovil = input.files?.[0] ?? null;
-    if (this.form.archivoMovil) {
-      this.form.quitarMovil = false;
+    const archivo = input.files?.[0] ?? null;
+    const previo = this.previewArchivo();
+    if (previo) {
+      URL.revokeObjectURL(previo);
     }
+    this.form.archivo = archivo;
+    this.previewArchivo.set(archivo ? URL.createObjectURL(archivo) : null);
     input.value = '';
+
+    if (archivo) {
+      this.verificarProporcion(this.previewArchivo()!);
+    }
   }
 
-  quitarImagenMovil(): void {
-    this.form.archivoMovil = null;
-    this.form.quitarMovil = true;
+  private verificarProporcion(url: string): void {
+    const imagen = new Image();
+    imagen.onload = () => {
+      const m = this.medida();
+      const esperada = m.ancho / m.alto;
+      const real = imagen.naturalWidth / imagen.naturalHeight;
+
+      if (Math.abs(real - esperada) / esperada > 0.05) {
+        this.avisoProporcion.set(
+          `Se recortará un poco. Medida recomendada: ${m.ancho}×${m.alto} px`,
+        );
+      } else {
+        this.avisoProporcion.set('✓ Medida correcta');
+      }
+    };
+    imagen.onerror = () => {
+      this.avisoProporcion.set(null);
+    };
+    imagen.src = url;
+  }
+
+  vistaPreviaEscritorio(): string | null {
+    return this.previewArchivo() ?? this.editando()?.url ?? null;
   }
 
   buscarProductoDestino(): void {
@@ -287,8 +330,8 @@ export class BannersComponent implements OnInit {
       enlace_url: tipo === 'url' ? this.form.enlace_url.trim() || null : null,
       fecha_inicio: this.form.fecha_inicio || null,
       fecha_fin: this.form.fecha_fin || null,
-      sin_imagen_movil: this.form.quitarMovil,
       activo: this.form.activo,
+      ubicacion: this.ubicacion(),
     };
 
     this.errorFormulario.set('');
@@ -296,8 +339,8 @@ export class BannersComponent implements OnInit {
 
     const editando = this.editando();
     const peticion = editando
-      ? this.bannersService.actualizar(editando.id, this.form.archivo, datos, this.form.archivoMovil)
-      : this.bannersService.crear(this.form.archivo as File, datos, this.form.archivoMovil);
+      ? this.bannersService.actualizar(editando.id, this.form.archivo, datos)
+      : this.bannersService.crear(this.form.archivo as File, datos);
 
     peticion.subscribe({
       next: () => {
@@ -362,7 +405,7 @@ export class BannersComponent implements OnInit {
   reordenar(ordenes: number[]): void {
     this.reordenandoId = null;
 
-    this.bannersService.reordenar(ordenes).subscribe({
+    this.bannersService.reordenar(ordenes, this.ubicacion()).subscribe({
       next: (res) => {
         this.reordenandoId = null;
         if (res.success && res.data) {
@@ -455,9 +498,9 @@ export class BannersComponent implements OnInit {
       fecha_fin: aLocalInput(banner?.fecha_fin),
       activo: banner?.activo ?? true,
       archivo: null,
-      archivoMovil: null,
-      quitarMovil: false,
     };
+    this.previewArchivo.set(null);
+    this.avisoProporcion.set(null);
     this.errorFormulario.set('');
   }
 }

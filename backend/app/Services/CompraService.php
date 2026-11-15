@@ -262,6 +262,8 @@ class CompraService
                 'anulada_en' => now(),
             ]);
 
+            \App\Models\Movimiento::query()->where('compra_id', $compra->id)->delete();
+
             // Desvincula las prendas del lote anulado.
             CompraProducto::query()
                 ->where('compra_id', $compra->id)
@@ -291,6 +293,8 @@ class CompraService
         }
 
         DB::transaction(function () use ($compra) {
+            \App\Models\Movimiento::query()->where('compra_id', $compra->id)->delete();
+
             CompraProducto::query()
                 ->where('compra_id', $compra->id)
                 ->get()

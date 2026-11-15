@@ -28,6 +28,7 @@
 
 .carrusel-pista {
   display: flex;
+  height: 100%;
   transition: transform 0.5s ease;
 }
 
@@ -35,6 +36,12 @@
   position: relative;
   flex: 0 0 100%;
   min-width: 100%;
+  height: 100%;
+}
+
+.carrusel-slide picture {
+  display: block;
+  height: 100%;
 }
 
 .carrusel-slide--enlace {
@@ -44,10 +51,16 @@
 .carrusel-img {
   display: block;
   width: 100%;
-  height: clamp(200px, 34vw, 400px);
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   object-position: center;
   background: var(--surface);
+}
+
+@media (max-width: 768px) {
+  .carrusel-img {
+    object-fit: contain;
+  }
 }
 
 .carrusel-overlay {

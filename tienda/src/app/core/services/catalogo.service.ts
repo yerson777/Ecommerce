@@ -12,7 +12,7 @@ import {
   CheckoutPayload,
   ZonaEnvioPublica,
 } from '../models/pedido';
-import { BannerPublico } from '../models/banner';
+import { BannerPublico, UbicacionBanner } from '../models/banner';
 import { OfertaPublica } from '../models/oferta';
 import { ValidarCuponResultado } from '../models/cupon';
 
@@ -74,8 +74,9 @@ export class CatalogoService extends ApiService {
     return this.get<ApiResponse<TallaRef[]>>('/v1/store/sizes');
   }
 
-  banners(): Observable<ApiResponse<BannerPublico[]>> {
-    return this.get<ApiResponse<BannerPublico[]>>('/v1/store/banners');
+  banners(ubicacion?: UbicacionBanner): Observable<ApiResponse<BannerPublico[]>> {
+    const query = ubicacion ? `?ubicacion=${ubicacion}` : '';
+    return this.get<ApiResponse<BannerPublico[]>>(`/v1/store/banners${query}`);
   }
 
   metodosEntrega(): Observable<ApiResponse<MetodoEntrega[]>> {
@@ -148,10 +149,13 @@ export class CatalogoService extends ApiService {
     for (const id of payload.productos) {
       form.append('productos[]', String(id));
     }
-    for (const esperado of payload.precios_esperados ?? []) {
-      form.append('precios_esperados[][producto_id]', String(esperado.producto_id));
-      form.append('precios_esperados[][precio]', String(esperado.precio));
-    }
+    // Con índice explícito: en PHP cada "[]" abre un elemento nuevo, así que
+    // sin índice el par producto_id/precio queda partido en dos entradas y
+    // la validación del pedido rechaza el envío con comprobante.
+    (payload.precios_esperados ?? []).forEach((esperado, indice) => {
+      form.append(`precios_esperados[${indice}][producto_id]`, String(esperado.producto_id));
+      form.append(`precios_esperados[${indice}][precio]`, String(esperado.precio));
+    });
     form.append('nombre', payload.nombre);
     form.append('telefono', payload.telefono);
     if (payload.email) {

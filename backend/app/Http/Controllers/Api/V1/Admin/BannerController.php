@@ -10,6 +10,7 @@ use App\Http\Resources\V1\BannerResource;
 use App\Models\Banner;
 use App\Services\BannerService;
 use App\Support\Api;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class BannerController extends Controller
@@ -23,7 +24,7 @@ class BannerController extends Controller
      */
     public function index(Request $request)
     {
-        $ordenados = Banner::query()
+        $ordenados = $this->filtrarUbicacion(Banner::query(), $request->query('ubicacion'))
             ->orderBy('orden')
             ->orderBy('id')
             ->get();
@@ -92,9 +93,11 @@ class BannerController extends Controller
      */
     public function reorder(ReordenarBannersRequest $request)
     {
-        $this->banners->reordenar($request->validated('ordenes'));
+        $ubicacion = $request->validated('ubicacion');
 
-        $ordenados = Banner::query()
+        $this->banners->reordenar($request->validated('ordenes'), $ubicacion);
+
+        $ordenados = $this->filtrarUbicacion(Banner::query(), $ubicacion)
             ->orderBy('orden')
             ->orderBy('id')
             ->get();
@@ -115,5 +118,17 @@ class BannerController extends Controller
         $this->banners->eliminar($banner);
 
         return Api::noContent('Banner eliminado correctamente.');
+    }
+
+    /**
+     * Aplica el filtro opcional por ubicación.
+     */
+    private function filtrarUbicacion(Builder $consulta, mixed $ubicacion): Builder
+    {
+        if (in_array($ubicacion, Banner::UBICACIONES, true)) {
+            $consulta->where('ubicacion', $ubicacion);
+        }
+
+        return $consulta;
     }
 }

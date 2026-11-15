@@ -27,6 +27,8 @@ import { formatearPrecio } from '../../core/utils/precio';
 
 const TELEFONO_RE = /^[0-9+\-\s()]{7,20}$/;
 const QR_IMAGEN = 'assets/images/qr.jpeg';
+const MENSAJE_FALLO_PROCESO =
+  'No pudimos procesar tu pedido. Intenta de nuevo o escríbenos por WhatsApp.';
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
@@ -52,6 +54,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly comprobante = signal<File | null>(null);
   readonly comprobantePreview = signal<string | null>(null);
   readonly comprobanteError = signal<string | null>(null);
+  readonly cuentaCopiada = signal(false);
 
   private readonly videoCamara = viewChild<ElementRef<HTMLVideoElement>>('videoCamara');
   private readonly inputCamara = viewChild<ElementRef<HTMLInputElement>>('comprobanteCamara');
@@ -181,6 +184,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** El método de pago seleccionado es "Transferencia". */
+  pagoEsTransferencia(): boolean {
+    const seleccionado = this.metodoPagoSeleccionado();
+    if (!seleccionado) {
+      return false;
+    }
+
+    return (
+      (seleccionado.codigo ?? '').toLowerCase() === 'transferencia' ||
+      seleccionado.nombre.toLowerCase() === 'transferencia'
+    );
+  }
+
+  /**
+   * Métodos de pago que exigen comprobante de la operación (QR y
+   * Transferencia). Ambos usan el mismo bloque de comprobante.
+   */
+  pagoRequiereComprobante(): boolean {
+    return this.pagoEsQR() || this.pagoEsTransferencia();
+  }
+
   qrImagenActual(): string {
     return this.metodoPagoSeleccionado()?.qr_url ?? QR_IMAGEN;
   }
@@ -211,6 +235,59 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return datos
       .filter((dato): dato is { etiqueta: string; valor: string } => !!dato.valor)
       .map((dato) => ({ etiqueta: dato.etiqueta, valor: String(dato.valor) }));
+  }
+
+  /** Datos de la cuenta bancaria para el método "Transferencia". */
+  datosTransferencia(): Array<{ etiqueta: string; valor: string }> {
+    const metodo = this.metodoPagoSeleccionado();
+    if (!metodo) {
+      return [];
+    }
+
+    const datos = [
+      { etiqueta: 'Cuenta', valor: metodo.numero_cuenta },
+      { etiqueta: 'A nombre de', valor: metodo.titular },
+      { etiqueta: 'Banco', valor: metodo.banco },
+    ];
+
+    return datos
+      .filter((dato): dato is { etiqueta: string; valor: string } => !!dato.valor)
+      .map((dato) => ({ etiqueta: dato.etiqueta, valor: String(dato.valor) }));
+  }
+
+  /** Número de cuenta a copiar (método "Transferencia"). */
+  numeroCuenta(): string {
+    return this.metodoPagoSeleccionado()?.numero_cuenta ?? '';
+  }
+
+  /** Copia el número de cuenta al portapapeles. */
+  async copiarCuenta(): Promise<void> {
+    const cuenta = this.numeroCuenta().trim();
+    if (!cuenta) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(cuenta);
+    } catch {
+      // Sin soporte de portapapeles (contexto no seguro): copia manual.
+      const area = document.createElement('textarea');
+      area.value = cuenta;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try {
+        document.execCommand('copy');
+      } catch {
+        // Si tampoco funciona, el usuario puede copiar el número a mano.
+      }
+      area.remove();
+    }
+
+    this.cuentaCopiada.set(true);
+    setTimeout(() => this.cuentaCopiada.set(false), 2000);
   }
 
   onComprobante(event: Event): void {
@@ -395,7 +472,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
 
     const valores = this.form.value;
-    const faltaComprobante = this.pagoEsQR() && !this.comprobante();
+    const faltaComprobante = this.pagoRequiereComprobante() && !this.comprobante();
     if (
       !this.form.valid ||
       this.items().length === 0 ||
@@ -455,26 +532,35 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       },
       error: (error: ApiError) => {
         this.enviando.set(false);
-        if (error.errors) {
-          const mapeados: Record<string, string> = {};
-          for (const [clave, mensajes] of Object.entries(error.errors)) {
-            if (mensajes.length > 0) {
-              if (clave === 'metodo_pago_id') {
-                mapeados['metodoPagoId'] = mensajes[0];
-              } else if (clave === 'metodo_entrega_id') {
-                mapeados['metodoEntregaId'] = mensajes[0];
-              } else if (clave === 'comprobante') {
-                this.comprobanteError.set(mensajes[0]);
-              } else {
-                mapeados[clave] = mensajes[0];
+        if (error.status === 422) {
+          // Errores de validación: mensaje específico junto a cada campo.
+          if (error.errors) {
+            const mapeados: Record<string, string> = {};
+            for (const [clave, mensajes] of Object.entries(error.errors)) {
+              if (mensajes.length > 0) {
+                if (clave === 'metodo_pago_id') {
+                  mapeados['metodoPagoId'] = mensajes[0];
+                } else if (clave === 'metodo_entrega_id') {
+                  mapeados['metodoEntregaId'] = mensajes[0];
+                } else if (clave === 'comprobante') {
+                  this.comprobanteError.set(mensajes[0]);
+                } else {
+                  mapeados[clave] = mensajes[0];
+                }
               }
             }
+            this.errores.set(mapeados);
           }
-          this.errores.set(mapeados);
+          this.errorGeneral.set('Revisá los datos marcados e intentá de nuevo.');
+          return;
         }
-        this.errorGeneral.set(
-          error.message || 'No pudimos procesar el pedido. Verificá tus datos e intentá de nuevo.',
-        );
+        if (error.status && error.status >= 400 && error.status < 500) {
+          // Rechazos con sentido (ej. 409 por stock ya reservado).
+          this.errorGeneral.set(error.message || MENSAJE_FALLO_PROCESO);
+          return;
+        }
+        // Error de servidor o de conexión.
+        this.errorGeneral.set(MENSAJE_FALLO_PROCESO);
       },
     });
   }

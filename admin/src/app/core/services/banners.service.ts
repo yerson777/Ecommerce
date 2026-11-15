@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import { ApiService } from './api.service';
-import { Banner, BannerPayload } from '../models/banner';
+import { Banner, BannerPayload, UbicacionBanner } from '../models/banner';
 
 @Injectable({ providedIn: 'root' })
 export class BannersService extends ApiService {
@@ -11,8 +11,9 @@ export class BannersService extends ApiService {
     super(http);
   }
 
-  listar(): Observable<ApiResponse<Banner[]>> {
-    return this.get<ApiResponse<Banner[]>>('/v1/admin/banners');
+  listar(ubicacion?: UbicacionBanner): Observable<ApiResponse<Banner[]>> {
+    const query = ubicacion ? `?ubicacion=${ubicacion}` : '';
+    return this.get<ApiResponse<Banner[]>>(`/v1/admin/banners${query}`);
   }
 
   crear(
@@ -48,8 +49,8 @@ export class BannersService extends ApiService {
     return this.putFormData<ApiResponse<Banner>>(`/v1/admin/banners/${id}`, formData);
   }
 
-  reordenar(ordenes: number[]): Observable<ApiResponse<Banner[]>> {
-    return this.put<ApiResponse<Banner[]>>('/v1/admin/banners/orden', { ordenes });
+  reordenar(ordenes: number[], ubicacion?: UbicacionBanner): Observable<ApiResponse<Banner[]>> {
+    return this.put<ApiResponse<Banner[]>>('/v1/admin/banners/orden', { ordenes, ubicacion });
   }
 
   eliminar(id: number): Observable<ApiResponse<null>> {
@@ -86,6 +87,9 @@ export class BannersService extends ApiService {
     }
     if (datos.orden !== undefined) {
       formData.append('orden', String(datos.orden));
+    }
+    if (datos.ubicacion) {
+      formData.append('ubicacion', datos.ubicacion);
     }
   }
 }

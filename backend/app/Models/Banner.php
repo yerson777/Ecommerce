@@ -36,6 +36,15 @@ class Banner extends Model
         self::ENLACE_URL,
     ];
 
+    public const UBICACION_INICIO = 'inicio';
+
+    public const UBICACION_CATALOGO = 'catalogo';
+
+    public const UBICACIONES = [
+        self::UBICACION_INICIO,
+        self::UBICACION_CATALOGO,
+    ];
+
     protected $table = 'banners';
 
     protected $fillable = [
@@ -50,6 +59,7 @@ class Banner extends Model
         'enlace_id',
         'activo',
         'orden',
+        'ubicacion',
     ];
 
     protected $appends = ['url'];

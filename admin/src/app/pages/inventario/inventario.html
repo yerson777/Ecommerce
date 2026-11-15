@@ -227,7 +227,7 @@
                   <th>Días</th>
                   <th>Estado</th>
                   <th>Verificada</th>
-                  <th>Acciones</th>
+                  <th class="actions-head">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,14 +253,34 @@
                     </td>
                     <td data-label="Acciones">
                       <div class="actions">
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="solicitarVerificar(producto)">
-                          {{ producto.verificada ? 'Quitar verificación' : 'Verificar' }}
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm btn-icon"
+                          [title]="producto.verificada ? 'Quitar verificación' : 'Verificar'"
+                          [attr.aria-label]="producto.verificada ? 'Quitar verificación' : 'Verificar prenda'"
+                          (click)="solicitarVerificar(producto)"
+                        >
+                          @if (producto.verificada) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          } @else {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>
+                          }
                         </button>
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPrecio(producto)">Precio</button>
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="cambiarPublicado(producto)">
-                          {{ producto.publicado ? 'Ocultar' : 'Publicar' }}
+                        <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Precio" aria-label="Editar precio" (click)="abrirPrecio(producto)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 12 22l-9-9V4h9l8.6 8.6a1.4 1.4 0 0 1 0 2Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
                         </button>
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirHistorial(producto)">Historial</button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm btn-icon"
+                          [title]="producto.publicado ? 'Ocultar' : 'Publicar'"
+                          [attr.aria-label]="producto.publicado ? 'Ocultar prenda' : 'Publicar prenda'"
+                          (click)="cambiarPublicado(producto)"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Historial" aria-label="Ver historial" (click)="abrirHistorial(producto)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -328,7 +348,7 @@
                   <th>Precio</th>
                   <th>Días</th>
                   <th>Publicado</th>
-                  <th>Acciones</th>
+                  <th class="actions-head">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -346,11 +366,21 @@
                     </td>
                     <td data-label="Acciones">
                       <div class="actions">
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPrecio(producto)">Editar precio</button>
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="cambiarPublicado(producto)">
-                          {{ producto.publicado ? 'Ocultar' : 'Publicar' }}
+                        <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Editar precio" aria-label="Editar precio" (click)="abrirPrecio(producto)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 12 22l-9-9V4h9l8.6 8.6a1.4 1.4 0 0 1 0 2Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
                         </button>
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="abrirHistorial(producto)">Historial</button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm btn-icon"
+                          [title]="producto.publicado ? 'Ocultar' : 'Publicar'"
+                          [attr.aria-label]="producto.publicado ? 'Ocultar prenda' : 'Publicar prenda'"
+                          (click)="cambiarPublicado(producto)"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Historial" aria-label="Ver historial" (click)="abrirHistorial(producto)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -87,7 +87,7 @@
                 <th>Monto</th>
                 <th>Registrada</th>
                 <th>Estado</th>
-                <th></th>
+                <th class="actions-head">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -107,14 +107,24 @@
                   <td data-label="Estado"><app-badge [tone]="tonoEstado(devolucion)">{{ etiquetaEstado(devolucion) }}</app-badge></td>
                   <td data-label="Acciones">
                     <div class="actions">
-                      <button type="button" class="btn btn-ghost btn-sm" (click)="imprimir(devolucion)">Imprimir</button>
+                      <button type="button" class="btn btn-ghost btn-sm btn-icon" title="Imprimir" aria-label="Imprimir devolución" (click)="imprimir(devolucion)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                      </button>
                       @if (puedeAprobar(devolucion)) {
-                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarAprobar(devolucion)">Aprobar</button>
-                        <button type="button" class="btn btn-danger btn-sm" (click)="solicitarRechazar(devolucion)">Rechazar</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-icon" title="Aprobar" aria-label="Aprobar devolución" (click)="solicitarAprobar(devolucion)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm btn-icon" title="Rechazar" aria-label="Rechazar devolución" (click)="solicitarRechazar(devolucion)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
                       }
                       @if (puedeReembolsar(devolucion)) {
-                        <button type="button" class="btn btn-primary btn-sm" (click)="solicitarReembolsar(devolucion)">Reembolsar</button>
-                        <button type="button" class="btn btn-danger btn-sm" (click)="solicitarRechazar(devolucion)">Rechazar</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-icon" title="Reembolsar" aria-label="Reembolsar devolución" (click)="solicitarReembolsar(devolucion)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm btn-icon" title="Rechazar" aria-label="Rechazar devolución" (click)="solicitarRechazar(devolucion)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
                       }
                     </div>
                   </td>

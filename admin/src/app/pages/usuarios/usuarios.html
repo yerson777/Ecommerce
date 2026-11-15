@@ -65,7 +65,7 @@
                 <th>Rol</th>
                 <th>Estado</th>
                 <th>Registrado</th>
-                <th></th>
+                <th class="actions-head">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -92,22 +92,24 @@
                   <td class="muted" data-label="Registrado">{{ formatearFecha(usuario.created_at) }}</td>
                   <td data-label="Acciones">
                     <div class="actions">
-                      <button type="button" class="btn btn-outline btn-sm" (click)="abrirEditar(usuario)">
-                        Editar
+                      <button type="button" class="btn btn-outline btn-sm btn-icon" title="Editar" aria-label="Editar usuario" (click)="abrirEditar(usuario)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                       </button>
                       @if (usuario.activo) {
                         @if (!esYo(usuario)) {
                           <button
                             type="button"
-                            class="btn btn-outline btn-sm"
+                            class="btn btn-outline btn-sm btn-icon"
+                            title="Desactivar"
+                            aria-label="Desactivar usuario"
                             (click)="pedirDesactivar(usuario)"
                           >
-                            Desactivar
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 5.6a9 9 0 1 1-12.8 0"/></svg>
                           </button>
                         }
                       } @else {
-                        <button type="button" class="btn btn-outline btn-sm" (click)="reactivar(usuario)">
-                          Reactivar
+                        <button type="button" class="btn btn-outline btn-sm btn-icon" title="Reactivar" aria-label="Reactivar usuario" (click)="reactivar(usuario)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 5.6a9 9 0 1 1-12.8 0"/></svg>
                         </button>
                       }
                     </div>

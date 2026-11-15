@@ -17,6 +17,8 @@ export class LoginComponent {
   errorMessage: string | null = null;
   loading = false;
   logoUrl = signal<string | null>(null);
+  /** Alterna la visibilidad de la contraseña (solo presentación). */
+  verPassword = signal(false);
 
   constructor(
     private readonly auth: AuthService,

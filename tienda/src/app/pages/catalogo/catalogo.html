@@ -8,7 +8,7 @@
       </p>
     </div>
 
-    <div class="carrusel" *ngIf="carrusel.banners().length > 0">
+    <div class="carrusel" *ngIf="carrusel.banners().length > 0" [style.aspect-ratio]="medida.aspecto">
       <div
         class="carrusel-pista"
         [style.transform]="'translateX(-' + carrusel.activo() * 100 + '%)'"
