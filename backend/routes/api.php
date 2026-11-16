@@ -95,6 +95,11 @@ Route::group(['prefix' => 'v1'], function () {
             ->middleware('throttle:5,1')
             ->name('contacto.store');
 
+        // Verificar si ya existe un cliente (aviso suave en checkout, sin revelar datos)
+        Route::get('/clientes/existe', [CheckoutController::class, 'clienteExiste'])
+            ->middleware('throttle:10,1')
+            ->name('clientes.existe');
+
         /* ---- Cuentas de cliente (opcionales) ---- */
         Route::prefix('auth')->name('auth.')->group(function () {
             Route::post('/registro', [StoreAuthController::class, 'registro'])

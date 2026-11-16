@@ -1,19 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { interval, Subscription } from 'rxjs';
 import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
+import { CatalogoService } from '../../core/services/catalogo.service';
+import { etiquetaEstadoPedido } from '../../core/utils/pedido-formato';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const STORAGE_KEY = 'everly_ultimo_pedido';
 const STORAGE_AVISOS_KEY = 'everly_ultimo_pedido_avisos';
-
-const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
-  pendiente: 'Pendiente de pago',
-  confirmado: 'Confirmado',
-  cancelado: 'Cancelado',
-  completado: 'Completado',
-};
 
 @Component({
   imports: [CommonModule, RouterLink],
@@ -21,9 +17,20 @@ const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
   styleUrl: './confirmacion.scss',
   templateUrl: './confirmacion.html',
 })
-export class ConfirmacionComponent implements OnInit {
+export class ConfirmacionComponent implements OnInit, OnDestroy {
   order: PedidoPublico | null = null;
   avisos: string[] = [];
+
+  private readonly catalogo = inject(CatalogoService);
+  readonly pagoConfirmado = signal(false);
+  private refrescoSuscripcion = new Subscription();
+
+  readonly claseBadge = computed(() => {
+    if (this.pagoConfirmado()) {
+      return 'badge badge-pago-confirmado';
+    }
+    return 'badge badge-pedido-recibido';
+  });
 
   constructor(
     private readonly router: Router,
@@ -40,8 +47,20 @@ export class ConfirmacionComponent implements OnInit {
 
     if (!this.order) {
       this.router.navigate(['/']);
+      return;
     }
+
+    this.consultarEstado();
+    this.iniciarRefresco();
+    this.iniciarListenerVisibilidad();
   }
+
+  ngOnDestroy(): void {
+    this.refrescoSuscripcion.unsubscribe();
+    window.removeEventListener('visibilitychange', this.onVisibilityChange);
+  }
+
+  private onVisibilityChange: () => void = () => {};
 
   private leerAvisos(): string[] {
     try {
@@ -76,13 +95,59 @@ export class ConfirmacionComponent implements OnInit {
     return null;
   }
 
+  private consultarEstado(): void {
+    if (!this.order) {
+      return;
+    }
+    this.catalogo.seguirPedido(this.order.numero_pedido).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.order = res.data;
+          if (res.data.estado === 'confirmado' || res.data.estado === 'completado') {
+            this.pagoConfirmado.set(true);
+          }
+        }
+      },
+      error: () => undefined,
+    });
+  }
+
+  private iniciarRefresco(): void {
+    if (this.pagoConfirmado() || this.order?.estado !== 'pendiente') {
+      return;
+    }
+    this.refrescoSuscripcion = interval(30000).subscribe(() => {
+      this.consultarEstado();
+    });
+  }
+
+  private iniciarListenerVisibilidad(): void {
+    this.onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        this.consultarEstado();
+      }
+    };
+    window.addEventListener('visibilitychange', this.onVisibilityChange);
+  }
+
   readonly formatearPrecio = formatearPrecio;
 
   estadoEtiqueta(estado: EstadoPedido): string {
-    return ESTADO_ETIQUETA[estado] ?? estado;
+    return etiquetaEstadoPedido(estado);
   }
 
   imprimir(): void {
+    const codigo = this.order?.numero_pedido ?? '';
+    const titleAnterior = document.title;
+    document.title = `Pedido ${codigo}`;
+    document.body.classList.add('imprimiendo-pedido');
+
+    const afterPrint = () => {
+      document.body.classList.remove('imprimiendo-pedido');
+      document.title = titleAnterior;
+      window.removeEventListener('afterprint', afterPrint);
+    };
+    window.addEventListener('afterprint', afterPrint);
     window.print();
   }
 

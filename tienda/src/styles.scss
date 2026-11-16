@@ -742,3 +742,44 @@ img {
     padding: 2rem 0 4rem;
   }
 }
+
+@media print {
+  body.imprimiendo-pedido * {
+    visibility: hidden !important;
+  }
+
+  body.imprimiendo-pedido #area-impresion-pedido,
+  body.imprimiendo-pedido #area-impresion-pedido * {
+    visibility: visible !important;
+  }
+
+  body.imprimiendo-pedido #area-impresion-pedido {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    padding: 15mm !important;
+    box-sizing: border-box !important;
+  }
+
+  body.imprimiendo-pedido .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.imprimiendo-pedido .badge {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.imprimiendo-pedido .card.bloque {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+}

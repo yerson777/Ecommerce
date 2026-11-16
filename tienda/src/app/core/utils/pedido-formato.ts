@@ -1,7 +1,7 @@
 const ETIQUETAS_ESTADO: Record<string, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
-  completado: 'Completado',
+  pendiente: 'Pedido recibido · Pago en revisión',
+  confirmado: 'Pago confirmado',
+  completado: '¡Pago recibido! Compra completada',
   cancelado: 'Cancelado',
   devuelto: 'Devuelto',
 };

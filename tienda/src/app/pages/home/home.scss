@@ -260,6 +260,25 @@ h3 {
   letter-spacing: 0.04em;
 }
 
+.hero-sello {
+  animation: selloFade 10s infinite;
+}
+
+@keyframes selloFade {
+  0% { opacity: 1; pointer-events: auto; }
+  40% { opacity: 1; pointer-events: auto; }
+  42% { opacity: 0; pointer-events: none; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sello {
+    animation: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 /* ================= BANNER (mismo tratamiento que pages/catalogo) ================= */
 .carrusel {
   position: relative;

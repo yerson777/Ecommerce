@@ -354,7 +354,11 @@
         @if (detalle.estado !== 'cancelado' && detalle.estado !== 'devuelto') {
           <div class="transiciones">
             <div class="transiciones-botones">
-              <button type="button" class="btn btn-primary" (click)="abrirRegistroPago()">Registrar pago</button>
+              @if (tieneSaldoPendiente()) {
+                <button type="button" class="btn btn-primary" (click)="abrirRegistroPago()">Registrar pago</button>
+              } @else {
+                <app-badge tone="success">Pagado</app-badge>
+              }
               <button type="button" class="btn btn-outline" (click)="imprimirComprobante()">Imprimir comprobante</button>
             </div>
           </div>
@@ -395,7 +399,7 @@
                 }
                 @if (siguiente === 'cancelado') {
                   <button type="button" class="btn btn-danger" (click)="pedirTransicion(siguiente)">
-                    Cancelar
+                    Cancelar pedido
                   </button>
                 }
               }
@@ -435,6 +439,7 @@
     [title]="textoTituloTransicion()"
     [message]="textoMensajeTransicion()"
     [confirmLabel]="etiquetaConfirmar()"
+    [cancelLabel]="objetivo.estado === 'cancelado' ? 'No, volver' : 'Cancelar'"
     [tone]="objetivo.estado === 'cancelado' ? 'danger' : 'primary'"
     (confirm)="confirmarTransicion()"
     (cancel)="cancelarTransicion()"

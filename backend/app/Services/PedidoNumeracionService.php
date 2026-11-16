@@ -9,9 +9,15 @@ use Illuminate\Support\Str;
  */
 class PedidoNumeracionService
 {
+    private const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
     public function numeroPedido(): string
     {
-        return 'PED-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
+        $codigo = '';
+        for ($i = 0; $i < 5; $i++) {
+            $codigo .= self::ALFABETO[random_int(0, strlen(self::ALFABETO) - 1)];
+        }
+        return 'PED-'.$codigo;
     }
 
     public function numeroVenta(): string

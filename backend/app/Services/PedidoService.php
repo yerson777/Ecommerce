@@ -166,6 +166,12 @@ class PedidoService
             if (! $cliente && $telefonoNorm) {
                 $cliente = Cliente::query()->where('telefono_normalizado', $telefonoNorm)->first();
             }
+            if (! $cliente && !empty($datos['email'])) {
+                $emailNorm = Contacto::normalizarEmail($datos['email']);
+                if ($emailNorm) {
+                    $cliente = Cliente::query()->whereRaw('LOWER(email) = ?', [$emailNorm])->first();
+                }
+            }
             if (! $cliente) {
                 $cliente = new Cliente;
             }
@@ -175,24 +181,65 @@ class PedidoService
             }
 
             // El mutador de Cliente sincroniza telefono_normalizado.
-            $cliente->telefono = $datos['telefono'];
-            $cliente->fill([
-                'nombre' => trim($datos['nombre']),
-                // Con sesión se conserva el correo de la cuenta para no romper
-                // el inicio de sesión ni la vinculación de sus pedidos.
-                'email' => $clienteAutenticadoId
-                    ? $cliente->email
-                    : ($datos['email'] ?? $cliente->email),
-                'ciudad' => trim($datos['ciudad']),
-                'direccion' => trim($datos['direccion']),
-                'notas' => $datos['notas'] ?? $cliente->notas,
-            ]);
+            try {
+                $cliente->telefono = $datos['telefono'];
+                $cliente->fill([
+                    'nombre' => $cliente->nombre ?: trim($datos['nombre']),
+                    // Con sesión se conserva el correo de la cuenta para no romper
+                    // el inicio de sesión ni la vinculación de sus pedidos.
+                    'email' => $clienteAutenticadoId
+                        ? $cliente->email
+                        : ($cliente->email ?: ($datos['email'] ?? $cliente->email)),
+                    'ciudad' => $cliente->ciudad ?: trim($datos['ciudad']),
+                    'direccion' => $cliente->direccion ?: trim($datos['direccion']),
+                    'notas' => $datos['notas'] ?? $cliente->notas,
+                ]);
 
-            if (! $cliente->fecha_primer_pedido) {
-                $cliente->fecha_primer_pedido = now()->toDateString();
+                if (! $cliente->fecha_primer_pedido) {
+                    $cliente->fecha_primer_pedido = now()->toDateString();
+                }
+                $cliente->fecha_ultimo_pedido = now()->toDateString();
+                $cliente->save();
+            } catch (UniqueConstraintViolationException $e) {
+                // Condición de carrera: otro request creó el cliente primero con el
+                // mismo teléfono normalizado o correo. Vinculamos el pedido al
+                // cliente existente sin mostrar error al comprador.
+                $clienteExistente = Cliente::query()
+                    ->where('es_prueba', false)
+                    ->where(function ($q) use ($telefonoNorm, $datos) {
+                        if ($telefonoNorm) {
+                            $q->orWhere('telefono_normalizado', $telefonoNorm);
+                        }
+                        if (!empty($datos['email'])) {
+                            $emailNorm = Contacto::normalizarEmail($datos['email']);
+                            if ($emailNorm) {
+                                $q->orWhereRaw('LOWER(email) = ?', [$emailNorm]);
+                            }
+                        }
+                    })
+                    ->first();
+
+                if ($clienteExistente) {
+                    $cliente = $clienteExistente;
+                    $cliente->telefono = $datos['telefono'];
+                    $cliente->fill([
+                        'nombre' => $cliente->nombre ?: trim($datos['nombre']),
+                        'email' => $clienteAutenticadoId
+                            ? $cliente->email
+                            : ($cliente->email ?: ($datos['email'] ?? $cliente->email)),
+                        'ciudad' => $cliente->ciudad ?: trim($datos['ciudad']),
+                        'direccion' => $cliente->direccion ?: trim($datos['direccion']),
+                        'notas' => $datos['notas'] ?? $cliente->notas,
+                    ]);
+                    if (! $cliente->fecha_primer_pedido) {
+                        $cliente->fecha_primer_pedido = now()->toDateString();
+                    }
+                    $cliente->fecha_ultimo_pedido = now()->toDateString();
+                    $cliente->save();
+                } else {
+                    throw $e;
+                }
             }
-            $cliente->fecha_ultimo_pedido = now()->toDateString();
-            $cliente->save();
 
             $pedido = Pedido::create([
                 'numero_pedido' => $this->proximoNumeroPedido(),
@@ -959,7 +1006,13 @@ class PedidoService
 
     private function proximoNumeroPedido(): string
     {
-        return $this->numeracion->numeroPedido();
+        $intentos = 0;
+        do {
+            $numero = $this->numeracion->numeroPedido();
+            $intentos++;
+        } while (Pedido::query()->where('numero_pedido', $numero)->exists() && $intentos < 5);
+
+        return $numero;
     }
 
     private function proximoNumeroVenta(): string

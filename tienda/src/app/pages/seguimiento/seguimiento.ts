@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/services/catalogo.service';
@@ -6,14 +6,14 @@ import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
+  pendiente: 'Pedido recibido · Pago en revisión',
+  confirmado: 'Pago confirmado',
   cancelado: 'Cancelado',
-  completado: 'Completado',
+  completado: '¡Pago recibido! Compra completada',
 };
 
 const ESTADO_CLASE: Record<EstadoPedido, string> = {
-  pendiente: 'badge-warning',
+  pendiente: 'badge-pedido-recibido',
   confirmado: 'badge-info',
   cancelado: 'badge-neutral',
   completado: 'badge-success',
@@ -27,6 +27,7 @@ const ESTADO_CLASE: Record<EstadoPedido, string> = {
 })
 export class SeguimientoComponent {
   private readonly catalogo = inject(CatalogoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   numero = '';
   pedido: PedidoPublico | null = null;
@@ -43,6 +44,7 @@ export class SeguimientoComponent {
     this.buscando = true;
     this.error = null;
     this.pedido = null;
+    this.cdr.markForCheck();
 
     this.catalogo.seguirPedido(numero).subscribe({
       next: (res) => {
@@ -53,11 +55,13 @@ export class SeguimientoComponent {
           this.error =
             res.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.buscando = false;
         this.error =
           err.message ?? 'No encontramos un pedido con ese código. Revisalo e intentá de nuevo.';
+        this.cdr.markForCheck();
       },
     });
   }

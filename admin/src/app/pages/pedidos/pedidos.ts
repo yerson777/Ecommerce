@@ -240,7 +240,7 @@ export class PedidosComponent implements OnInit {
     if (transicion.estado === 'completado') {
       return `El pedido ${numero} pasará a Completado: se registrará la venta con los precios históricos y las prendas quedarán marcadas como vendidas. Esta acción no se puede deshacer porque el comprobante queda registrado como venta definitiva.`;
     }
-    return `Se cancelará el pedido ${numero} y las prendas volverán a estar disponibles. Esta acción no se puede deshacer.`;
+    return `¿Seguro que querés cancelar el pedido ${numero}? Esta acción liberará las prendas reservadas.`;
   }
 
   etiquetaConfirmar(): string {
@@ -340,6 +340,10 @@ export class PedidosComponent implements OnInit {
 
   descuentoPositivo(descuento: string | number | null | undefined): boolean {
     return parseFloat(String(descuento ?? '0')) > 0;
+  }
+
+  tieneSaldoPendiente(): boolean {
+    return parseFloat(String(this.detalle()?.saldo_pendiente ?? '0')) > 0;
   }
 
   readonly formatearFecha = formatearFechaCompartida;

@@ -230,36 +230,35 @@ export class BannersComponent implements OnInit {
       const m = this.medida();
       const esperada = m.ancho / m.alto;
       const real = imagen.naturalWidth / imagen.naturalHeight;
-      const proporcionCorrecta = Math.abs(real - esperada) / esperada <= 0.03;
-      const mitadAncho = m.ancho / 2;
+      const proporcionCorrecta = Math.abs(real - esperada) / esperada <= 0.05;
+      const anchoMinimo = m.ancho * 0.85;
+      const anchoMedio = m.ancho * 0.5;
       const w = imagen.naturalWidth;
       const h = imagen.naturalHeight;
 
       if (!proporcionCorrecta) {
-        if (w < mitadAncho) {
-          this.avisoMedida.set({
-            tipo: 'danger',
-            icono: '⚠',
-            texto: `Imagen demasiado pequeña (${w}×${h} px). Se verá borrosa o cortada. Recomendado: ${m.ancho}×${m.alto} px`,
-          });
-        } else {
-          this.avisoMedida.set({
-            tipo: 'warning',
-            icono: '⚠',
-            texto: `La imagen se recortará un poco en la tienda (${w}×${h} px). Recomendado: ${m.ancho}×${m.alto} px (proporción ${m.proporcion})`,
-          });
-        }
-      } else if (w < m.ancho) {
         this.avisoMedida.set({
           tipo: 'warning',
           icono: '⚠',
-          texto: `La imagen es pequeña (${w}×${h} px). Puede verse borrosa. Recomendado: ${m.ancho}×${m.alto} px`,
+          texto: `La imagen se recortará un poco en la tienda (${w}×${h} px). Recomendado: ${m.ancho}×${m.alto} px (proporción ${m.proporcion})`,
         });
-      } else {
+      } else if (w >= anchoMinimo) {
         this.avisoMedida.set({
           tipo: 'success',
           icono: '✓',
           texto: `✓ Medida correcta (${w}×${h} px)`,
+        });
+      } else if (w >= anchoMedio) {
+        this.avisoMedida.set({
+          tipo: 'warning',
+          icono: '⚠',
+          texto: `La imagen es algo pequeña (${w}×${h} px). Podría verse menos nítida. Recomendado: ${m.ancho}×${m.alto} px`,
+        });
+      } else {
+        this.avisoMedida.set({
+          tipo: 'danger',
+          icono: '⚠',
+          texto: `Imagen demasiado pequeña (${w}×${h} px). Se verá borrosa. Recomendado: ${m.ancho}×${m.alto} px`,
         });
       }
     };

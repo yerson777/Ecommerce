@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response';
 import { Paginated } from '../models/paginated';
@@ -178,9 +178,22 @@ export class CatalogoService extends ApiService {
     return this.post<RespuestaCheckout>(url, form);
   }
 
+  clienteExiste(telefono: string, email: string | null): Observable<boolean> {
+    const params: Record<string, string> = {};
+    if (telefono.trim()) {
+      params['telefono'] = telefono.trim();
+    }
+    if (email?.trim()) {
+      params['email'] = email.trim();
+    }
+    return this.get<{ existe: boolean }>(
+      `/v1/store/clientes/existe?${new URLSearchParams(params).toString()}`,
+    ).pipe(map((res) => res.existe ?? false));
+  }
+
   seguirPedido(numeroPedido: string): Observable<ApiResponse<PedidoPublico>> {
     return this.get<ApiResponse<PedidoPublico>>(
-      `/v1/store/pedidos/${encodeURIComponent(numeroPedido)}`,
+      `/v1/store/pedidos/${encodeURIComponent(numeroPedido)}?t=${Date.now()}`,
     );
   }
 }

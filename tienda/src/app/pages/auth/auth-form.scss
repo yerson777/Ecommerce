@@ -204,11 +204,13 @@
 .estado--completado {
   background: rgb(63 140 92 / 14%);
   color: var(--success);
+  white-space: normal;
 }
 
 .estado--pendiente {
-  background: rgb(201 138 45 / 16%);
-  color: var(--warning);
+  background: rgb(217 119 6 / 20%);
+  color: #b45309;
+  font-weight: 800;
 }
 
 .estado--cancelado {

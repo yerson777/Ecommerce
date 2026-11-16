@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api\V1\Store;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Store\PedidoStoreRequest;
 use App\Http\Resources\V1\PedidoPublicoResource;
+use App\Models\Cliente;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
 use App\Models\Pedido;
 use App\Services\PedidoService;
 use App\Support\Api;
+use App\Support\Contacto;
+use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
@@ -113,5 +116,31 @@ class CheckoutController extends Controller
         }
 
         return Api::resource(new PedidoPublicoResource($pedido), 'Seguimiento del pedido.');
+    }
+
+    public function clienteExiste(Request $request)
+    {
+        $telefono = $request->string('telefono');
+        $email = $request->string('email');
+
+        $telNorm = Contacto::normalizarTelefono($telefono);
+        $emailNorm = Contacto::normalizarEmail($email);
+
+        if (! $telNorm && ! $emailNorm) {
+            return response()->json(['existe' => false]);
+        }
+
+        $query = Cliente::query()->where(function ($q) use ($telNorm, $emailNorm) {
+            if ($telNorm) {
+                $q->orWhere('telefono_normalizado', $telNorm);
+            }
+            if ($emailNorm) {
+                $q->orWhereRaw('LOWER(email) = ?', [$emailNorm]);
+            }
+        });
+
+        $existe = $query->exists();
+
+        return response()->json(['existe' => $existe]);
     }
 }

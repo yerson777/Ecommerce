@@ -63,3 +63,16 @@
 .wa-ico {
   flex-shrink: 0;
 }
+
+.badge-pedido-recibido {
+  background: #d97706;
+  color: #ffffff;
+  border: 1px solid #b45309;
+}
+
+.badge-pago-confirmado {
+  background: #16a34a;
+  color: #ffffff;
+  border: 1px solid #15803d;
+  white-space: normal;
+}

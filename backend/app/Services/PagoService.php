@@ -108,6 +108,12 @@ class PagoService
             $pagado = $this->pagadoDePedido($pedido);
             $saldo = max(0.0, (float) $pedido->total - $pagado);
 
+            if ($saldo <= 0) {
+                throw ValidationException::withMessages([
+                    'monto' => 'Este pedido ya está pagado.',
+                ]);
+            }
+
             if ($monto > $saldo + 0.01) {
                 throw ValidationException::withMessages([
                     'monto' => 'El monto supera el saldo pendiente (Bs '.number_format($saldo, 2).'). No se permiten pagos mayores al saldo.',

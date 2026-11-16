@@ -42,18 +42,20 @@
             </div>
             <div class="field">
               <label for="telefono">Teléfono / WhatsApp *</label>
-              <input id="telefono" class="input" formControlName="telefono" placeholder="Ej: 70123456" />
+              <input id="telefono" class="input" formControlName="telefono" placeholder="Ej: 70123456" (blur)="consultarClienteExistente()" />
               <span class="field-error" *ngIf="form.controls.telefono.touched && (form.controls.telefono.invalid || erroresDe('telefono'))">
                 {{ erroresDe('telefono') ?? 'Ingresá un teléfono válido (7 a 20 caracteres).' }}
               </span>
+              <span class="field-aviso" *ngIf="clienteExistente() === true">Ya tenemos un registro con este dato. Tu pedido se asociará a él.</span>
             </div>
           </div>
           <div class="field">
             <label for="email">Email <span class="muted">(opcional)</span></label>
-            <input id="email" class="input" type="email" formControlName="email" placeholder="nombre@email.com" />
+            <input id="email" class="input" type="email" formControlName="email" placeholder="nombre@email.com" (blur)="consultarClienteExistente()" />
             <span class="field-error" *ngIf="form.controls.email.touched && form.controls.email.invalid">
               Ingresá un email válido.
             </span>
+            <span class="field-aviso" *ngIf="clienteExistente() === true">Ya tenemos un registro con este dato. Tu pedido se asociará a él.</span>
           </div>
 
           <h2 class="panel-titulo">Entrega</h2>

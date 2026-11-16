@@ -55,6 +55,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly comprobantePreview = signal<string | null>(null);
   readonly comprobanteError = signal<string | null>(null);
   readonly cuentaCopiada = signal(false);
+  readonly clienteExistente = signal<boolean | null>(null);
 
   private readonly videoCamara = viewChild<ElementRef<HTMLVideoElement>>('videoCamara');
   private readonly inputCamara = viewChild<ElementRef<HTMLInputElement>>('comprobanteCamara');
@@ -124,6 +125,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       next: (res) => this.metodosEntrega.set(res.data ?? []),
     });
     this.cargarMetodosPago();
+
+    // Aviso suave si el teléfono o el correo ya están registrados (sin revelar datos).
+    this.form.controls.telefono.valueChanges.subscribe(() => {
+      this.clienteExistente.set(null);
+    });
+    this.form.controls.email.valueChanges.subscribe(() => {
+      this.clienteExistente.set(null);
+    });
   }
 
   private cargarMetodosPago(): void {
@@ -143,6 +152,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.catalogo.metodosPago().subscribe({
       next: (res) => this.metodosPago.set(res.data ?? []),
       error: () => this.metodosPago.set([]),
+    });
+  }
+
+  consultarClienteExistente(): void {
+    const telefono = this.form.controls.telefono.value?.trim() || '';
+    const email = this.form.controls.email.value?.trim() || null;
+    if (!telefono && !email) {
+      this.clienteExistente.set(null);
+      return;
+    }
+    this.catalogo.clienteExiste(telefono, email).subscribe({
+      next: (existe) => this.clienteExistente.set(existe),
+      error: () => this.clienteExistente.set(null),
     });
   }
 

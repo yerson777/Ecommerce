@@ -61,11 +61,6 @@ export class LayoutComponent implements OnInit {
     if (!this.usuario()) {
       this.auth.cargarUsuario();
     }
-
-    // Abre el grupo que corresponde a la ruta activa al entrar. En móvil
-    // (<768px) no se expande ningún grupo: los ítems activos siguen
-    // resaltados por routerLinkActive.
-    this.actualizarGrupoPorRuta(this.router.url);
   }
 
   private actualizarGrupoPorRuta(url: string): void {
