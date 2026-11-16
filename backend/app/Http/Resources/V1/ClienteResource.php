@@ -27,6 +27,7 @@ class ClienteResource extends JsonResource
             'ultimo_acceso_at' => $this->ultimo_acceso_at?->toISOString(),
             'es_duplicado' => $this->when($this->es_duplicado !== null, (bool) $this->es_duplicado),
             'pedidos_count' => $this->when($this->pedidos_count !== null, $this->pedidos_count),
+            'pedidos_pendientes_count' => $this->when($this->pedidos_pendientes_count !== null, (int) $this->pedidos_pendientes_count),
             'compras_count' => $this->when($this->compras_count !== null, $this->compras_count),
             'ventas_count' => $this->when($this->ventas_count !== null, $this->ventas_count),
             'total_comprado' => $this->when($this->total_comprado !== null, (string) $this->total_comprado),

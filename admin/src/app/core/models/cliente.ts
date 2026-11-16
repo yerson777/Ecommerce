@@ -28,6 +28,7 @@ export interface Cliente {
   ultimo_acceso_at?: string | null;
   es_duplicado?: boolean;
   pedidos_count?: number;
+  pedidos_pendientes_count?: number;
   compras_count?: number;
   ventas_count?: number;
   total_comprado?: string | null;

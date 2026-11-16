@@ -44,6 +44,15 @@ class ClienteController extends Controller
                 Pedido::ESTADO_CANCELADO,
                 Pedido::ESTADO_DEVUELTO,
             ])], 'total')
+            ->addSelect(['pedidos_pendientes_count' => function ($query) {
+                $query->from('pedidos')
+                    ->whereColumn('pedidos.cliente_id', 'clientes.id')
+                    ->whereIn('estado', [
+                        Pedido::ESTADO_PENDIENTE,
+                        Pedido::ESTADO_CONFIRMADO,
+                    ])
+                    ->selectRaw('count(*)');
+            }])
             ->leftJoinSub(
                 Pedido::query()
                     ->selectRaw('MAX(id) as pedido_id, cliente_id')

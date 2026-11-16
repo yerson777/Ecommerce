@@ -115,6 +115,9 @@
                     } @else {
                       <app-badge tone="neutral">Sin pedidos</app-badge>
                     }
+                    @if (filtros().filtro === 'pendientes' && cliente.pedidos_pendientes_count && cliente.pedidos_pendientes_count > 0) {
+                      <div class="muted" style="font-size: 0.75rem; margin-top: 0.2rem">{{ cliente.pedidos_pendientes_count }} pendientes</div>
+                    }
                   </td>
                   <td data-label="Acciones">
                     <div class="actions">

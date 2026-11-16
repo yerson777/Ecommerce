@@ -386,23 +386,24 @@
           <div class="transiciones">
             <h3 class="subtitle">Cambiar estado</h3>
             <div class="transiciones-botones">
-              @for (siguiente of detalle.estados_siguientes; track siguiente) {
-                @if (siguiente === 'confirmado') {
-                  <button type="button" class="btn btn-primary" (click)="pedirTransicion(siguiente)">
-                    Confirmar pedido
-                  </button>
-                }
-                @if (siguiente === 'completado') {
-                  <button type="button" class="btn btn-primary" (click)="pedirTransicion(siguiente)">
-                    Completar venta
-                  </button>
-                }
-                @if (siguiente === 'cancelado') {
-                  <button type="button" class="btn btn-danger" (click)="pedirTransicion(siguiente)">
-                    Cancelar pedido
-                  </button>
-                }
+              <!-- Acción principal primero -->
+              @if (detalle.estados_siguientes.includes('confirmado')) {
+                <button type="button" class="btn btn-primary" (click)="pedirTransicion('confirmado')">
+                  Confirmar pedido
+                </button>
               }
+              @if (detalle.estados_siguientes.includes('completado')) {
+                <button type="button" class="btn btn-primary" (click)="pedirTransicion('completado')">
+                  Completar venta
+                </button>
+              }
+              <!-- Cancelar pedido -->
+              @if (detalle.estados_siguientes.includes('cancelado')) {
+                <button type="button" class="btn btn-danger" (click)="pedirTransicion('cancelado')">
+                  Cancelar pedido
+                </button>
+              }
+              <!-- Registrar devolución -->
               @if (!detalle.devolucion) {
                 <button type="button" class="btn btn-danger" (click)="abrirDevolucion()">
                   Registrar devolución
