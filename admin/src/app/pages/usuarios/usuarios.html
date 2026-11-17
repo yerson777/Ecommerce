@@ -21,6 +21,7 @@
           placeholder="Nombre o correo…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 

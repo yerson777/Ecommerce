@@ -22,6 +22,7 @@
           placeholder="Nº de pago, pedido, cliente o referencia…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 

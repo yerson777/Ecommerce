@@ -1,5 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { formatearMoneda } from '../../core/utils/formato';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { interval } from 'rxjs';
@@ -79,6 +79,7 @@ export class DashboardComponent implements OnInit {
 
   /** Etiqueta del período, taken del propio filtro para no duplicar textos. */
   readonly etiquetaPeriodo = computed(() => ETIQUETAS_PERIODO[this.periodo()]);
+  readonly formatearFecha = formatearFechaCompartida;
 
   ngOnInit(): void {
     this.cargar();

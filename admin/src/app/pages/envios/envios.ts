@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { EnviosService } from '../../core/services/envios.service';
@@ -23,6 +23,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 @Component({
   imports: [
@@ -81,11 +82,69 @@ export class EnviosComponent implements OnInit {
   readonly configCargando = signal(false);
   readonly zonaEditando = signal<number | null>(null);
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   zonaForm: ZonaEnvioPayload = this.formularioZonaVacio();
 
   ngOnInit(): void {
     this.cargar();
     this.cargarMetodosPago();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    const f = this.filtros();
+    const filtros = {
+      busqueda: texto || undefined,
+      estado_envio: f.estado_envio || undefined,
+      modalidad: f.modalidad || undefined,
+      fecha_desde: f.fecha_desde || undefined,
+      fecha_hasta: f.fecha_hasta || undefined,
+      page: this.pagina(),
+      per_page: this.perPage,
+    };
+
+    const peticion = this.soloPorEnviar()
+      ? this.enviosService.porEnviar(filtros)
+      : this.enviosService.listar(filtros);
+
+    return peticion.pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(this.mensajeError(err, 'No se pudieron cargar los envíos.'));
+        return of(null);
+      })
+    );
   }
 
   get transiciones(): EstadoEnvio[] {

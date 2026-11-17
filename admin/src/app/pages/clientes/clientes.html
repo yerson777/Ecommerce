@@ -17,6 +17,7 @@
           placeholder="Nombre, teléfono, correo o número de pedido…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { Paginated } from '../../core/models/paginated';
@@ -13,6 +13,7 @@ import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 interface Formulario {
   name: string;
@@ -65,8 +66,56 @@ export class UsuariosComponent implements OnInit {
   desactivarObjetivo: Usuario | null = null;
   desactivandoId: number | null = null;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    return this.usuariosService.listar({
+      busqueda: texto || undefined,
+      rol: (this.filtros().rol || undefined) as Rol | undefined,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los usuarios.');
+        return of(null);
+      })
+    );
   }
 
   esYo(usuario: Usuario): boolean {

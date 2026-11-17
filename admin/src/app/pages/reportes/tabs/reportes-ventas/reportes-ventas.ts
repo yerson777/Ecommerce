@@ -1,5 +1,5 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
-import { formatearMoneda } from '../../../../core/utils/formato';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../../../core/utils/formato';
 import {
   ComparacionPeriodo,
   GananciaPorOrigen,
@@ -43,6 +43,7 @@ export class ReportesVentasComponent {
   readonly comparacion = signal<ComparacionPeriodo | null>(null);
   readonly gananciaOrigen = signal<GananciaPorOrigen | null>(null);
   readonly cargando = signal(true);
+  readonly formatearFecha = formatearFechaCompartida;
   error: string | null = null;
 
   constructor() {

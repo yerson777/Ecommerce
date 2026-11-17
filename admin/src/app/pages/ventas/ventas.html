@@ -20,6 +20,7 @@
           placeholder="Número o cliente…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 
@@ -125,7 +126,7 @@
               @for (venta of page.data; track venta.id) {
                 <tr>
                   <td class="mono" data-label="Número">{{ venta.numero_venta }}</td>
-                  <td data-label="Fecha">{{ venta.fecha_venta }}</td>
+                  <td data-label="Fecha">{{ formatearFecha(venta.fecha_venta) }}</td>
                   <td data-label="Cliente">{{ venta.cliente?.nombre ?? '—' }}</td>
                   <td data-label="Prendas">{{ venta.items?.length ?? 0 }}</td>
                   <td class="muted" data-label="Método">{{ venta.metodo_pago ?? '—' }}</td>

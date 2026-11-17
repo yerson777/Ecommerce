@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 import {
   CategoriaRef,
   CondicionRef,
@@ -98,9 +99,65 @@ export class ProductosComponent implements OnInit {
   liberarObjetivo: Producto | null = null;
   ocultarObjetivo: Producto | null = null;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargarCatalogos();
     this.cargar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    return this.productosService.listar({
+      busqueda: texto || undefined,
+      categoria: this.filtros().categoria,
+      talla: this.filtros().talla,
+      marca: this.filtros().marca,
+      condicion: this.filtros().condicion,
+      estado: this.filtros().estado || null,
+      publicado: this.filtros().publicado === '' ? null : this.filtros().publicado === '1',
+      precio_min: this.filtros().precio_min,
+      precio_max: this.filtros().precio_max,
+      orden: this.filtros().orden,
+      page: this.pagina(),
+      per_page: this.perPage(),
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los productos.');
+        return of(null);
+      })
+    );
   }
 
   onBuscar(): void {

@@ -1,5 +1,5 @@
 import { effect, Component, inject, input, signal, untracked } from '@angular/core';
-import { formatearMoneda } from '../../../../core/utils/formato';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ETIQUETA_ESTADO_PAGO, TONO_ESTADO_PAGO } from '../../../../core/models/pago';
 import {
@@ -46,6 +46,7 @@ export class ReportesPagosComponent {
   readonly cargando = signal(true);
   readonly pagina = signal(1);
   readonly perPage = signal(10);
+  readonly formatearFecha = formatearFechaCompartida;
   error: string | null = null;
 
   constructor() {

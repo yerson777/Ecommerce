@@ -21,6 +21,7 @@
           placeholder="Nombre de la oferta…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 
@@ -78,9 +79,9 @@
                 </td>
                 <td class="muted" data-label="Alcance">{{ alanceTexto(oferta) }}</td>
                 <td class="muted nowrap" data-label="Vigencia">
-                  {{ oferta.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
+                  {{ oferta.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}
                   →
-                  {{ oferta.fecha_fin | date: 'dd/MM/yy HH:mm' }}
+                  {{ oferta.fecha_fin | date: 'dd/MM/yyyy HH:mm' }}
                 </td>
                 <td class="muted" data-label="Cupón">
                   {{ oferta.permitir_cupon ? 'Acumulable' : 'No acumula' }}

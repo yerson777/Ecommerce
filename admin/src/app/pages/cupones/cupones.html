@@ -21,6 +21,7 @@
           placeholder="Código del cupón…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 
@@ -119,7 +120,7 @@
                 </td>
                 <td class="muted" data-label="Vence">
                   @if (cupon.vence_en) {
-                    {{ cupon.vence_en | date: 'dd MMM yyyy' }}
+                    {{ cupon.vence_en | date: 'dd/MM/yyyy' }}
                   } @else {
                     —
                   }
@@ -335,8 +336,8 @@
           <div><span class="muted">Mínimo de compra</span><strong>{{ detalle()!.minimo_compra ? '$ ' + detalle()!.minimo_compra : '—' }}</strong></div>
           <div><span class="muted">Usos</span><strong>{{ detalle()!.usos }}@if (detalle()!.limite_usos) { / {{ detalle()!.limite_usos }} }</strong></div>
           <div><span class="muted">Límite por cliente</span><strong>{{ detalle()!.limite_por_cliente ?? 'Sin límite' }}</strong></div>
-          <div><span class="muted">Inicia el</span><strong>{{ detalle()!.fecha_inicio ? (detalle()!.fecha_inicio | date: 'dd MMM yyyy') : '—' }}</strong></div>
-          <div><span class="muted">Vence el</span><strong>{{ detalle()!.vence_en ? (detalle()!.vence_en | date: 'dd MMM yyyy') : '—' }}</strong></div>
+          <div><span class="muted">Inicia el</span><strong>{{ detalle()!.fecha_inicio ? (detalle()!.fecha_inicio | date: 'dd/MM/yyyy') : '—' }}</strong></div>
+          <div><span class="muted">Vence el</span><strong>{{ detalle()!.vence_en ? (detalle()!.vence_en | date: 'dd/MM/yyyy') : '—' }}</strong></div>
           <div><span class="muted">Categorías</span><strong>{{ nombresCategorias(detalle()!) }}</strong></div>
           <div><span class="muted">Total descontado</span><strong>$ {{ detalle()!.total_descontado ?? '0.00' }}</strong></div>
         </div>
@@ -360,7 +361,7 @@
                 <tbody>
                   @for (uso of usosDe(detalle()!); track uso.id) {
                     <tr>
-                      <td class="muted" data-label="Fecha">{{ uso.fecha | date: 'dd MMM yyyy HH:mm' }}</td>
+                      <td class="muted" data-label="Fecha">{{ uso.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
                       <td class="mono" data-label="Pedido">{{ uso.numero_pedido ?? '—' }}</td>
                       <td data-label="Cliente">{{ uso.cliente ?? '—' }}</td>
                       <td class="muted" data-label="Contacto">{{ uso.telefono ?? uso.email ?? '—' }}</td>

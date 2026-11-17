@@ -80,7 +80,7 @@
           <tbody>
             @for (compra of compras(); track compra.id) {
               <tr>
-                <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yyyy' }}</td>
                 <td data-label="Proveedor">
                   <button type="button" class="link" (click)="verDetalle(compra)">
                     <strong>{{ proveedorNombre(compra) }}</strong>

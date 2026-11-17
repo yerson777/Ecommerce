@@ -1,5 +1,5 @@
 import { effect, Component, inject, input, signal } from '@angular/core';
-import { formatearMoneda } from '../../../../core/utils/formato';
+import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
   ETIQUETA_ESTADO_PAGO_PEDIDO,
@@ -35,6 +35,7 @@ export class ReportesPedidosComponent {
   readonly pagina = signal(1);
   readonly porPagina = signal(10);
   readonly cargando = signal(true);
+  readonly formatearFecha = formatearFechaCompartida;
   error: string | null = null;
 
   readonly estadoPedido = signal<'' | EstadoPedido>('');

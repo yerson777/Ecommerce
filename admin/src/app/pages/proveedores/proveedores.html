@@ -21,6 +21,7 @@
           placeholder="Nombre, contacto, teléfono o ciudad…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 
@@ -288,7 +289,7 @@
               <tbody>
                 @for (compra of p.historial; track compra.id) {
                   <tr>
-                    <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yy' }}</td>
+                    <td class="muted nowrap" data-label="Fecha">{{ compra.fecha | date: 'dd/MM/yyyy' }}</td>
                     <td class="muted" data-label="Prendas">{{ compra.prendas_count ?? 0 }}</td>
                     <td class="muted" data-label="Costo total">$ {{ compra.costo_total }}</td>
                     <td class="muted" data-label="Gastos">$ {{ compra.gastos_extra }}</td>

@@ -1,7 +1,7 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { interval } from 'rxjs';
+import { Component, DestroyRef, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { interval, debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import {
   ETIQUETA_ESTADO_PEDIDO,
@@ -86,12 +86,62 @@ export class PedidosComponent implements OnInit {
   readonly metodos = signal<MetodoPagoRef[]>([]);
   readonly registroPagoAbierto = signal(false);
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargarMetodos();
     this.cargar();
     this.aplicarRefrescoAutomatico();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    return this.pedidosService.listar({
+      busqueda: texto || undefined,
+      estado: this.filtros().estado || null,
+      fecha_desde: this.filtros().fecha_desde || null,
+      fecha_hasta: this.filtros().fecha_hasta || null,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los pedidos.');
+        return of(null);
+      })
+    );
   }
 
   private cargarMetodos(): void {

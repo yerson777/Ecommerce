@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import {
@@ -29,6 +29,7 @@ import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card';
 import { IngresoManualModalComponent } from './ingreso-manual-modal';
 import { RegistroGastoModalComponent } from './registro-gasto-modal';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 @Component({
   imports: [
@@ -80,10 +81,61 @@ export class CajaComponent implements OnInit {
   objetivoEliminar: ObjetivoEliminar | null = null;
   eliminando = false;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargarCatalogo();
     this.fechaCierre = new Date().toISOString().slice(0, 10);
     this.cargarTodo();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    const f = this.filtros();
+    return this.cajaService.listar({
+      busqueda: texto || undefined,
+      tipo: f.tipo || null,
+      fecha_desde: f.fecha_desde || null,
+      fecha_hasta: f.fecha_hasta || null,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los movimientos.');
+        return of(null);
+      })
+    );
   }
 
   cambiarPeriodoFlujo(): void {

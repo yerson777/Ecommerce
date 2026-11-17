@@ -62,7 +62,7 @@
             <tr>
               <td class="mono" data-label="Nº pedido">{{ item.numero_pedido }}</td>
               <td data-label="Cliente">{{ item.cliente }}</td>
-              <td data-label="Fecha">{{ item.fecha_pedido }}</td>
+              <td data-label="Fecha">{{ formatearFecha(item.fecha_pedido) }}</td>
               <td data-label="Total">{{ moneda(item.total) }}</td>
               <td data-label="Pagado">{{ moneda(item.total_pagado) }}</td>
               <td data-label="Saldo">{{ moneda(item.saldo_pendiente) }}</td>

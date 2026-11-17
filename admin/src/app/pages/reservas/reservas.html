@@ -20,6 +20,7 @@
           placeholder="Producto, cliente o pedido…"
           [(ngModel)]="filtros().busqueda"
           (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
         />
       </div>
 

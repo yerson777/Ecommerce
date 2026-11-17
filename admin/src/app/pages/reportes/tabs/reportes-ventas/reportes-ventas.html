@@ -254,7 +254,7 @@
                   <td data-label="Categoría">{{ item.categoria }}</td>
                   <td data-label="Talla">{{ item.talla }}</td>
                   <td data-label="Precio">{{ moneda(item.precio) }}</td>
-                  <td data-label="Vendida">{{ item.ultima_venta ?? '—' }}</td>
+                  <td data-label="Vendida">{{ formatearFecha(item.ultima_venta ?? null) }}</td>
                   <td data-label="Monto"><strong>{{ moneda(item.monto_total) }}</strong></td>
                 </tr>
               }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Paginated } from '../../core/models/paginated';
@@ -19,6 +19,7 @@ import { ModalComponent } from '../../shared/components/modal/modal';
 import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 interface Formulario {
   nombre: string;
@@ -93,8 +94,59 @@ export class ProveedoresComponent implements OnInit {
   eliminarObjetivo: Proveedor | null = null;
   alternandoId: number | null = null;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    const f = this.filtros();
+    return this.proveedoresService.listarPaginado({
+      busqueda: texto || undefined,
+      tipo: f.tipo || undefined,
+      activo: f.activo === 'activos' ? true : f.activo === 'inactivos' ? false : null,
+      page: this.pagina(),
+      per_page: this.perPage(),
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+          this.proveedores.set(res.data.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los proveedores.');
+        return of(null);
+      })
+    );
   }
 
   onBuscar(): void {

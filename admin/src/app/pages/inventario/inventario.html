@@ -112,7 +112,9 @@
       <div class="toolbar">
         <div class="field grow">
           <label>Buscar</label>
-          <input class="input" type="text" placeholder="Código o nombre…" [(ngModel)]="filtros().busqueda" (keyup.enter)="onBuscar()" />
+          <input class="input" type="text" placeholder="Código o nombre…"           [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()" />
         </div>
 
         <div class="field">

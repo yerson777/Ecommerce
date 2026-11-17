@@ -84,14 +84,14 @@
                 <td class="muted small-cell" data-label="Vigencia">
                   <div>
                     @if (banner.fecha_inicio) {
-                      {{ banner.fecha_inicio | date: 'dd/MM/yy HH:mm' }}
+                      {{ banner.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}
                     } @else {
                       Sin inicio
                     }
                   </div>
                   <div>
                     @if (banner.fecha_fin) {
-                      {{ banner.fecha_fin | date: 'dd/MM/yy HH:mm' }}
+                      {{ banner.fecha_fin | date: 'dd/MM/yyyy HH:mm' }}
                     } @else {
                       Sin fin
                     }

@@ -85,7 +85,7 @@
                 @for (p of d.pagos; track p.id) {
                   <tr>
                     <td class="mono" data-label="Nº pago">{{ p.numero_pago }}</td>
-                    <td data-label="Fecha">{{ p.pagado_en ?? '—' }}</td>
+                    <td data-label="Fecha">{{ formatearFecha(p.pagado_en) }}</td>
                     <td data-label="Cliente">{{ p.cliente_nombre ?? '—' }}</td>
                     <td data-label="Método">{{ p.metodo_pago ?? '—' }}</td>
                     <td data-label="Monto">{{ moneda(p.monto) }}</td>

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
@@ -28,6 +28,7 @@ import { PaginatorComponent } from '../../shared/components/paginator/paginator'
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { ClienteFormModalComponent } from './cliente-form-modal';
 import { ClientesDuplicadosModalComponent } from './clientes-duplicados-modal';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 interface OpcionFiltro {
   valor: ClienteFiltro;
@@ -91,10 +92,58 @@ export class ClientesComponent implements OnInit {
   eliminarObjetivo: Cliente | null = null;
   bloqueoObjetivo: Cliente | null = null;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   readonly perPage = 10;
 
   ngOnInit(): void {
     this.cargar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    return this.clientesService.listar({
+      busqueda: texto || undefined,
+      filtro: this.filtros().filtro || undefined,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los clientes.');
+        return of(null);
+      })
+    );
   }
 
   onBuscar(): void {

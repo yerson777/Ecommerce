@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,6 +28,7 @@ import { NotificationCenterComponent } from '../../shared/components/notificatio
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { VentaPresencialModalComponent } from './venta-presencial-modal';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 @Component({
   imports: [
@@ -87,9 +88,64 @@ export class VentasComponent implements OnInit {
 
   readonly perPage = 10;
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargarCatalogos();
     this.cargar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    const f = this.filtros();
+    return this.ventasService.listar({
+      busqueda: texto || undefined,
+      estado: f.estado || null,
+      categoria_id: f.categoria,
+      producto_id: f.producto,
+      cliente_id: f.cliente,
+      metodo_pago_id: f.metodo_pago_id,
+      fecha_desde: f.fecha_desde || null,
+      fecha_hasta: f.fecha_hasta || null,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar las ventas.');
+        return of(null);
+      })
+    );
   }
 
   onBuscar(): void {

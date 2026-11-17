@@ -43,8 +43,9 @@
             class="input"
             type="text"
             placeholder="Pedido, cliente, teléfono, guía o paquetería…"
-            [(ngModel)]="filtros().busqueda"
-            (keyup.enter)="onBuscar()"
+          [(ngModel)]="filtros().busqueda"
+          (keyup.enter)="onBuscar()"
+          (keyup)="onTextoBusqueda()"
           />
         </div>
 

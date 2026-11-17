@@ -150,7 +150,7 @@
                 <tr>
                   <td class="mono" data-label="Pedido">{{ pedido.numero_pedido }}</td>
                   <td data-label="Cliente">{{ pedido.cliente }}</td>
-                  <td class="mono" data-label="Fecha">{{ pedido.fecha_pedido }}</td>
+                  <td class="mono" data-label="Fecha">{{ formatearFecha(pedido.fecha_pedido) }}</td>
                   <td data-label="Estado">
                     <app-badge [tone]="tonoPedido(pedido.estado)">
                       {{ etiquetaPedido(pedido.estado) }}
@@ -267,7 +267,7 @@
                       <div class="muted small">{{ reserva.categoria }}</div>
                     </td>
                     <td data-label="Cliente">{{ reserva.cliente }}</td>
-                    <td class="mono" data-label="Vence">{{ reserva.vence_en }}</td>
+                    <td class="mono" data-label="Vence">{{ formatearFecha(reserva.vence_en) }}</td>
                     <td class="right" data-label="Restante">
                       @if (reserva.vencida) {
                         <app-badge tone="danger">Vencida</app-badge>
@@ -324,7 +324,7 @@
                 <tr>
                   <td data-label="Prenda">{{ prenda.nombre }}</td>
                   <td class="muted" data-label="Categoría">{{ prenda.categoria }}</td>
-                  <td class="mono" data-label="Venta">{{ prenda.fecha_venta }}</td>
+                  <td class="mono" data-label="Venta">{{ formatearFecha(prenda.fecha_venta) }}</td>
                   <td class="right mono" data-label="Precio">{{ moneda(prenda.precio_venta) }}</td>
                   <td class="right mono muted" data-label="Costo">{{ moneda(prenda.costo) }}</td>
                   <td class="right mono ganancia" data-label="Ganancia">{{ prenda.ganancia }}</td>
@@ -410,7 +410,7 @@
               <tbody>
                 @for (venta of d.ventas.recientes; track venta.id) {
                   <tr>
-                    <td data-label="Fecha">{{ venta.fecha_venta }}</td>
+                    <td data-label="Fecha">{{ formatearFecha(venta.fecha_venta) }}</td>
                     <td class="mono" data-label="Número">{{ venta.numero_venta }}</td>
                     <td data-label="Cliente">{{ venta.cliente?.nombre ?? '—' }}</td>
                     <td class="right mono" data-label="Total">{{ moneda(venta.total) }}</td>

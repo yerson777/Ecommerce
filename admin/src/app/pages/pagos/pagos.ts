@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
@@ -27,6 +27,7 @@ import { NotificationCenterComponent } from '../../shared/components/notificatio
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 import { RegistroPagoModalComponent } from './registro-pago-modal';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 function esEstadoPago(estado: string): estado is EstadoPago {
   return ['pendiente', 'completado', 'anulado'].includes(estado);
@@ -87,10 +88,61 @@ export class PagosComponent implements OnInit {
   readonly cargandoPorCobrar = signal(false);
   readonly mostrarPorCobrar = signal(false);
 
+  private readonly buscar$ = new Subject<string>();
+  private buscarSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     this.cargarMetodos();
     this.cargar();
     this.cargarPorCobrar();
+
+    this.buscarSubscription = this.buscar$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap(texto => this.ejecutarBusqueda(texto))
+      )
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscarSubscription?.unsubscribe();
+  }
+
+  onTextoBusqueda(): void {
+    const texto = this.filtros().busqueda?.trim() || '';
+    if (texto === '' || texto.length >= 2) {
+      this.buscar$.next(texto);
+    }
+  }
+
+  private ejecutarBusqueda(texto: string): import('rxjs').Observable<any> {
+    this.cargando.set(true);
+    this.pagina.set(1);
+    return this.pagosService.listar({
+      busqueda: texto || undefined,
+      estado: this.filtros().estado || null,
+      metodo_pago_id: this.filtros().metodo_pago_id,
+      fecha_desde: this.filtros().fecha_desde || null,
+      fecha_hasta: this.filtros().fecha_hasta || null,
+      page: this.pagina(),
+      per_page: this.perPage,
+    }).pipe(
+      map(res => {
+        this.cargando.set(false);
+        if (res.success && res.data) {
+          this.resultados.set(res.data);
+        }
+      }),
+      catchError(err => {
+        this.cargando.set(false);
+        this.toast.error(err.message ?? 'No se pudieron cargar los pagos.');
+        return of(null);
+      })
+    );
   }
 
   onBuscar(): void {
