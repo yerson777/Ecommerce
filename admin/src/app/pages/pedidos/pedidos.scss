@@ -168,3 +168,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+.print-area.comprobante {
+  display: none;
+}
+
+body.printeando-comprobante .print-area.comprobante {
+  display: block;
+}
+
+@media print {
+  .print-area.comprobante {
+    display: block;
+  }
+}

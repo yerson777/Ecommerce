@@ -106,7 +106,21 @@ class PagoService
                 ]);
             }
 
+            // Si ya existe un pago PENDIENTE para este pedido con el mismo
+            // método y monto, confirmar ese pago existente en lugar de crear
+            // uno nuevo (evita duplicados).
             $monto = (float) $datos['monto'];
+            $pagoExistente = Pago::query()
+                ->where('pedido_id', $pedidoId)
+                ->where('estado', Pago::ESTADO_PENDIENTE)
+                ->where('metodo_pago_id', (int) $datos['metodo_pago_id'])
+                ->where('monto', $monto)
+                ->first();
+
+            if ($pagoExistente) {
+                return $this->confirmar($pagoExistente->id);
+            }
+
             $pagado = $this->pagadoDePedido($pedido);
             $saldo = max(0.0, (float) $pedido->total - $pagado);
 
