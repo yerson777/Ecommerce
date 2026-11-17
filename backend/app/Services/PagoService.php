@@ -36,6 +36,8 @@ class PagoService
 
     protected const MAX_TAMANO = 5120; // KB (5 MB)
 
+    protected const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
     public function __construct() {}
 
     protected function almacenamiento(): Filesystem
@@ -224,6 +226,13 @@ class PagoService
 
             $pagado = $this->pagadoDePedido($pedido);
             $monto = (float) $pago->monto;
+            $saldo = max(0.0, (float) $pedido->total - $pagado);
+
+            if ($saldo <= 0) {
+                throw ValidationException::withMessages([
+                    'monto' => 'Este pedido ya está pagado; no se puede confirmar otro pago.',
+                ]);
+            }
 
             if (($pagado + $monto) > (float) $pedido->total + 0.01) {
                 throw ValidationException::withMessages([
@@ -239,6 +248,21 @@ class PagoService
             $this->registrarIngresoCaja($pago, $pedido);
 
             $this->avanzarPedidoSiLiquidado($pedido);
+
+            // Si el pedido quedó totalmente pagado, anular pagos pendientes restantes
+            // para evitar duplicados futuros en este mismo pedido.
+            if ($this->pagadoDePedido($pedido) >= (float) $pedido->total - 0.01) {
+                Pago::query()
+                    ->where('pedido_id', $pedido->id)
+                    ->where('estado', Pago::ESTADO_PENDIENTE)
+                    ->where('id', '!=', $pago->id)
+                    ->update([
+                        'estado' => Pago::ESTADO_ANULADO,
+                        'nota' => $pago->nota
+                            ? ($pago->nota . ' | Anulado automáticamente: pedido ya pagado por otro pago.')
+                            : 'Anulado automáticamente: pedido ya pagado por otro pago.',
+                    ]);
+            }
 
             event(new PagoConfirmado($pago));
 
@@ -383,6 +407,16 @@ class PagoService
 
     protected function proximoNumeroPago(): string
     {
-        return 'PAG-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+        $intentos = 0;
+        do {
+            $codigo = '';
+            for ($i = 0; $i < 5; $i++) {
+                $codigo .= self::ALFABETO[random_int(0, strlen(self::ALFABETO) - 1)];
+            }
+            $numero = 'PAG-'.$codigo;
+            $intentos++;
+        } while (Pago::query()->where('numero_pago', $numero)->exists() && $intentos < 5);
+
+        return $numero;
     }
 }

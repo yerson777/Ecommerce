@@ -329,9 +329,17 @@ export class PagosComponent implements OnInit {
       },
       error: (err: ApiError) => {
         this.transicionando = false;
-        this.toast.error(err.message ?? 'No se pudo confirmar el pago.');
+        this.toast.error(err.errors?.['monto']?.[0] ?? err.message ?? 'No se pudo confirmar el pago.');
       },
     });
+  }
+
+  pedidoTieneSaldo(pago: Pago): boolean {
+    const pedido = pago.pedido;
+    if (!pedido) {
+      return true;
+    }
+    return Number(pedido.saldo_pendiente ?? '0') > 0;
   }
 
   anularPago(): void {
