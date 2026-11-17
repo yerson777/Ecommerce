@@ -1,0 +1,26 @@
+{
+  "name": "Everly Admin",
+  "short_name": "Everly Admin",
+  "description": "Panel de administración de Everly Boutique",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f6",
+  "theme_color": "#a13a75",
+  "lang": "es",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

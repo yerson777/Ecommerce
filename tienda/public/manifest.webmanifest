@@ -1,0 +1,26 @@
+{
+  "name": "Everly Boutique",
+  "short_name": "Everly",
+  "description": "Tienda de prendas únicas. Cada prenda existe en una sola pieza.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7ece9",
+  "theme_color": "#9c5b54",
+  "lang": "es",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
