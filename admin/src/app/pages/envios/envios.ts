@@ -23,6 +23,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { ModalComponent } from '../../shared/components/modal/modal';
 import { PaginatorComponent } from '../../shared/components/paginator/paginator';
 import { SpinnerComponent } from '../../shared/components/spinner/spinner';
+import { NotificationCenterComponent } from '../../shared/components/notification-center/notification-center';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 @Component({
@@ -33,6 +34,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Sub
     ModalComponent,
     PaginatorComponent,
     SpinnerComponent,
+    NotificationCenterComponent,
   ],
   selector: 'app-envios',
   standalone: true,
