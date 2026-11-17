@@ -16,7 +16,7 @@ export class Footer {
     () => this.config.datos().correo?.trim() || 'contacto@everlyboutique.yervixsoft.com',
   );
   readonly direccion = computed(
-    () => this.config.datos().direccion?.trim() || 'Calle Panamá 158 entre Argentina',
+    () => this.config.datos().direccion?.trim() || 'Calle Panamá 458 entre Argentina',
   );
   readonly horario = computed(
     () =>

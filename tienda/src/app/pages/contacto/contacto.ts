@@ -26,7 +26,7 @@ export class ContactoComponent {
   readonly direccion = computed(
     () =>
       this.config.datos().direccion?.trim() ||
-      'Calle Panamá 158 entre Argentina',
+      'Calle Panamá 458 entre Argentina',
   );
   readonly horario = computed(
     () =>
