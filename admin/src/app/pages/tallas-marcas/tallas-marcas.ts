@@ -13,16 +13,6 @@ import { SpinnerComponent } from '../../shared/components/spinner/spinner';
 
 type Pestana = 'tallas' | 'marcas' | 'condiciones';
 
-interface ItemCatalogo {
-  id: number;
-  nombre: string;
-  slug?: string;
-  activo?: boolean;
-  orden?: number;
-  productos_count?: number;
-  logo_url?: string | null;
-}
-
 interface Formulario {
   nombre: string;
   slug: string;

@@ -38,8 +38,3 @@ export interface CondicionPayload {
   activo: boolean;
   orden: number;
 }
-
-export interface CategoriaSinPadre {
-  id: number;
-  nombre: string;
-}
