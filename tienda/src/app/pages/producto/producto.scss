@@ -179,6 +179,29 @@
   margin-top: 0.5rem;
 }
 
+.acciones .btn-ir-carrito {
+  min-height: 50px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.acciones .btn-ir-carrito:not(:disabled):hover {
+  background: var(--primary-dark);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.acciones .btn-ir-carrito:focus-visible {
+  outline: 3px solid rgb(156 91 84 / 35%);
+  outline-offset: 2px;
+}
+
+.acciones .btn-ir-carrito:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
 .aviso {
   font-size: 0.85rem;
   margin-top: 0.4rem;
