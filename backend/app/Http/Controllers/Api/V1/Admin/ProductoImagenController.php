@@ -10,7 +10,6 @@ use App\Http\Resources\V1\ProductoImagenResource;
 use App\Models\Producto;
 use App\Services\ProductoImagenService;
 use App\Support\Api;
-use Illuminate\Http\Request;
 
 class ProductoImagenController extends Controller
 {

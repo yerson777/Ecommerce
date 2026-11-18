@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api;
 
-use App\Models\ConfiguracionHistorial;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
 use App\Models\User;

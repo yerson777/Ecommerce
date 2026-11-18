@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
 use App\Models\Comunicacion;
 use App\Models\Pedido;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 /**
