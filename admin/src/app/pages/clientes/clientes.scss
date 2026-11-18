@@ -97,12 +97,6 @@
   margin-top: 0.4rem;
 }
 
-.detalle-encabezado {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

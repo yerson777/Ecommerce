@@ -108,25 +108,6 @@
   flex: 1;
 }
 
-.nav-group__label {
-  display: none;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: #8a8192;
-  padding: 0.9rem 0.7rem 0.2rem;
-  white-space: nowrap;
-}
-
-.nav-group__label:first-child {
-  padding-top: 0.3rem;
-}
-
-.sidebar:hover .nav-group__label {
-  display: block;
-}
-
 /* ---------------- Grupos colapsables (submenú 1 nivel) ---------------- */
 .nav-group {
   position: relative;
@@ -444,10 +425,6 @@
 
   .sidebar .nav-group__toggle {
     justify-content: flex-start;
-  }
-
-  .sidebar .nav-group__label {
-    display: inline;
   }
 
   .sidebar .nav-group__chevron {
