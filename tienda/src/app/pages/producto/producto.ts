@@ -200,6 +200,7 @@ export class ProductoComponent implements OnInit {
       imagen: this.fotoActiva(),
     });
 
-    this.cartToast.mostrar();
+    this.cartToast.cerrar();
+    this.router.navigate(['/carrito']);
   }
 }
