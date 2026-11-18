@@ -41,12 +41,12 @@
         </div>
 
         <div class="info">
-          <span class="badge badge-neutral">{{ producto.codigo }}</span>
+          <span class="badge badge-neutral codigo-prenda">{{ producto.codigo }}</span>
           <h1 class="detalle-nombre">{{ producto.nombre }}</h1>
           <p class="detalle-caracteristicas">
-            <span *ngIf="producto.talla?.nombre">Talle {{ producto.talla?.nombre }}</span>
-            <span *ngIf="producto.color"> · {{ producto.color }}</span>
-            <span *ngIf="producto.categoria?.nombre"> · {{ producto.categoria?.nombre }}</span>
+            <span class="detalle-chip" *ngIf="producto.talla?.nombre">Talle {{ producto.talla?.nombre }}</span>
+            <span class="detalle-chip" *ngIf="producto.color">{{ producto.color }}</span>
+            <span class="detalle-chip" *ngIf="producto.categoria?.nombre">{{ producto.categoria?.nombre }}</span>
           </p>
           <div class="detalle-precio" *ngIf="tieneOferta(producto)">
             <span class="precio-tachado">{{ formatearPrecio(producto.precio) }}</span>
@@ -57,7 +57,13 @@
             {{ formatearPrecio(producto.precio) }}
           </div>
           <p class="descripcion" *ngIf="producto.descripcion">
-            {{ producto.descripcion }}
+            <span
+              class="linea-descripcion"
+              *ngFor="let linea of lineasDescripcion(producto.descripcion); trackBy: rastrearLinea"
+              [class.linea-descripcion--titulo]="esTituloDescripcion(linea)"
+              [class.linea-descripcion--vineta]="esVinetaDescripcion(linea)"
+              [class.linea-descripcion--vacia]="!linea"
+            >{{ linea }}</span>
           </p>
 
           <div class="acciones">

@@ -64,6 +64,22 @@ export class ProductoComponent implements OnInit {
     return this.carrito.contiene(this.productoId);
   }
 
+  lineasDescripcion(texto: string | null | undefined): string[] {
+    return texto ? texto.split(/\r?\n/) : [];
+  }
+
+  esTituloDescripcion(linea: string): boolean {
+    return linea.trimEnd().endsWith(':');
+  }
+
+  esVinetaDescripcion(linea: string): boolean {
+    return linea.trimStart().startsWith('•');
+  }
+
+  rastrearLinea(indice: number): number {
+    return indice;
+  }
+
   cargar(): void {
     this.cargando.set(true);
     this.error.set(null);

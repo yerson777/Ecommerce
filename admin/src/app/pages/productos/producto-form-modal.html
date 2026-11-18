@@ -5,49 +5,49 @@
 <div class="form">
   @if (!readonly) {
     @if (errorBanner()) {
-      <div class="error-banner">{{ errorBanner() }}</div>
+      <div class="error-banner" role="alert">{{ errorBanner() }}</div>
     }
 
     <div class="form-grid">
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('codigo')">
         <label>Código *</label>
-        <input class="input" type="text" [(ngModel)]="forma.codigo" name="codigo" maxlength="30" />
+        <input #campoCodigo class="input" type="text" [(ngModel)]="forma.codigo" name="codigo" maxlength="30" (input)="onCampoCambiado()" [attr.aria-describedby]="errorDe('codigo') ? 'error-codigo' : null" />
         @if (errorDe('codigo')) {
-          <span class="field-error">{{ errorDe('codigo') }}</span>
+          <span class="field-error error-campo" id="error-codigo" role="alert">{{ errorDe('codigo') }}</span>
         }
       </div>
 
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('nombre')">
         <label>Nombre *</label>
-        <input class="input" type="text" [(ngModel)]="forma.nombre" name="nombre" maxlength="255" />
+        <input #campoNombre class="input" type="text" [(ngModel)]="forma.nombre" name="nombre" maxlength="255" (input)="onCampoCambiado()" [attr.aria-describedby]="errorDe('nombre') ? 'error-nombre' : null" />
         @if (errorDe('nombre')) {
-          <span class="field-error">{{ errorDe('nombre') }}</span>
+          <span class="field-error error-campo" id="error-nombre" role="alert">{{ errorDe('nombre') }}</span>
         }
       </div>
 
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('categoria_id')">
         <label>Categoría *</label>
-        <select class="select" [(ngModel)]="forma.categoria_id" name="categoria_id">
+        <select #campoCategoria class="select" [(ngModel)]="forma.categoria_id" name="categoria_id" (change)="onCampoCambiado()" [attr.aria-describedby]="errorDe('categoria_id') ? 'error-categoria' : null">
           <option [ngValue]="null">Selecciona…</option>
           @for (categoria of categorias(); track categoria.id) {
             <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
           }
         </select>
         @if (errorDe('categoria_id')) {
-          <span class="field-error">{{ errorDe('categoria_id') }}</span>
+          <span class="field-error error-campo" id="error-categoria" role="alert">{{ errorDe('categoria_id') }}</span>
         }
       </div>
 
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('talla_id')">
         <label>Talla *</label>
-        <select class="select" [(ngModel)]="forma.talla_id" name="talla_id">
+        <select #campoTalla class="select" [(ngModel)]="forma.talla_id" name="talla_id" (change)="onCampoCambiado()" [attr.aria-describedby]="errorDe('talla_id') ? 'error-talla' : null">
           <option [ngValue]="null">Selecciona…</option>
           @for (talla of tallas(); track talla.id) {
             <option [ngValue]="talla.id">{{ talla.nombre }}</option>
           }
         </select>
         @if (errorDe('talla_id')) {
-          <span class="field-error">{{ errorDe('talla_id') }}</span>
+          <span class="field-error error-campo" id="error-talla" role="alert">{{ errorDe('talla_id') }}</span>
         }
       </div>
 
@@ -102,17 +102,18 @@
         <input class="input" type="date" [(ngModel)]="forma.fecha_ingreso" name="fecha_ingreso" />
       </div>
 
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('costo')">
         <label>Costo (Bs) *</label>
-        <input class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.costo" name="costo" />
+        <input #campoCosto class="input" type="number" min="0" step="0.01" [(ngModel)]="forma.costo" name="costo" (input)="onCampoCambiado()" [attr.aria-describedby]="errorDe('costo') ? 'error-costo' : null" />
         @if (errorDe('costo')) {
-          <span class="field-error">{{ errorDe('costo') }}</span>
+          <span class="field-error error-campo" id="error-costo" role="alert">{{ errorDe('costo') }}</span>
         }
       </div>
 
-      <div class="field">
+      <div class="field" [class.campo-con-error]="errorDe('precio')">
         <label>Precio (Bs) *</label>
         <input
+          #campoPrecio
           class="input"
           type="number"
           min="0"
@@ -120,12 +121,14 @@
           [(ngModel)]="forma.precio"
           name="precio"
           [disabled]="precioBloqueado"
+          (input)="onCampoCambiado()"
+          [attr.aria-describedby]="errorDe('precio') ? 'error-precio' : null"
         />
         @if (precioBloqueado) {
           <span class="hint">El precio no se puede editar en una prenda reservada o vendida.</span>
         }
         @if (errorDe('precio')) {
-          <span class="field-error">{{ errorDe('precio') }}</span>
+          <span class="field-error error-campo" id="error-precio" role="alert">{{ errorDe('precio') }}</span>
         }
       </div>
 
@@ -141,6 +144,10 @@
 
       <div class="field field-full">
         <label>Fotos</label>
+        <p class="hint foto-help">
+          Recomendado: <strong>1080 × 1350 px</strong> (proporción 4:5, vertical y centrada). La
+          tienda recorta las fotos a 4:5; mínimo 800 px de ancho.
+        </p>
 
         @let actual = producto();
         @if (esEdicion && actual?.imagenes?.length) {
@@ -167,13 +174,32 @@
         @if (imagenesPendientes().length) {
           <div class="previews">
             @for (imagen of imagenesPendientes(); track $index) {
-              <div class="preview">
-                <img [src]="imagen.preview" [alt]="imagen.archivo.name" />
-                <button type="button" class="btn btn-icon preview-quitar" title="Quitar" (click)="quitarImagen($index)">✕</button>
+              <div class="preview-item">
+                <div class="preview">
+                  <img [src]="imagen.preview" [alt]="imagen.archivo.name" />
+                  <button type="button" class="btn btn-icon preview-quitar" title="Quitar" (click)="quitarImagen($index)">✕</button>
+                </div>
+                @if (imagen.revision; as revision) {
+                  <div class="revision">
+                    <span class="foto-estado" [class]="'foto-estado foto-estado--' + revision.estado">
+                      {{ revision.etiqueta }}
+                    </span>
+                    <span class="foto-dimensiones">{{ revision.ancho }} × {{ revision.alto }} px</span>
+                    <span class="foto-recorte">Recorte aproximado: {{ revision.recorte }} %</span>
+                    @if (revision.bajaResolucion) {
+                      <div class="foto-baja">
+                        <span class="foto-baja-insignia">Resolución baja</span>
+                        <span class="foto-baja-texto">Se verá borrosa en la tienda</span>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <span class="foto-dimensiones">Midiendo…</span>
+                }
               </div>
             }
           </div>
-          <p class="hint">Las fotos se subirán al producto al guardar. JPG, PNG, WEBP o GIF · máx. 4 MB c/u.</p>
+          <p class="hint foto-formatos">Las fotos se subirán al producto al guardar. JPG, PNG, WEBP o GIF · máx. 4 MB c/u.</p>
         }
       </div>
 

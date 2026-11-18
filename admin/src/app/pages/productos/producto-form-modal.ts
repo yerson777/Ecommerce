@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, ElementRef, inject, input, OnInit, output, signal, ViewChild } from '@angular/core';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
@@ -18,9 +18,21 @@ import { ToastService } from '../../core/services/toast.service';
 import { BadgeComponent } from '../../shared/components/badge/badge';
 import { ModalComponent } from '../../shared/components/modal/modal';
 
+type EstadoRevision = 'correcta' | 'ligera' | 'fuerte';
+
+interface RevisionFoto {
+  ancho: number;
+  alto: number;
+  recorte: number;
+  bajaResolucion: boolean;
+  etiqueta: string;
+  estado: EstadoRevision;
+}
+
 interface ImagenPendiente {
   archivo: File;
   preview: string;
+  revision: RevisionFoto | null;
 }
 
 interface FormaProducto {
@@ -86,6 +98,24 @@ export class ProductoFormModalComponent implements OnInit {
   readonly errores = signal<Record<string, string[]> | null>(null);
   readonly imagenesPendientes = signal<ImagenPendiente[]>([]);
 
+  @ViewChild('campoCodigo') private campoCodigo?: ElementRef<HTMLInputElement>;
+  @ViewChild('campoNombre') private campoNombre?: ElementRef<HTMLInputElement>;
+  @ViewChild('campoCategoria') private campoCategoria?: ElementRef<HTMLSelectElement>;
+  @ViewChild('campoTalla') private campoTalla?: ElementRef<HTMLSelectElement>;
+  @ViewChild('campoCosto') private campoCosto?: ElementRef<HTMLInputElement>;
+  @ViewChild('campoPrecio') private campoPrecio?: ElementRef<HTMLInputElement>;
+
+  private readonly nombresCampos: Record<string, string> = {
+    codigo: 'Código',
+    nombre: 'Nombre',
+    categoria_id: 'Categoría',
+    talla_id: 'Talla',
+    costo: 'Costo',
+    precio: 'Precio',
+  };
+
+  private readonly ordenCampos = ['codigo', 'nombre', 'categoria_id', 'talla_id', 'costo', 'precio'];
+
   ngOnInit(): void {
     const actual = this.producto();
 
@@ -119,14 +149,87 @@ export class ProductoFormModalComponent implements OnInit {
     return this.errores()?.[campo]?.[0];
   }
 
+  private erroresDeCampos(): Record<string, string[]> {
+    const f = this.forma;
+    const errores: Record<string, string[]> = {};
+
+    if (!f.codigo.trim()) errores['codigo'] = ['El código es obligatorio'];
+    if (!f.nombre.trim()) errores['nombre'] = ['El nombre es obligatorio'];
+    if (f.categoria_id == null) errores['categoria_id'] = ['Elegí una categoría'];
+    if (f.talla_id == null) errores['talla_id'] = ['Elegí una talla'];
+    if (f.costo == null) errores['costo'] = ['El costo es obligatorio'];
+    else if (f.costo <= 0) errores['costo'] = ['Ingresá un monto mayor a 0'];
+    if (f.precio == null) errores['precio'] = ['El precio es obligatorio'];
+    else if (f.precio <= 0) errores['precio'] = ['Ingresá un monto mayor a 0'];
+
+    return errores;
+  }
+
+  private resumenErrores(errores: Record<string, string[]>): string {
+    const nombres = this.ordenCampos
+      .filter((campo) => errores[campo])
+      .map((campo) => this.nombresCampos[campo]);
+    return `Falta completar: ${nombres.join(', ')}.`;
+  }
+
+  private obtenerCampo(campo: string): HTMLElement | undefined {
+    switch (campo) {
+      case 'codigo': return this.campoCodigo?.nativeElement;
+      case 'nombre': return this.campoNombre?.nativeElement;
+      case 'categoria_id': return this.campoCategoria?.nativeElement;
+      case 'talla_id': return this.campoTalla?.nativeElement;
+      case 'costo': return this.campoCosto?.nativeElement;
+      case 'precio': return this.campoPrecio?.nativeElement;
+      default: return undefined;
+    }
+  }
+
+  private enfocarPrimerError(errores: Record<string, string[]>): void {
+    const primero = this.ordenCampos.find((campo) => errores[campo]);
+    if (!primero) return;
+
+    const objetivo = this.obtenerCampo(primero);
+    if (!objetivo) return;
+
+    objetivo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    objetivo.focus({ preventScroll: true });
+  }
+
+  onCampoCambiado(): void {
+    const actuales = this.errores();
+    if (!actuales) return;
+
+    const nuevos = this.erroresDeCampos();
+    const resultado: Record<string, string[]> = {};
+
+    for (const campo of this.ordenCampos) {
+      const mensaje = nuevos[campo];
+      if (actuales[campo] && mensaje) resultado[campo] = mensaje;
+    }
+
+    for (const campo of Object.keys(actuales)) {
+      if (!this.ordenCampos.includes(campo)) resultado[campo] = actuales[campo];
+    }
+
+    this.errores.set(Object.keys(resultado).length ? resultado : null);
+
+    const banner = this.errorBanner();
+    if (banner?.startsWith('Falta completar:')) {
+      this.errorBanner.set(Object.keys(resultado).length ? this.resumenErrores(resultado) : null);
+    }
+  }
+
   guardar(otra = false): void {
     const f = this.forma;
     const categoriaId = f.categoria_id;
     const tallaId = f.talla_id;
 
-    if (!f.codigo.trim() || !f.nombre.trim() || categoriaId == null || tallaId == null || f.costo == null || f.precio == null) {
-      this.errorBanner.set('Completa los campos obligatorios.');
-      this.errores.set(null);
+    if (!f.codigo.trim() || !f.nombre.trim() || categoriaId == null || tallaId == null ||
+        f.costo == null || f.precio == null || f.costo <= 0 || f.precio <= 0) {
+      const errores = this.erroresDeCampos();
+      this.errorBanner.set(this.resumenErrores(errores));
+      this.errores.set(errores);
+      this.enfocarPrimerError(errores);
       return;
     }
 
@@ -261,9 +364,44 @@ export class ProductoFormModalComponent implements OnInit {
 
     const pendientes = this.imagenesPendientes();
     for (const archivo of validos) {
-      pendientes.push({ archivo, preview: URL.createObjectURL(archivo) });
+      const imagen: ImagenPendiente = { archivo, preview: URL.createObjectURL(archivo), revision: null };
+      pendientes.push(imagen);
+      this.medirImagen(imagen);
     }
     this.imagenesPendientes.set(pendientes);
+  }
+
+  private medirImagen(imagen: ImagenPendiente): void {
+    const elemento = new Image();
+    elemento.onload = () => {
+      imagen.revision = this.calcularRevision(elemento.naturalWidth, elemento.naturalHeight);
+      this.imagenesPendientes.set([...this.imagenesPendientes()]);
+    };
+    elemento.src = imagen.preview;
+  }
+
+  private calcularRevision(ancho: number, alto: number): RevisionFoto {
+    const relacion = ancho / alto;
+    const relacionObjetivo = 4 / 5;
+    const recorte = relacion > relacionObjetivo
+      ? 1 - relacionObjetivo / relacion
+      : 1 - relacion / relacionObjetivo;
+    const porcentaje = Math.round(Math.max(0, recorte) * 100);
+    const estado: EstadoRevision = porcentaje <= 10 ? 'correcta' : porcentaje <= 30 ? 'ligera' : 'fuerte';
+    const etiqueta = estado === 'correcta'
+      ? 'Correcta'
+      : estado === 'ligera'
+        ? 'Se recortará un poco'
+        : 'Se cortará bastante';
+
+    return {
+      ancho,
+      alto,
+      recorte: porcentaje,
+      bajaResolucion: Math.min(ancho, alto) < 800,
+      etiqueta,
+      estado,
+    };
   }
 
   quitarImagen(indice: number): void {

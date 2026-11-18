@@ -95,29 +95,80 @@
   gap: 0.6rem;
 }
 
+.codigo-prenda {
+  background: var(--primary-soft);
+  color: var(--text);
+  letter-spacing: 0.06em;
+}
+
 .detalle-nombre {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-size: clamp(2rem, 3vw, 2.25rem);
+  line-height: 1.15;
+  color: var(--text);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .detalle-caracteristicas {
-  color: var(--text-muted);
-  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.15rem 0 0;
+}
+
+.detalle-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .detalle-precio {
-  font-size: 1.7rem;
+  font-size: 2rem;
   font-weight: 800;
+  line-height: 1.15;
   color: var(--primary);
+  margin: 0.2rem 0 0;
 }
 
 .descripcion {
+  max-width: 65ch;
   color: var(--text);
-  line-height: 1.65;
-  margin: 0.2rem 0;
+  font-size: 1rem;
+  line-height: 1.67;
+  margin: 0.5rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
   white-space: pre-line;
+}
+
+.linea-descripcion {
+  display: block;
+}
+
+.linea-descripcion--vacia {
+  min-height: 1.67em;
+}
+
+.linea-descripcion--titulo {
+  font-weight: 700;
+  margin-top: 0.55rem;
+}
+
+.linea-descripcion--titulo:first-child {
+  margin-top: 0;
+}
+
+.linea-descripcion--vineta {
+  padding-left: 1rem;
+  text-indent: -0.75rem;
 }
 
 .acciones {
@@ -316,6 +367,14 @@
 }
 
 @media (max-width: 600px) {
+  .detalle-nombre {
+    font-size: 1.75rem;
+  }
+
+  .detalle-precio {
+    font-size: 1.75rem;
+  }
+
   .relacionados {
     margin-top: 2rem;
   }
