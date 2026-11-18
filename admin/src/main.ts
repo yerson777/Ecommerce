@@ -8,6 +8,5 @@ bootstrapApplication(App, appConfig)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('/sw.js')
-    .then(() => console.log('SW registrado'))
     .catch(() => {});
 }

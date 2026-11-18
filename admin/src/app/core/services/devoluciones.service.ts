@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import { Paginated } from '../models/paginated';
-import { MetodoPagoRef } from '../models/pago';
 import { Venta } from '../models/venta';
 import {
   Devolucion,

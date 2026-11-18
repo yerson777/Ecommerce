@@ -1,6 +1,6 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { formatearFecha as formatearFechaCompartida, formatearMoneda } from '../../core/utils/formato';
-import { Component, DestroyRef, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { interval, debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import {

@@ -4,8 +4,6 @@ import { filter } from 'rxjs';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
-import { Rol } from '../../core/models/usuario';
-import { puedeVerModulo } from '../../core/models/usuario';
 
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
