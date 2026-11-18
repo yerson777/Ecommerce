@@ -122,8 +122,7 @@
   background: var(--primary-soft);
 }
 
-.usuario-toggle svg,
-.usuario-link svg {
+.usuario-toggle svg {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
@@ -181,12 +180,6 @@
 .usuario-salir:hover {
   background: var(--primary-soft);
   color: var(--primary);
-}
-
-.usuario-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
 }
 
 /* ---------- Menú hamburguesa ---------- */
