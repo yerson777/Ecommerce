@@ -52,8 +52,3 @@ export function precioEfectivo(producto: ProductoPublico): string {
 export function tieneOferta(producto: ProductoPublico): boolean {
   return producto.precio_oferta !== null && producto.precio_oferta !== undefined;
 }
-
-/** Porcentaje de descuento (el backend lo deriva de la oferta). */
-export function porcentajeDescuento(producto: ProductoPublico): number | null {
-  return producto.descuento_porcentaje ?? null;
-}
