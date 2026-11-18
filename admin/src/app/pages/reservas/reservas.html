@@ -106,6 +106,12 @@
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
                         </button>
                       </div>
+                    } @else {
+                      <div class="actions">
+                        <button type="button" class="btn btn-outline btn-sm btn-icon" title="Ver detalle" aria-label="Ver detalle" (click)="verDetalle(reserva)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>
@@ -240,4 +246,94 @@
   @if (liberando()) {
     <app-spinner [size]="20" />
   }
+}
+
+@if (reservaDetalle(); as r) {
+  <app-modal title="Detalle de la reserva" [width]="'640px'" (closed)="cerrarDetalle()">
+    <div class="stack">
+      <div class="ficha-cabecera">
+        <div>
+          <div class="ficha-metadata">Reserva · {{ formatearFecha(r.created_at) }}</div>
+          <h3 class="ficha-nombre">{{ etiquetaProducto(r) }}</h3>
+          <div class="ficha-meta-line">
+            {{ nombreCliente(r) }}
+            @if (r.cliente?.telefono) {
+              · {{ r.cliente!.telefono }}
+            }
+            @if (r.pedido?.numero_pedido) {
+              · Pedido {{ r.pedido!.numero_pedido }}
+            }
+          </div>
+        </div>
+        <div class="ficha-badges">
+          <app-badge [tone]="tonoEstado(r)">
+            {{ etiquetaEstado(r) }}
+          </app-badge>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div>
+          <span class="muted-label">Cliente</span>
+          <div>{{ nombreCliente(r) }}</div>
+        </div>
+        @if (r.cliente?.telefono) {
+          <div>
+            <span class="muted-label">Teléfono</span>
+            <div>{{ r.cliente!.telefono }}</div>
+          </div>
+        }
+        @if (r.pedido?.numero_pedido) {
+          <div>
+            <span class="muted-label">Pedido asociado</span>
+            <div class="mono">{{ r.pedido!.numero_pedido }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Talla</th>
+              <th>Color</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono" data-label="Código">{{ r.producto?.codigo ?? '—' }}</td>
+              <td data-label="Nombre">{{ r.producto?.nombre ?? '—' }}</td>
+              <td data-label="Talla">{{ r.producto?.talla?.nombre ?? '—' }}</td>
+              <td data-label="Color">{{ r.producto?.color ?? '—' }}</td>
+              <td data-label="Precio">{{ moneda(r.producto?.precio) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-grid">
+        <div>
+          <span class="muted-label">Reserva</span>
+          <div>{{ formatearFecha(r.created_at) }}</div>
+        </div>
+        <div>
+          <span class="muted-label">Fecha límite</span>
+          <div [class.danger-text]="esVencida(r)">{{ formatearFecha(r.vence_en) }}</div>
+        </div>
+        @if (r.liberada_en) {
+          <div>
+            <span class="muted-label">Liberación</span>
+            <div>{{ formatearFecha(r.liberada_en) }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions" modal-footer>
+        <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
+      </div>
+    </div>
+  </app-modal>
 }

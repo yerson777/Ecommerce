@@ -16,6 +16,7 @@ export interface ReservaProducto {
   id: number;
   codigo: string;
   nombre: string;
+  color?: string | null;
   precio: string;
   talla?: { id: number; nombre: string } | null;
   categoria?: { id: number; nombre: string } | null;

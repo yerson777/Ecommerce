@@ -83,3 +83,14 @@
   gap: 0.6rem;
   padding-top: 0.4rem;
 }
+
+.actions > .btn-outline[title="Ver detalle"] {
+  background: var(--violet-dark);
+  border-color: var(--violet-dark);
+  color: #fff;
+}
+
+.actions > .btn-outline[title="Ver detalle"]:hover:not(:disabled) {
+  background: var(--violet-dark-hover);
+  border-color: var(--violet-dark-hover);
+}

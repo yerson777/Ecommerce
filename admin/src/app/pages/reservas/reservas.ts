@@ -91,6 +91,8 @@ export class ReservasComponent implements OnInit {
   readonly liberarObjetivo = signal<Reserva | null>(null);
   readonly liberando = signal(false);
 
+  readonly reservaDetalle = signal<Reserva | null>(null);
+
   readonly perPage = 10;
 
   private readonly buscar$ = new Subject<string>();
@@ -224,6 +226,14 @@ export class ReservasComponent implements OnInit {
       clienteId: null,
       venceEn: this.fechaLimitePorDefecto(),
     });
+  }
+
+  verDetalle(r: Reserva): void {
+    this.reservaDetalle.set(r);
+  }
+
+  cerrarDetalle(): void {
+    this.reservaDetalle.set(null);
   }
 
   cerrarCrear(): void {
