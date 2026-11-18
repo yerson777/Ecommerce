@@ -181,4 +181,73 @@ body.printeando-comprobante .print-area.comprobante {
   .print-area.comprobante {
     display: block;
   }
+
+  :host .print-area.comprobante .table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    box-sizing: border-box;
+    font-size: 8px;
+  }
+
+  :host .print-area.comprobante .table th,
+  :host .print-area.comprobante .table td {
+    padding: 1px 2px;
+    border: 0.5px solid #000 !important;
+    box-sizing: border-box;
+    vertical-align: top;
+  }
+
+  :host .print-area.comprobante .table th {
+    font-size: 7.5px;
+    letter-spacing: 0;
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  :host .print-area.comprobante .table td {
+    overflow-wrap: anywhere;
+  }
+
+  :host .print-area.comprobante .table td.mono {
+    font-size: 7.5px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(1) {
+    width: 25%;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(2) {
+    width: 29%;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(3) {
+    width: 11%;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(4) {
+    width: 13%;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(5) {
+    width: 22%;
+  }
+
+  :host .print-area.comprobante .table th:nth-child(5),
+  :host .print-area.comprobante .table td:nth-child(5) {
+    text-align: right;
+  }
+
+  :host .print-area.comprobante .table td:nth-child(5) {
+    font-size: 7.5px;
+    white-space: nowrap;
+  }
+
+  :host .print-area.comprobante .comprobante-meta,
+  :host .print-area.comprobante .comprobante-totales {
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

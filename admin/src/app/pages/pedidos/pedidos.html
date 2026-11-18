@@ -512,7 +512,6 @@
           <th>Talla</th>
           <th>Color</th>
           <th>Precio</th>
-          <th>Ganancia</th>
         </tr>
       </thead>
       <tbody>
@@ -523,13 +522,6 @@
             <td data-label="Talla">{{ item.producto_talla ?? '—' }}</td>
             <td data-label="Color">{{ item.producto_color ?? '—' }}</td>
             <td data-label="Precio">{{ moneda(item.precio_unitario) }}</td>
-            <td data-label="Ganancia">
-              @if (item.tiene_costo) {
-                {{ moneda(item.ganancia ?? '0') }}
-              } @else {
-                <span class="muted" title="Sin costo no se calcula ganancia">s/costo</span>
-              }
-            </td>
           </tr>
         }
       </tbody>
