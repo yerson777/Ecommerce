@@ -4,7 +4,6 @@ import { CategoriaRef, EstadoPrenda, ETIQUETA_ESTADO, TONO_ESTADO } from '../../
 import { ConteoEstado, ConteoNombre, ReporteFiltros } from '../../../../core/models/reporte';
 import { CatalogosService } from '../../../../core/services/catalogos.service';
 import { ReportesService } from '../../../../core/services/reportes.service';
-import { ToastService } from '../../../../core/services/toast.service';
 import { ChartDonutComponent } from '../../../../shared/components/chart-donut/chart-donut';
 import { ChartDato } from '../../../../shared/components/chart.models';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state';
@@ -21,7 +20,6 @@ import { StatCardComponent } from '../../../../shared/components/stat-card/stat-
 export class ReportesInventarioComponent implements OnInit {
   private readonly reportesService = inject(ReportesService);
   private readonly catalogosService = inject(CatalogosService);
-  private readonly toast = inject(ToastService);
 
   readonly filtros = input<ReporteFiltros>({});
 

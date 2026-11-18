@@ -2,7 +2,6 @@ import { effect, Component, inject, input, signal } from '@angular/core';
 import { formatearMoneda } from '../../../../core/utils/formato';
 import { ClientesReporte, ReporteFiltros } from '../../../../core/models/reporte';
 import { ReportesService } from '../../../../core/services/reportes.service';
-import { ToastService } from '../../../../core/services/toast.service';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state';
 import { SpinnerComponent } from '../../../../shared/components/spinner/spinner';
 import { StatCardComponent } from '../../../../shared/components/stat-card/stat-card';
@@ -16,7 +15,6 @@ import { StatCardComponent } from '../../../../shared/components/stat-card/stat-
 })
 export class ReportesClientesComponent {
   private readonly reportesService = inject(ReportesService);
-  private readonly toast = inject(ToastService);
 
   readonly filtros = input<ReporteFiltros>({});
 
