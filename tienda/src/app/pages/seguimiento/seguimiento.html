@@ -33,7 +33,7 @@
             <div class="numero-pedido">{{ pedido.numero_pedido }}</div>
           </div>
           <div>
-            <span class="badge {{ estadoClase(pedido.estado) }}">{{ estadoEtiqueta(pedido.estado) }}</span>
+            <span [class]="cartel().clase">{{ cartel().texto }}</span>
           </div>
         </div>
 

@@ -299,8 +299,16 @@ class ClientesApiTest extends TestCase
         $segundo = $this->crearProducto();
 
         $this->hacerPedido($primero);
-        $this->hacerPedido($segundo, ['telefono' => '60111111', 'nombre' => 'Marta Ruiz']);
-        $this->hacerPedido($this->crearProducto(), ['telefono' => '60111111', 'nombre' => 'Marta Ruiz']);
+        $this->hacerPedido($segundo, [
+            'telefono' => '60111111',
+            'nombre' => 'Marta Ruiz',
+            'email' => 'marta@example.com',
+        ]);
+        $this->hacerPedido($this->crearProducto(), [
+            'telefono' => '60111111',
+            'nombre' => 'Marta Ruiz',
+            'email' => 'marta@example.com',
+        ]);
 
         $response = $this->withToken($this->token)
             ->getJson('/api/v1/admin/dashboard')

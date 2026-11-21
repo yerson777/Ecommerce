@@ -13,7 +13,13 @@ class PagoStoreRequest extends ApiFormRequest
         return [
             'pedido_id' => ['required', 'integer', 'exists:pedidos,id'],
             'monto' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago_id' => ['required', 'integer', 'exists:metodos_pago,id'],
+            'metodo_pago_id' => [
+                'required',
+                'integer',
+                Rule::exists('metodos_pago', 'id')->where(
+                    fn ($query) => $query->where('activo', true)
+                ),
+            ],
             'fecha' => ['nullable', 'date'],
             'referencia' => ['nullable', 'string', 'max:191'],
             'nota' => ['nullable', 'string', 'max:1000'],

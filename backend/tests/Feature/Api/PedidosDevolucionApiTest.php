@@ -13,6 +13,7 @@ use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\Talla;
 use App\Models\User;
+use App\Models\Venta;
 use App\Services\PagoService;
 use App\Services\PedidoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,6 +96,12 @@ class PedidosDevolucionApiTest extends TestCase
         $this->assertSame(Pago::ESTADO_REEMBOLSADO, $this->pedido->pagos()->firstOrFail()->estado);
         $this->assertTrue(Devolucion::where('pedido_id', $this->pedido->id)->exists());
 
+        $pago = $this->pedido->pagos()->firstOrFail();
+        $this->withToken($this->token)
+            ->getJson("/api/v1/admin/pagos/{$pago->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.pedido.estado_pago', 'reembolsado');
+
         $movimiento = Movimiento::where('tipo', 'egreso')->firstOrFail();
         $this->assertSame('ajuste', $movimiento->fuente);
         $this->assertSame('125.00', $movimiento->monto);
@@ -108,6 +115,10 @@ class PedidosDevolucionApiTest extends TestCase
             ->assertJsonPath('data.ingresos', '125.00')
             ->assertJsonPath('data.egresos', '125.00')
             ->assertJsonPath('data.saldo', '0.00');
+
+        $venta = Venta::where('pedido_id', $this->pedido->id)->firstOrFail();
+        $this->assertNotNull($venta->anulada_en);
+        $this->assertSame('anulada', $venta->fresh()->estado);
     }
 
     public function test_devolucion_sin_pago_no_genera_egreso(): void

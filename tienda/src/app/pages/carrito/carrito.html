@@ -13,23 +13,38 @@
 
       <div class="layout-col">
         <div class="card" style="padding: 0.5rem 1.25rem">
-          <div class="linea" *ngFor="let item of items()">
+          <div class="linea prenda-fila" *ngFor="let item of items()">
             <img
               *ngIf="item.imagen"
-              class="linea-foto"
+              class="linea-foto prenda-foto"
               [src]="item.imagen"
               [alt]="item.nombre"
             />
-            <div *ngIf="!item.imagen" class="linea-foto"></div>
-            <div class="linea-info">
-              <div class="linea-nombre">{{ item.nombre }}</div>
-              <div class="linea-sub">
+            <div *ngIf="!item.imagen" class="linea-foto prenda-foto prenda-sin-foto">
+              <svg
+                class="prenda-sin-foto-icono"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                width="32"
+                height="32"
+              >
+                <path d="M8 3 6 5 3 7l2 3 2-1v10h10V9l2 1 2-3-3-2-2-2-4 2-4-2Z" />
+              </svg>
+            </div>
+            <div class="linea-info prenda-info">
+              <div class="linea-nombre prenda-nombre">{{ item.nombre }}</div>
+              <div class="linea-sub prenda-sub">
                 {{ item.codigo }}
                 <span *ngIf="item.talla"> · Talle {{ item.talla }}</span>
                 <span *ngIf="item.color"> · {{ item.color }}</span>
               </div>
             </div>
-            <div class="linea-precio">
+            <div class="linea-precio prenda-precio">
               <span *ngIf="item.precio_original" class="precio-tachado">
                 {{ formatearPrecio(item.precio_original) }}
               </span>
@@ -37,7 +52,7 @@
                 {{ formatearPrecio(item.precio) }}
               </span>
             </div>
-            <button class="btn btn-ghost btn-sm" title="Quitar" (click)="quitar(item.producto_id)">
+            <button class="btn btn-ghost btn-sm quitar-prenda" title="Quitar" (click)="quitar(item.producto_id)">
               ✕
             </button>
           </div>

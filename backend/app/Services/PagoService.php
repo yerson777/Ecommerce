@@ -6,6 +6,7 @@ use App\Events\PagoAnulado;
 use App\Events\PagoComprobanteAdjuntado;
 use App\Events\PagoConfirmado;
 use App\Events\PagoRegistrado;
+use App\Exceptions\PagoPendienteExistenteException;
 use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
@@ -100,16 +101,25 @@ class PagoService
                 ]);
             }
 
+            if ($pedido->estado === Pedido::ESTADO_DEVUELTO) {
+                throw ValidationException::withMessages([
+                    'pedido_id' => 'No se pueden registrar pagos en un pedido devuelto.',
+                ]);
+            }
+
             if ($pedido->estado === Pedido::ESTADO_CANCELADO) {
                 throw ValidationException::withMessages([
                     'pedido_id' => 'No se pueden registrar pagos en un pedido cancelado.',
                 ]);
             }
 
-            // Si ya existe un pago PENDIENTE para este pedido con el mismo
-            // método y monto, confirmar ese pago existente en lugar de crear
-            // uno nuevo (evita duplicados).
             $monto = (float) $datos['monto'];
+            $estado = $datos['estado'] ?? Pago::ESTADO_PENDIENTE;
+
+            // Si ya existe un pago PENDIENTE para este pedido con el mismo
+            // método y monto, no crear duplicados. Si el nuevo pago se pide
+            // como "pendiente", se rechaza para que se confirme manualmente
+            // desde Pagos. Solo un pago "completado" reutiliza el pendiente.
             $pagoExistente = Pago::query()
                 ->where('pedido_id', $pedidoId)
                 ->where('estado', Pago::ESTADO_PENDIENTE)
@@ -118,6 +128,13 @@ class PagoService
                 ->first();
 
             if ($pagoExistente) {
+                if ($estado !== Pago::ESTADO_COMPLETADO) {
+                    throw new PagoPendienteExistenteException(
+                        'Ya existe un pago pendiente por este monto y método, confírmalo desde Pagos.',
+                        $pagoExistente
+                    );
+                }
+
                 return $this->confirmar($pagoExistente->id);
             }
 
@@ -137,7 +154,6 @@ class PagoService
             }
             unset($datos['permitir_excedente']);
 
-            $estado = $datos['estado'] ?? Pago::ESTADO_PENDIENTE;
             $pagadoEn = null;
 
             if ($estado === Pago::ESTADO_COMPLETADO) {
@@ -167,8 +183,6 @@ class PagoService
 
             if ($estado === Pago::ESTADO_COMPLETADO) {
                 $this->registrarIngresoCaja($pago, $pedido);
-
-                $this->avanzarPedidoSiLiquidado($pedido);
             }
 
             event(new PagoRegistrado($pago));
@@ -238,6 +252,12 @@ class PagoService
                 ]);
             }
 
+            if ($pedido->estado === Pedido::ESTADO_DEVUELTO) {
+                throw ValidationException::withMessages([
+                    'estado' => 'No se puede confirmar el pago: el pedido está devuelto.',
+                ]);
+            }
+
             $pagado = $this->pagadoDePedido($pedido);
             $monto = (float) $pago->monto;
             $saldo = max(0.0, (float) $pedido->total - $pagado);
@@ -254,14 +274,16 @@ class PagoService
                 ]);
             }
 
+            if (! $pago->venta_id && $pedido->venta) {
+                $pago->venta_id = $pedido->venta->id;
+            }
+
             $pago->forceFill([
                 'estado' => Pago::ESTADO_COMPLETADO,
                 'pagado_en' => $pago->pagado_en ?? now(),
             ])->save();
 
             $this->registrarIngresoCaja($pago, $pedido);
-
-            $this->avanzarPedidoSiLiquidado($pedido);
 
             // Si el pedido quedó totalmente pagado, anular pagos pendientes restantes
             // para evitar duplicados futuros en este mismo pedido.
@@ -314,6 +336,8 @@ class PagoService
                 'nota' => $nota,
             ])->save();
 
+            App::make(PedidoService::class)->revertirConfirmacionAutomaticaSiCorresponde($pago->pedido_id);
+
             event(new PagoAnulado($pago));
 
             return $this->pagoDetallado($pago);
@@ -329,27 +353,6 @@ class PagoService
             ->where('pedido_id', $pedido->id)
             ->where('estado', Pago::ESTADO_COMPLETADO)
             ->sum('monto');
-    }
-
-    /**
-     * Si el pedido quedó totalmente pagado, lo pasa automáticamente de
-     * "pendiente" a "confirmado": la confirmación del cobro acepta el pedido.
-     */
-    protected function avanzarPedidoSiLiquidado(Pedido $pedido): void
-    {
-        if ($pedido->estado !== Pedido::ESTADO_PENDIENTE) {
-            return;
-        }
-
-        if (! $pedido->puedeTransicionarA(Pedido::ESTADO_CONFIRMADO)) {
-            return;
-        }
-
-        if ($this->pagadoDePedido($pedido) < (float) $pedido->total - 0.01) {
-            return;
-        }
-
-        App::make(PedidoService::class)->cambiarEstado($pedido->id, Pedido::ESTADO_CONFIRMADO);
     }
 
     protected function guardarComprobante(Pago $pago, UploadedFile $comprobante): void

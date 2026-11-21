@@ -33,6 +33,7 @@
           <option value="pendiente">Pendiente</option>
           <option value="completado">Confirmado</option>
           <option value="anulado">Anulado</option>
+          <option value="reembolsado">Reembolsado</option>
         </select>
       </div>
 
@@ -384,7 +385,7 @@
 @if (objetivoAnular; as objetivo) {
   <app-modal title="Anular pago" [width]="'480px'" (closed)="cancelarTransicion()">
     <div class="stack">
-      <p>Se anulará el pago {{ objetivo.numero_pago }} ({{ moneda(objetivo.monto) }}). No contará para el saldo del pedido y se retirará su ingreso de caja. El pedido volverá a su estado según el saldo.</p>
+      <p>Se anulará el pago {{ objetivo.numero_pago }} ({{ moneda(objetivo.monto) }}). No contará para el saldo del pedido y se retirará su ingreso de caja. El estado del pedido no cambia; solo se ajustan el saldo y la caja. Si el pedido provenía de una confirmación automática anterior, volverá a pendiente.</p>
       <div class="field">
         <label>Motivo de anulación (opcional)</label>
         <input class="input" [(ngModel)]="motivoAnular" placeholder="Motivo..." />

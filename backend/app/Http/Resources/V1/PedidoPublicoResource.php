@@ -17,6 +17,8 @@ class PedidoPublicoResource extends JsonResource
         return [
             'numero_pedido' => $this->numero_pedido,
             'estado' => $this->estado,
+            'estado_pago' => $this->estadoPago(),
+            'total_pagado' => $this->totalPagado(),
             'subtotal' => $this->subtotal,
             'descuento' => $this->descuento,
             'costo_envio' => $this->costo_envio,

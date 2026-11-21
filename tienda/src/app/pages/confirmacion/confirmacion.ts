@@ -2,10 +2,10 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
-import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
+import { PedidoPublico } from '../../core/models/pedido';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
-import { etiquetaEstadoPedido } from '../../core/utils/pedido-formato';
+import { cartelEstadoPedido, pedidoPagado } from '../../core/utils/estado-pedido';
 import { formatearPrecio } from '../../core/utils/precio';
 
 const STORAGE_KEY = 'everly_ultimo_pedido';
@@ -18,19 +18,19 @@ const STORAGE_AVISOS_KEY = 'everly_ultimo_pedido_avisos';
   templateUrl: './confirmacion.html',
 })
 export class ConfirmacionComponent implements OnInit, OnDestroy {
-  order: PedidoPublico | null = null;
+  readonly order = signal<PedidoPublico | null>(null);
   avisos: string[] = [];
 
   private readonly catalogo = inject(CatalogoService);
-  readonly pagoConfirmado = signal(false);
+  readonly estadoPedido = computed(() => this.order()?.estado ?? 'pendiente');
+  readonly pagoCompletado = computed(() => pedidoPagado(this.order()));
+  readonly pagoConfirmado = computed(
+    () => this.estadoPedido() === 'confirmado' || this.estadoPedido() === 'completado',
+  );
+  readonly cartel = computed(() =>
+    cartelEstadoPedido(this.estadoPedido(), this.pagoCompletado(), 'confirmacion'),
+  );
   private refrescoSuscripcion = new Subscription();
-
-  readonly claseBadge = computed(() => {
-    if (this.pagoConfirmado()) {
-      return 'badge badge-pago-confirmado';
-    }
-    return 'badge badge-pedido-recibido';
-  });
 
   constructor(
     private readonly router: Router,
@@ -42,10 +42,10 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
     const delEstado = navegacion?.extras.state?.['order'] as PedidoPublico | undefined;
     const avisosEstado = navegacion?.extras.state?.['avisos'] as string[] | undefined;
 
-    this.order = delEstado ?? this.leerAlmacenado();
+    this.order.set(delEstado ?? this.leerAlmacenado());
     this.avisos = avisosEstado ?? this.leerAvisos();
 
-    if (!this.order) {
+    if (!this.order()) {
       this.router.navigate(['/']);
       return;
     }
@@ -96,16 +96,14 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
   }
 
   private consultarEstado(): void {
-    if (!this.order) {
+    const numeroPedido = this.order()?.numero_pedido;
+    if (!numeroPedido) {
       return;
     }
-    this.catalogo.seguirPedido(this.order.numero_pedido).subscribe({
+    this.catalogo.seguirPedido(numeroPedido).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.order = res.data;
-          if (res.data.estado === 'confirmado' || res.data.estado === 'completado') {
-            this.pagoConfirmado.set(true);
-          }
+          this.order.set(res.data);
         }
       },
       error: () => undefined,
@@ -113,7 +111,7 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
   }
 
   private iniciarRefresco(): void {
-    if (this.pagoConfirmado() || this.order?.estado !== 'pendiente') {
+    if (this.pagoConfirmado() || this.order()?.estado !== 'pendiente') {
       return;
     }
     this.refrescoSuscripcion = interval(30000).subscribe(() => {
@@ -132,12 +130,8 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
 
   readonly formatearPrecio = formatearPrecio;
 
-  estadoEtiqueta(estado: EstadoPedido): string {
-    return etiquetaEstadoPedido(estado);
-  }
-
   imprimir(): void {
-    const codigo = this.order?.numero_pedido ?? '';
+    const codigo = this.order()?.numero_pedido ?? '';
     const titleAnterior = document.title;
     document.title = `Pedido ${codigo}`;
     document.body.classList.add('imprimiendo-pedido');
@@ -152,7 +146,7 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
   }
 
   enviarWhatsApp(): void {
-    const pedido = this.order;
+    const pedido = this.order();
     if (!pedido) {
       return;
     }

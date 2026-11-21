@@ -1,4 +1,4 @@
-<div class="page" *ngIf="order as pedido">
+<div class="page" *ngIf="order() as pedido">
   <div id="area-impresion-pedido">
     <div class="container estrecho confirmacion">
       <div class="confirmacion-icono" aria-hidden="true">✓</div>
@@ -8,14 +8,7 @@
         (también podés usar el código de tu prenda, por ejemplo <span class="mono">EV-1234</span>).
       </p>
       <p class="numero-pedido">{{ pedido.numero_pedido }}</p>
-      <span [class]="claseBadge()">{{ estadoEtiqueta(pedido?.estado ?? 'pendiente') }}</span>
-
-      <div class="card bloque avisos" *ngIf="avisos.length > 0">
-        <h2>Revisá estos detalles</h2>
-        <ul class="avisos-lista">
-          <li *ngFor="let aviso of avisos">{{ aviso }}</li>
-        </ul>
-      </div>
+      <span [class]="cartel().clase">{{ cartel().texto }}</span>
 
       <div class="card bloque avisos" *ngIf="avisos.length > 0">
         <h2>Revisá estos detalles</h2>
@@ -94,7 +87,7 @@
     <div class="card bloque">
       <h2 style="margin-bottom: 0.1rem">¿Qué sigue?</h2>
       <ol class="pasos">
-        @if (pagoConfirmado()) {
+        @if (pagoCompletado()) {
           <li>
             <span class="num">1</span>
             <span>Recibimos tu pago. Estamos coordinando la entrega.</span>

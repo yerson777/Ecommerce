@@ -174,6 +174,29 @@ class DevolucionesApiTest extends TestCase
         $movimiento = Movimiento::where('tipo', 'egreso')->firstOrFail();
         $this->assertSame($devolucion->id, $movimiento->devolucion_id);
         $this->assertSame('100.00', $movimiento->monto);
+
+        $venta = $this->pedido->fresh()->venta;
+        $this->assertNull($venta->anulada_en);
+        $this->assertSame('pagada', $venta->estado);
+    }
+
+    public function test_no_se_puede_reembolsar_devolucion_pendiente(): void
+    {
+        $devolucion = app(PedidoService::class)->registrarDevolucionPendiente(
+            $this->pedido->id,
+            'Devolución pendiente',
+            200.00,
+            ['tipo' => Devolucion::TIPO_TOTAL],
+        );
+
+        $this->withToken($this->token)
+            ->postJson('/api/v1/admin/devoluciones/'.$devolucion->id.'/reembolsar')
+            ->assertStatus(409)
+            ->assertJsonPath('success', false);
+
+        $this->assertSame(Devolucion::ESTADO_PENDIENTE, $devolucion->fresh()->estado);
+        $this->assertSame(0, Movimiento::where('tipo', 'egreso')->count());
+        $this->assertSame(Pago::ESTADO_COMPLETADO, $this->pedido->pagos()->firstOrFail()->estado);
     }
 
     public function test_rechazar_devolucion_no_reingresa_prendas_ni_genera_egreso(): void

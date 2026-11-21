@@ -12,6 +12,7 @@ use App\Models\MetodoPago;
 use App\Models\Movimiento;
 use App\Models\Pago;
 use App\Models\Pedido;
+use App\Models\PedidoHistorial;
 use App\Models\PedidoItem;
 use App\Models\Producto;
 use App\Models\Reserva;
@@ -39,6 +40,8 @@ use Illuminate\Support\Facades\DB;
  */
 class PedidoService
 {
+    public const MOTIVO_CONFIRMACION_AUTOMATICA = 'Confirmado automáticamente por pago completo.';
+
     /**
      * Avisos generados al crear el último pedido (precios que cambiaron,
      * cupón no aplicado por regla de no acumulación, etc.). Los consume el
@@ -424,9 +427,9 @@ class PedidoService
      * @throws InventarioException si la transición no es válida o el
      *                             inventario no permite el cambio.
      */
-    public function cambiarEstado(int $pedidoId, string $estado): Pedido
+    public function cambiarEstado(int $pedidoId, string $estado, ?string $motivo = null): Pedido
     {
-        return DB::transaction(function () use ($pedidoId, $estado) {
+        return DB::transaction(function () use ($pedidoId, $estado, $motivo) {
             /** @var Pedido|null $pedido */
             $pedido = Pedido::query()->with(['items', 'cliente', 'metodoPago', 'metodoEntrega'])->whereKey($pedidoId)->lockForUpdate()->first();
 
@@ -450,11 +453,59 @@ class PedidoService
 
             $pedido->forceFill(['estado' => $estado])->save();
 
-            $this->registrarHistorial($pedido, $estadoAnterior, $estado);
+            $this->registrarHistorial($pedido, $estadoAnterior, $estado, $motivo);
 
             event(new PedidoEstadoCambiado($pedido, $estadoAnterior));
 
             return $pedido->fresh(['cliente', 'metodoPago', 'metodoEntrega', 'zonaEnvio', 'envio', 'items.producto.talla', 'items.producto.imagenes', 'venta']);
+        });
+    }
+
+    /**
+     * Si el pedido se había confirmado automáticamente por un pago completo
+     * y ese pago se anula, lo devuelve a "pendiente" para que no quede
+     * confirmado sin respaldo de cobro. No toca pedidos confirmados a mano.
+     */
+    public function revertirConfirmacionAutomaticaSiCorresponde(int $pedidoId): void
+    {
+        DB::transaction(function () use ($pedidoId) {
+            /** @var Pedido|null $pedido */
+            $pedido = Pedido::query()->whereKey($pedidoId)->lockForUpdate()->first();
+
+            if (! $pedido || $pedido->estado !== Pedido::ESTADO_CONFIRMADO) {
+                return;
+            }
+
+            $pagado = (float) Pago::query()
+                ->where('pedido_id', $pedido->id)
+                ->where('estado', Pago::ESTADO_COMPLETADO)
+                ->sum('monto');
+
+            if ($pagado >= (float) $pedido->total - 0.01) {
+                return;
+            }
+
+            $ultimaConfirmacion = PedidoHistorial::query()
+                ->where('pedido_id', $pedido->id)
+                ->where('estado_anterior', Pedido::ESTADO_PENDIENTE)
+                ->where('estado_nuevo', Pedido::ESTADO_CONFIRMADO)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($ultimaConfirmacion?->motivo !== self::MOTIVO_CONFIRMACION_AUTOMATICA) {
+                return;
+            }
+
+            $pedido->forceFill(['estado' => Pedido::ESTADO_PENDIENTE])->save();
+
+            $this->registrarHistorial(
+                $pedido,
+                Pedido::ESTADO_CONFIRMADO,
+                Pedido::ESTADO_PENDIENTE,
+                'Pago confirmado anulado: el pedido vuelve a pendiente.'
+            );
+
+            event(new PedidoEstadoCambiado($pedido, Pedido::ESTADO_CONFIRMADO));
         });
     }
 
@@ -477,22 +528,24 @@ class PedidoService
      */
     public function devolver(int $pedidoId, string $motivo, ?float $montoReembolso, array $opciones = []): Pedido
     {
-        $devolucion = $this->registrarDevolucionPendiente($pedidoId, $motivo, $montoReembolso, $opciones);
+        return DB::transaction(function () use ($pedidoId, $motivo, $montoReembolso, $opciones) {
+            $devolucion = $this->registrarDevolucionPendiente($pedidoId, $motivo, $montoReembolso, $opciones);
 
-        $this->aprobarDevolucion($devolucion->id);
-        $this->reembolsarDevolucion($devolucion->id, $opciones['reembolso_metodo_id'] ?? null);
+            $this->aprobarDevolucion($devolucion->id);
+            $this->reembolsarDevolucion($devolucion->id, $opciones['reembolso_metodo_id'] ?? null);
 
-        return Pedido::query()
-            ->with([
-                'cliente',
-                'metodoPago',
-                'metodoEntrega',
-                'items.producto.talla',
-                'items.producto.imagenes',
-                'venta',
-                'devolucion',
-            ])
-            ->findOrFail($devolucion->pedido_id);
+            return Pedido::query()
+                ->with([
+                    'cliente',
+                    'metodoPago',
+                    'metodoEntrega',
+                    'items.producto.talla',
+                    'items.producto.imagenes',
+                    'venta',
+                    'devolucion',
+                ])
+                ->findOrFail($devolucion->pedido_id);
+        });
     }
 
     /**
@@ -702,14 +755,15 @@ class PedidoService
 
     /**
      * Marca una devolución como reembolsada: cierra los pagos confirmados
-     * (solo en devolución total) y registra el egreso de caja si hay monto.
+     * (solo en devolución total), anula la venta asociada y registra el
+     * egreso de caja si hay monto.
      */
     public function reembolsarDevolucion(int $devolucionId, ?int $metodoPagoId = null): Devolucion
     {
         return DB::transaction(function () use ($devolucionId, $metodoPagoId) {
             /** @var Devolucion|null $devolucion */
             $devolucion = Devolucion::query()
-                ->with(['pedido'])
+                ->with(['pedido.venta'])
                 ->whereKey($devolucionId)
                 ->lockForUpdate()
                 ->first();
@@ -718,8 +772,8 @@ class PedidoService
                 throw new ModelNotFoundException('La devolución no existe.');
             }
 
-            if (! in_array($devolucion->estado, [Devolucion::ESTADO_PENDIENTE, Devolucion::ESTADO_APROBADA], true)) {
-                throw new InventarioException('La devolución no está pendiente de reembolso.');
+            if ($devolucion->estado !== Devolucion::ESTADO_APROBADA) {
+                throw new InventarioException('La devolución debe estar aprobada antes de reembolsarse.');
             }
 
             if ($metodoPagoId) {
@@ -733,6 +787,12 @@ class PedidoService
                 $pedido->pagos()
                     ->where('estado', Pago::ESTADO_COMPLETADO)
                     ->update(['estado' => Pago::ESTADO_REEMBOLSADO]);
+
+                $venta = $pedido->venta;
+
+                if ($venta && ! $venta->anulada_en) {
+                    $venta->forceFill(['anulada_en' => now()])->save();
+                }
             }
 
             $aReembolsar = (float) $devolucion->monto_reembolsado;
@@ -812,6 +872,15 @@ class PedidoService
      */
     private function cancelarPedido(Pedido $pedido): void
     {
+        if (Pago::query()
+            ->where('pedido_id', $pedido->id)
+            ->where('estado', Pago::ESTADO_COMPLETADO)
+            ->exists()) {
+            throw new InventarioException(
+                'No se puede cancelar el pedido porque tiene pagos confirmados. Registrá una devolución para reembolsarlos.'
+            );
+        }
+
         foreach ($pedido->items as $item) {
             /** @var Producto|null $producto */
             $producto = Producto::query()->whereKey($item->producto_id)->lockForUpdate()->first();
@@ -835,6 +904,14 @@ class PedidoService
         }
 
         app(CuponService::class)->liberar($pedido);
+
+        Pago::query()
+            ->where('pedido_id', $pedido->id)
+            ->where('estado', Pago::ESTADO_PENDIENTE)
+            ->get()
+            ->each(function (Pago $pago) {
+                app(PagoService::class)->anular($pago->id, 'Pedido cancelado.');
+            });
     }
 
     /**
@@ -885,6 +962,11 @@ class PedidoService
             'fecha_venta' => now()->toDateString(),
             'notas' => 'Venta del pedido '.$pedido->numero_pedido,
         ]);
+
+        Pago::query()
+            ->where('pedido_id', $pedido->id)
+            ->whereNull('venta_id')
+            ->update(['venta_id' => $venta->id]);
 
         foreach ($detalles as $detalle) {
             try {

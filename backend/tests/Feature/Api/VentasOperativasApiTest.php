@@ -400,13 +400,13 @@ class VentasOperativasApiTest extends TestCase
         $this->assertSame('pendiente', $historial[2]['estado_nuevo']);
     }
 
-    public function test_pago_completo_avanza_el_pedido_a_confirmado(): void
+    public function test_pago_completo_no_avanza_el_pedido_a_confirmado(): void
     {
         $producto = $this->crearProducto(100.0);
 
         $this->postJson('/api/v1/store/pedidos', [
             'productos' => [$producto->id],
-            'nombre' => 'LucÃ­a FernÃ¡ndez',
+            'nombre' => 'Lucía Fernández',
             'telefono' => '70123456',
             'ciudad' => 'Cochabamba',
             'direccion' => 'Las Palmas, calle 3 #45',
@@ -427,8 +427,8 @@ class VentasOperativasApiTest extends TestCase
             ->assertStatus(201)
             ->assertJsonPath('data.pedido.estado_pago', 'pagado');
 
-        $this->assertSame('confirmado', $pedido->fresh()->estado);
-        $this->assertSame('confirmado', PedidoHistorial::orderByDesc('id')->firstOrFail()->estado_nuevo);
+        $this->assertSame('pendiente', $pedido->fresh()->estado);
+        $this->assertSame('pendiente', PedidoHistorial::orderByDesc('id')->firstOrFail()->estado_nuevo);
     }
 
     /* ===================== Filtros ===================== */

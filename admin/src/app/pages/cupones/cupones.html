@@ -374,7 +374,9 @@
           }
         </div>
       </div>
+    }
 
+    @if (!cargandoDetalle() && detalle()) {
       <ng-container modal-footer>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>

@@ -3,7 +3,7 @@ import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { ApiError } from '../../core/models/api-response';
 import { MetodoPagoRef, Pago, PagoPayload } from '../../core/models/pago';
-import { Pedido } from '../../core/models/pedido';
+import { Pedido, PedidoPago } from '../../core/models/pedido';
 import { PagosService } from '../../core/services/pagos.service';
 import { PedidosService } from '../../core/services/pedidos.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -111,6 +111,10 @@ export class RegistroPagoModalComponent implements OnInit {
     const pagado = parseFloat(pedido.total_pagado ?? '0');
     const saldo = pedido.saldo_pendiente != null ? parseFloat(pedido.saldo_pendiente) : total - pagado;
     return Number.isNaN(saldo) ? 0 : Math.max(0, saldo);
+  }
+
+  pagosPendientes(): PedidoPago[] {
+    return (this.seleccionado?.pagos ?? []).filter(pago => pago.estado === 'pendiente');
   }
 
   montoSuperaSaldo(): boolean {

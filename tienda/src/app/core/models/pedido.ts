@@ -42,6 +42,8 @@ export interface MetodoPago {
 
 export type EstadoPedido = 'pendiente' | 'confirmado' | 'cancelado' | 'completado';
 
+export type EstadoPagoPedido = 'pendiente' | 'parcial' | 'pagado' | 'cancelado' | 'reembolsado';
+
 export interface PedidoPublicoCliente {
   nombre: string;
   telefono: string;
@@ -67,6 +69,8 @@ export interface PedidoPublicoItem {
 export interface PedidoPublico {
   numero_pedido: string;
   estado: EstadoPedido;
+  estado_pago?: EstadoPagoPedido | null;
+  total_pagado?: string | null;
   subtotal: string;
   descuento?: string | number;
   costo_envio: string;

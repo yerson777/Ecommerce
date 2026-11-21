@@ -2,22 +2,9 @@ import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/services/catalogo.service';
-import { PedidoPublico, EstadoPedido } from '../../core/models/pedido';
+import { PedidoPublico } from '../../core/models/pedido';
+import { CartelEstadoPedido, cartelEstadoPedido, pedidoPagado } from '../../core/utils/estado-pedido';
 import { formatearPrecio } from '../../core/utils/precio';
-
-const ESTADO_ETIQUETA: Record<EstadoPedido, string> = {
-  pendiente: 'Pedido recibido · Pago en revisión',
-  confirmado: 'Pago confirmado',
-  cancelado: 'Cancelado',
-  completado: '¡Pago recibido! Compra completada',
-};
-
-const ESTADO_CLASE: Record<EstadoPedido, string> = {
-  pendiente: 'badge-pedido-recibido',
-  confirmado: 'badge-info',
-  cancelado: 'badge-neutral',
-  completado: 'badge-success',
-};
 
 @Component({
   imports: [CommonModule, FormsModule],
@@ -66,12 +53,12 @@ export class SeguimientoComponent {
     });
   }
 
-  estadoEtiqueta(estado: EstadoPedido): string {
-    return ESTADO_ETIQUETA[estado] ?? estado;
-  }
-
-  estadoClase(estado: EstadoPedido): string {
-    return ESTADO_CLASE[estado] ?? 'badge-neutral';
+  cartel(): CartelEstadoPedido {
+    return cartelEstadoPedido(
+      this.pedido?.estado ?? '',
+      pedidoPagado(this.pedido),
+      'seguimiento',
+    );
   }
 
   readonly formatearPrecio = formatearPrecio;

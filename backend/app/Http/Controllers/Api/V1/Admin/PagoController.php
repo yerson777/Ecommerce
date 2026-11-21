@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Exceptions\PagoPendienteExistenteException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Admin\Pago\PagoComprobanteRequest;
 use App\Http\Requests\V1\Admin\Pago\PagoStoreRequest;
@@ -106,11 +107,24 @@ class PagoController extends Controller
             }
         }
 
-        $pago = $this->pagos->registrar(
-            $pedidoId,
-            $datos,
-            $request->file('comprobante')
-        );
+        try {
+            $pago = $this->pagos->registrar(
+                $pedidoId,
+                $datos,
+                $request->file('comprobante')
+            );
+        } catch (PagoPendienteExistenteException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => null,
+                'data' => [
+                    'pago_existente' => (new PagoResource(
+                        $e->pago->loadMissing('metodoPago')
+                    ))->resolve(),
+                ],
+            ], 409);
+        }
 
         return Api::resource(new PagoResource($pago), 'Pago registrado correctamente.', 201);
     }

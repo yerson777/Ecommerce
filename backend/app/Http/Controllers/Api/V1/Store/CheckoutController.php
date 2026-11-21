@@ -8,6 +8,7 @@ use App\Http\Resources\V1\PedidoPublicoResource;
 use App\Models\Cliente;
 use App\Models\MetodoEntrega;
 use App\Models\MetodoPago;
+use App\Models\Pago;
 use App\Models\Pedido;
 use App\Services\PedidoService;
 use App\Support\Api;
@@ -109,6 +110,7 @@ class CheckoutController extends Controller
                     ->orWhereHas('items.producto', fn ($producto) => $producto->where('codigo', $referencia));
             })
             ->with(['cliente', 'metodoPago', 'metodoEntrega', 'zonaEnvio', 'envio', 'items.producto.talla', 'items.producto.imagenes'])
+            ->withSum(['pagos as pagos_completados_total' => fn ($query) => $query->where('estado', Pago::ESTADO_COMPLETADO)], 'monto')
             ->first();
 
         if (! $pedido) {

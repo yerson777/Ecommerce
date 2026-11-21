@@ -100,6 +100,10 @@ class PagoResource extends JsonResource
 
     protected function estadoPagoPedido(Pedido $pedido, float $pagado, float $total): string
     {
+        if ($pedido->estado === Pedido::ESTADO_DEVUELTO) {
+            return 'reembolsado';
+        }
+
         if ($pedido->estado === Pedido::ESTADO_CANCELADO) {
             return 'cancelado';
         }

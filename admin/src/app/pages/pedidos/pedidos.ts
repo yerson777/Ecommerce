@@ -12,7 +12,7 @@ import {
   EstadoPagoPedido,
   Pedido,
 } from '../../core/models/pedido';
-import { MetodoPagoRef, Pago } from '../../core/models/pago';
+import { ETIQUETA_ESTADO_PAGO, EstadoPago, MetodoPagoRef, Pago } from '../../core/models/pago';
 import { Paginated } from '../../core/models/paginated';
 import { PagosService } from '../../core/services/pagos.service';
 import { PedidosService } from '../../core/services/pedidos.service';
@@ -288,9 +288,9 @@ export class PedidosComponent implements OnInit {
       return `Se confirmará el pedido ${numero}. Las prendas permanecen reservadas hasta completarlo.`;
     }
     if (transicion.estado === 'completado') {
-      return `El pedido ${numero} pasará a Completado: se registrará la venta con los precios históricos y las prendas quedarán marcadas como vendidas. Esta acción no se puede deshacer porque el comprobante queda registrado como venta definitiva.`;
+      return `El pedido ${numero} pasará a Completado: se registrará la venta con los precios históricos y las prendas quedarán marcadas como vendidas. Si no está totalmente pagado, la venta quedará con saldo pendiente. Esta acción no se puede deshacer porque el comprobante queda registrado como venta definitiva.`;
     }
-    return `¿Seguro que querés cancelar el pedido ${numero}? Esta acción liberará las prendas reservadas.`;
+    return `¿Seguro que querés cancelar el pedido ${numero}? Se liberarán las prendas reservadas y se anularán los pagos pendientes. Los pagos confirmados impiden cancelar: en ese caso usá Devolución.`;
   }
 
   etiquetaConfirmar(): string {
@@ -396,6 +396,10 @@ export class PedidosComponent implements OnInit {
     return parseFloat(String(this.detalle()?.saldo_pendiente ?? '0')) > 0;
   }
 
+  tienePagosCompletados(): boolean {
+    return parseFloat(String(this.detalle()?.total_pagado ?? '0')) > 0;
+  }
+
   readonly formatearFecha = formatearFechaCompartida;
 
   formatearFechaHora(fecha: string | null | undefined): string {
@@ -409,7 +413,18 @@ export class PedidosComponent implements OnInit {
     return esEstadoPago(estado) ? ETIQUETA_ESTADO_PAGO_PEDIDO[estado] : estado;
   }
 
+  etiquetaEstadoPagoDetalle(estado: string): string {
+    if (estado === 'completado') {
+      return 'Confirmado';
+    }
+    return esEstadoPagoDetalle(estado) ? ETIQUETA_ESTADO_PAGO[estado] : estado;
+  }
+
   tonoEstadoPago(estado: string): string {
     return esEstadoPago(estado) ? TONO_ESTADO_PAGO_PEDIDO[estado] : 'neutral';
   }
+}
+
+function esEstadoPagoDetalle(estado: string): estado is EstadoPago {
+  return ['pendiente', 'completado', 'anulado', 'reembolsado'].includes(estado);
 }

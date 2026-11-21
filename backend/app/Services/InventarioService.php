@@ -11,7 +11,6 @@ use App\Models\Venta;
 use App\Models\VentaItem;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Operaciones de inventario sobre prendas físicas únicas.
@@ -26,6 +25,10 @@ use Illuminate\Support\Str;
  */
 class InventarioService
 {
+    public function __construct(
+        private readonly PedidoNumeracionService $numeracion,
+    ) {}
+
     /**
      * Reserva una prenda disponible.
      *
@@ -209,6 +212,6 @@ class InventarioService
 
     private function proximoNumeroVenta(): string
     {
-        return 'V-'.now()->format('Ymd').'-'.strtoupper(Str::random(5));
+        return $this->numeracion->numeroVenta();
     }
 }

@@ -55,6 +55,22 @@
           </div>
         </div>
       </div>
+
+      @if (pagosPendientes().length) {
+        <div class="pedido-card">
+          <span class="muted-label">Pagos pendientes</span>
+          @for (pago of pagosPendientes(); track pago.id) {
+            <div class="pedido-card-row">
+              <span class="mono">{{ pago.numero_pago }}</span>
+              <span>{{ pago.metodo_pago ?? 'Sin método' }}</span>
+              <span class="mono strong">{{ moneda(pago.monto) }}</span>
+              @if (pago.nota) {
+                <span class="muted small">{{ pago.nota }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
     }
 
     @if (!seleccionado) {
@@ -113,6 +129,7 @@
         @if (errorDe('estado')) {
           <span class="field-error">{{ errorDe('estado') }}</span>
         }
+        <p class="hint">Un pago pendiente no suma al saldo ni a caja hasta confirmarlo desde Pagos.</p>
       </div>
 
       @if (estado === 'completado') {

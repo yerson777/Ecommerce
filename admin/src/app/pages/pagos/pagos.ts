@@ -30,7 +30,7 @@ import { RegistroPagoModalComponent } from './registro-pago-modal';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of, map, Subject, Subscription } from 'rxjs';
 
 function esEstadoPago(estado: string): estado is EstadoPago {
-  return ['pendiente', 'completado', 'anulado'].includes(estado);
+  return ['pendiente', 'completado', 'anulado', 'reembolsado'].includes(estado);
 }
 
 interface PagoObjetivo {
@@ -452,5 +452,5 @@ export class PagosComponent implements OnInit {
 }
 
 function esEstadoPagoPedido(estado: string): estado is keyof typeof ETIQUETA_ESTADO_PAGO_PEDIDO {
-  return ['pendiente', 'parcial', 'pagado', 'cancelado'].includes(estado);
+  return ['pendiente', 'parcial', 'pagado', 'cancelado', 'reembolsado'].includes(estado);
 }

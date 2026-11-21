@@ -314,7 +314,7 @@
                       </td>
                       <td data-label="Estado">
                         <app-badge [tone]="pago.estado === 'completado' ? 'success' : pago.estado === 'anulado' ? 'danger' : pago.estado === 'reembolsado' ? 'neutral' : 'warning'">
-                          {{ pago.estado }}
+                          {{ etiquetaEstadoPagoDetalle(pago.estado) }}
                         </app-badge>
                       </td>
                     </tr>
@@ -356,7 +356,14 @@
           <div class="transiciones">
             <div class="transiciones-botones">
               @if (tieneSaldoPendiente()) {
-                <button type="button" class="btn btn-primary" (click)="abrirRegistroPago()">Registrar pago</button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  (click)="abrirRegistroPago()"
+                  title="Registra el cobro sin cambiar el estado del pedido. Para avanzar, usá 'Confirmar pedido'."
+                >
+                  Registrar pago
+                </button>
               } @else {
                 <app-badge tone="success">Pagado</app-badge>
               }
@@ -389,7 +396,12 @@
             <div class="transiciones-botones">
               <!-- Acción principal primero -->
               @if (detalle.estados_siguientes.includes('confirmado')) {
-                <button type="button" class="btn btn-primary" (click)="pedirTransicion('confirmado')">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  (click)="pedirTransicion('confirmado')"
+                  title="Confirma el pedido sin registrar un cobro. Las prendas quedan reservadas hasta completar la venta."
+                >
                   Confirmar pedido
                 </button>
               }
@@ -399,13 +411,16 @@
                 </button>
               }
               <!-- Cancelar pedido -->
-              @if (detalle.estados_siguientes.includes('cancelado')) {
+              @if (detalle.estados_siguientes.includes('cancelado') && !tienePagosCompletados()) {
                 <button type="button" class="btn btn-danger" (click)="pedirTransicion('cancelado')">
                   Cancelar pedido
                 </button>
               }
+              @if (detalle.estados_siguientes.includes('cancelado') && tienePagosCompletados()) {
+                <p class="muted">Tiene pagos confirmados. Para revertir el cobro, registrá una devolución.</p>
+              }
               <!-- Registrar devolución -->
-              @if (!detalle.devolucion) {
+              @if (detalle.estado === 'confirmado' && !detalle.devolucion && tienePagosCompletados()) {
                 <button type="button" class="btn btn-danger" (click)="abrirDevolucion()">
                   Registrar devolución
                 </button>
