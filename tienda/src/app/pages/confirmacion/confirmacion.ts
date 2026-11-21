@@ -30,6 +30,7 @@ export class ConfirmacionComponent implements OnInit, OnDestroy {
   readonly cartel = computed(() =>
     cartelEstadoPedido(this.estadoPedido(), this.pagoCompletado(), 'confirmacion'),
   );
+  readonly duracionReservaHoras = computed(() => this.config.datos().duracion_reserva_horas ?? 24);
   private refrescoSuscripcion = new Subscription();
 
   constructor(

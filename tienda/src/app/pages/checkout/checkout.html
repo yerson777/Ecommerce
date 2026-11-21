@@ -94,8 +94,9 @@
                 {{ erroresDe('metodoEntregaId') ?? 'Elegí un método de entrega.' }}
               </span>
             </div>
-            <div class="field">
-              <label for="metodoPagoId">Método de pago *</label>
+
+          <div class="field">
+            <label for="metodoPagoId">Método de pago *</label>
               <select id="metodoPagoId" class="select" formControlName="metodoPagoId">
                 <option [ngValue]="null" disabled>Elegí una opción</option>
                 <option *ngFor="let metodo of metodosPago()" [ngValue]="metodo.id">
@@ -275,8 +276,8 @@
           Volver al carrito
         </a>
         <p class="muted" style="font-size: 0.82rem; margin-top: 0.8rem">
-          Al confirmar, tus prendas quedan reservadas por 24 horas. Te contactamos por
-          WhatsApp para coordinar la entrega y el pago.
+            Al confirmar, tus prendas quedan reservadas por {{ duracionReservaHoras() }} horas. Te contactamos por
+            WhatsApp para coordinar la entrega y el pago.
         </p>
       </aside>
     </div>

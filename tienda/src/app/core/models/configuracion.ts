@@ -24,4 +24,5 @@ export interface ConfiguracionTienda {
   tiktok: string | null;
   textos: TextosTienda;
   moneda: MonedaTienda;
+  duracion_reserva_horas?: number | null;
 }

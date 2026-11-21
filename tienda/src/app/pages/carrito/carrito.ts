@@ -1,4 +1,4 @@
-import { Component, OnDestroy, Signal, signal } from '@angular/core';
+import { Component, computed, Signal, WritableSignal, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService, CartItem } from '../../core/services/cart.service';
@@ -11,24 +11,26 @@ import { formatearPrecio } from '../../core/utils/precio';
   styleUrl: './carrito.scss',
   templateUrl: './carrito.html',
 })
-export class CarritoComponent implements OnDestroy {
+export class CarritoComponent {
   private readonly cartService: CartService;
   private readonly catalogo: CatalogoService;
   readonly items: Signal<CartItem[]>;
   readonly subtotal: Signal<number>;
 
-  readonly cuponCodigo = signal('');
-  readonly cuponAplicado = signal(false);
   readonly validandoCupon = signal(false);
   readonly cuponMensaje = signal<string | null>(null);
   readonly cuponError = signal(false);
-  readonly cuponDescuento = signal<number>(0);
+
+  readonly cuponAplicado = computed(() => this.cartService.cuponAplicado());
+  readonly cuponDescuento = computed(() => this.cartService.cuponDescuento());
+  readonly cuponCodigo: WritableSignal<string>;
 
   constructor(cartService: CartService, catalogo: CatalogoService) {
     this.cartService = cartService;
     this.catalogo = catalogo;
     this.items = cartService.items;
     this.subtotal = cartService.subtotal;
+    this.cuponCodigo = this.cartService.cuponBorrador;
   }
 
   readonly formatearPrecio = formatearPrecio;
@@ -62,20 +64,17 @@ export class CarritoComponent implements OnDestroy {
         this.validandoCupon.set(false);
         const datos = res.data;
         if (datos?.valido) {
-          this.cuponAplicado.set(true);
-          this.cuponDescuento.set(Number(datos.descuento) || 0);
+          this.cartService.aplicarCupon(codigo, Number(datos.descuento) || 0);
           this.cuponMensaje.set(datos.mensaje ?? 'Cupón aplicado correctamente.');
         } else {
-          this.cuponAplicado.set(false);
-          this.cuponDescuento.set(0);
+          this.cartService.limpiarCupon();
           this.cuponError.set(true);
           this.cuponMensaje.set(datos?.mensaje ?? 'El cupón no es válido para este pedido.');
         }
       },
       error: () => {
         this.validandoCupon.set(false);
-        this.cuponAplicado.set(false);
-        this.cuponDescuento.set(0);
+        this.cartService.limpiarCupon();
         this.cuponError.set(true);
         this.cuponMensaje.set('No pudimos validar el cupón. Intentá de nuevo.');
       },
@@ -84,16 +83,5 @@ export class CarritoComponent implements OnDestroy {
 
   totalConDescuento(): number {
     return Math.max(0, this.subtotal() - this.cuponDescuento());
-  }
-
-  ngOnDestroy(): void {
-    const cuponGuardar = this.cuponAplicado()
-      ? { codigo: this.cuponCodigo(), descuento: this.cuponDescuento() }
-      : null;
-    try {
-      sessionStorage.setItem('everly_cupon_carrito', JSON.stringify(cuponGuardar));
-    } catch {
-      // Sin persistencia no bloqueamos la navegación.
-    }
   }
 }

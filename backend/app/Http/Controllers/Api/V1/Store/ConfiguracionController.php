@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api\V1\Store;
 
 use App\Http\Controllers\Controller;
 use App\Services\ConfiguracionTiendaService;
+use App\Services\ReservaConfigService;
 use App\Support\Api;
 
 class ConfiguracionController extends Controller
 {
-    public function __construct(private readonly ConfiguracionTiendaService $tienda)
-    {
+    public function __construct(
+        private readonly ConfiguracionTiendaService $tienda,
+        private readonly ReservaConfigService $reserva,
+    ) {
     }
 
     /**
@@ -18,6 +21,9 @@ class ConfiguracionController extends Controller
      */
     public function index()
     {
-        return Api::success($this->tienda->datos(), 'Datos de la tienda.');
+        $datos = $this->tienda->datos();
+        $datos['duracion_reserva_horas'] = $this->reserva->duracionHoras();
+
+        return Api::success($datos, 'Datos de la tienda.');
     }
 }

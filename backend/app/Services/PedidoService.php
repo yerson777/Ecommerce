@@ -146,6 +146,16 @@ class PedidoService
 
             $total = $baseGravable + $costoEnvio;
 
+            if (isset($datos['total_esperado'])) {
+                $totalEsperado = (float) $datos['total_esperado'];
+                if (abs(round($total, 2) - round($totalEsperado, 2)) > 0.01) {
+                    throw new InventarioException(
+                        'El total calculado (Bs ' . number_format($total, 2, '.', '') . ') no coincide con el total esperado (Bs '
+                        . number_format($totalEsperado, 2, '.', '') . '). Actualiza el carrito e intenta de nuevo.'
+                    );
+                }
+            }
+
             // Bloqueo de clientes: se valida en el servidor comparando el
             // teléfono y el correo normalizados. El mensaje es neutro para no
             // revelar que el cliente está bloqueado.

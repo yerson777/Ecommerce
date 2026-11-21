@@ -32,6 +32,7 @@ function configuracionVacia(): ConfiguracionTienda {
       separador_miles: '',
       separador_decimal: '.',
     },
+    duracion_reserva_horas: null,
   };
 }
 
@@ -100,6 +101,7 @@ export class ConfiguracionService extends ApiService {
         separador_miles: datos.moneda?.separador_miles ?? '',
         separador_decimal: datos.moneda?.separador_decimal || '.',
       },
+      duracion_reserva_horas: datos.duracion_reserva_horas ?? null,
     };
   }
 }

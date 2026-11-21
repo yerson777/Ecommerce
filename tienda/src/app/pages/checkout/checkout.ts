@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   ElementRef,
   OnDestroy,
   OnInit,
@@ -7,6 +8,7 @@ import {
   effect,
   inject,
   signal,
+  WritableSignal,
   viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,6 +23,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CartService, CartItem } from '../../core/services/cart.service';
 import { ClienteAuthService } from '../../core/services/cliente-auth.service';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { CheckoutPayload, MetodoEntrega, MetodoPago } from '../../core/models/pedido';
 import { ApiError } from '../../core/models/api-response';
 import { formatearPrecio } from '../../core/utils/precio';
@@ -45,6 +48,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   readonly metodosEntrega = signal<MetodoEntrega[]>([]);
   readonly metodosPago = signal<MetodoPago[]>([]);
+  readonly duracionReservaHoras = computed(() => this.config.datos().duracion_reserva_horas ?? 24);
 
   readonly enviando = signal(false);
   readonly errorGeneral = signal<string | null>(null);
@@ -63,12 +67,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly camaraAbierta = signal(false);
   readonly camaraError = signal<string | null>(null);
 
-  readonly cuponCodigo = signal('');
-  readonly cuponAplicado = signal(false);
   readonly validandoCupon = signal(false);
   readonly cuponMensaje = signal<string | null>(null);
   readonly cuponError = signal(false);
-  readonly cuponDescuento = signal<number>(0);
+
+  readonly cuponAplicado = computed(() => this.cartService.cuponAplicado());
+  readonly cuponDescuento = computed(() => this.cartService.cuponDescuento());
+  readonly cuponCodigo: WritableSignal<string>;
 
   readonly form = new FormGroup({
     nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -85,10 +90,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private readonly catalogo: CatalogoService,
     cartService: CartService,
     private readonly router: Router,
+    private readonly config: ConfiguracionService,
   ) {
     this.cartService = cartService;
     this.items = cartService.items;
     this.subtotal = cartService.subtotal;
+    this.cuponCodigo = this.cartService.cuponBorrador;
 
     // Conecta el stream de la cámara al <video> en cuanto el modal se renderiza.
     effect(() => {
@@ -125,6 +132,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       next: (res) => this.metodosEntrega.set(res.data ?? []),
     });
     this.cargarMetodosPago();
+
+    // Si hay un cupón aplicado desde el carrito, revalidarlo contra el backend.
+    // Si ya no es válido, se quita y se avisa al cliente.
+    this.revalidarCuponGuardado();
 
     // Aviso suave si el teléfono o el correo ya están registrados (sin revelar datos).
     this.form.controls.telefono.valueChanges.subscribe(() => {
@@ -447,9 +458,37 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return (event.target as HTMLInputElement).value.trim().toUpperCase();
   }
 
+  private revalidarCuponGuardado(): void {
+    if (!this.cartService.cuponAplicado()) {
+      return;
+    }
+
+    const codigo = this.cartService.cuponCodigo();
+    this.validandoCupon.set(true);
+
+    this.catalogo.validarCupon(codigo, this.subtotal(), {
+      productos: this.items().map((item) => item.producto_id),
+    }).subscribe({
+      next: (res) => {
+        this.validandoCupon.set(false);
+        if (!res.data?.valido) {
+          this.cartService.limpiarCupon();
+          this.cuponMensaje.set(res.data?.mensaje ?? 'El cupón ya no es válido y se eliminó.');
+          this.cuponError.set(true);
+        }
+      },
+      error: () => {
+        this.validandoCupon.set(false);
+        this.cartService.limpiarCupon();
+        this.cuponMensaje.set('No pudimos revalidar el cupón. Se eliminó del pedido.');
+        this.cuponError.set(true);
+      },
+    });
+  }
+
   aplicarCupon(): void {
     const codigo = this.cuponCodigo().trim().toUpperCase();
-    if (!codigo || this.cuponAplicado()) {
+    if (!codigo || this.cuponAplicado() || this.validandoCupon()) {
       return;
     }
 
@@ -467,20 +506,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.validandoCupon.set(false);
         const datos = res.data;
         if (datos?.valido) {
-          this.cuponAplicado.set(true);
-          this.cuponDescuento.set(Number(datos.descuento) || 0);
+          this.cartService.aplicarCupon(codigo, Number(datos.descuento) || 0);
           this.cuponMensaje.set(datos.mensaje ?? 'Cupón aplicado correctamente.');
         } else {
-          this.cuponAplicado.set(false);
-          this.cuponDescuento.set(0);
+          this.cartService.limpiarCupon();
           this.cuponError.set(true);
           this.cuponMensaje.set(datos?.mensaje ?? 'El cupón no es válido para este pedido.');
         }
       },
       error: () => {
         this.validandoCupon.set(false);
-        this.cuponAplicado.set(false);
-        this.cuponDescuento.set(0);
+        this.cartService.limpiarCupon();
         this.cuponError.set(true);
         this.cuponMensaje.set('No pudimos validar el cupón. Intentá de nuevo.');
       },
@@ -525,7 +561,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       notas: valores.notas?.trim() || null,
       metodo_pago_id: valores.metodoPagoId ?? null,
       metodo_entrega_id: valores.metodoEntregaId ?? null,
-      codigo_cupon: this.cuponAplicado() ? this.cuponCodigo().trim().toUpperCase() || null : null,
+      cupon_codigo: this.cuponAplicado() ? this.cartService.cuponCodigo() : null,
       precios_esperados: this.items().map((item) => ({
         producto_id: item.producto_id,
         precio: Number(item.precio),

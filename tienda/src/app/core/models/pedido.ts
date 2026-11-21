@@ -100,6 +100,7 @@ export interface CheckoutPayload {
   metodo_pago_id: number | null;
   metodo_entrega_id: number | null;
   zona_envio_id?: number | null;
-  codigo_cupon?: string | null;
+  cupon_codigo?: string | null;
+  total_esperado?: number | null;
   precios_esperados?: PrecioEsperado[];
 }

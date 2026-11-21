@@ -171,8 +171,8 @@ export class CatalogoService extends ApiService {
     if (payload.zona_envio_id) {
       form.append('zona_envio_id', String(payload.zona_envio_id));
     }
-    if (payload.codigo_cupon) {
-      form.append('codigo_cupon', payload.codigo_cupon);
+    if (payload.cupon_codigo) {
+      form.append('cupon_codigo', payload.cupon_codigo);
     }
     form.append('comprobante', comprobante, comprobante.name);
     return this.post<RespuestaCheckout>(url, form);
