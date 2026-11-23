@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { EMPTY, catchError, throwError } from 'rxjs';
 import { ApiError } from '../models/api-response';
 import { AuthService } from '../services/auth.service';
+import { mensajeError } from '../utils/mensajes-error';
 
 const LOGIN_URL = '/v1/admin/auth/login';
 const LOGOUT_URL = '/v1/admin/auth/logout';
@@ -36,22 +37,20 @@ export const errorHandlerInterceptor: HttpInterceptorFn = (req, next) => {
         return EMPTY;
       }
 
+      const cuerpo = (error.error ?? {}) as {
+        errors?: Record<string, string[]>;
+        code?: string;
+      };
       const apiError: ApiError = {
         success: false,
-        message: 'Error de conexión con el servidor.',
-        errors: null,
+        message: mensajeError(
+          { status: error.status, code: cuerpo.code, name: error.name },
+          esLogin,
+        ),
+        errors: cuerpo.errors ?? null,
         status: error.status ?? undefined,
+        code: cuerpo.code,
       };
-
-      if (error.status === 0) {
-        apiError.message = 'No se pudo conectar con el servidor. Verifica tu conexión.';
-      } else if (error.error?.message) {
-        apiError.message = error.error.message;
-        apiError.errors = error.error.errors ?? null;
-      } else if (error.status === 422) {
-        apiError.message = 'Datos no válidos. Revisa el formulario.';
-        apiError.errors = error.error?.errors ?? null;
-      }
 
       return throwError(() => apiError);
     }),

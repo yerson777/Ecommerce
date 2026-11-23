@@ -53,10 +53,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 if ($e instanceof ValidationException) {
+                    $errores = $e->errors();
+                    $credenciales = $request->is('api/v1/admin/auth/login')
+                        && ($errores['email'][0] ?? null) === 'Las credenciales proporcionadas son incorrectas.';
+
                     return new JsonResponse([
                         'success' => false,
-                        'message' => 'Error de validación.',
-                        'errors' => $e->errors(),
+                        'message' => $credenciales
+                            ? 'El correo o la contraseña son incorrectos. Revisá tus datos e intentá de nuevo.'
+                            : 'Revisá los datos ingresados: hay campos incompletos o con formato incorrecto.',
+                        'errors' => $errores,
+                        'code' => $credenciales ? 'credenciales_incorrectas' : 'validacion',
                     ], 422);
                 }
 

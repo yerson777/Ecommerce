@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
+import { mensajeError } from '../../core/utils/mensajes-error';
 
 @Component({
   imports: [FormsModule, CommonModule],
@@ -75,7 +76,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.message ?? 'No se pudo iniciar sesión.';
+        this.errorMessage = mensajeError(err, true);
       },
     });
   }
