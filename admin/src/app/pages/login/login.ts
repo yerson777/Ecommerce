@@ -19,6 +19,8 @@ export class LoginComponent {
   logoUrl = signal<string | null>(null);
   /** Alterna la visibilidad de la contraseña (solo presentación). */
   verPassword = signal(false);
+  /** Marca que se intentó enviar para mostrar validaciones bajo los campos. */
+  enviado = false;
 
   constructor(
     private readonly auth: AuthService,
@@ -40,8 +42,27 @@ export class LoginComponent {
     });
   }
 
+  get emailInvalido(): boolean {
+    return this.enviado && !this.email().trim();
+  }
+
+  get emailFormatoInvalido(): boolean {
+    const correo = this.email().trim();
+    return this.enviado && !!correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+  }
+
+  get passwordInvalido(): boolean {
+    return this.enviado && !this.password();
+  }
+
   async onSubmit(): Promise<void> {
+    this.enviado = true;
     this.errorMessage = null;
+
+    if (this.emailInvalido || this.emailFormatoInvalido || this.passwordInvalido) {
+      return;
+    }
+
     this.loading = true;
 
     this.auth.login(this.email(), this.password()).subscribe({

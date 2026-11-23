@@ -34,7 +34,7 @@
       <h2 class="login-titulo">Iniciar sesión</h2>
       <p class="login-subtitulo">Ingresá con tu cuenta de administrador.</p>
 
-      <form (ngSubmit)="onSubmit()" class="login-form">
+      <form (ngSubmit)="onSubmit()" class="login-form" novalidate>
         <div class="campo">
           <label for="email">Correo electrónico</label>
           <div class="campo-control">
@@ -59,8 +59,14 @@
               required
               autocomplete="email"
               placeholder="admin@everly.local"
+              [attr.aria-invalid]="emailInvalido || emailFormatoInvalido"
             />
           </div>
+          @if (emailInvalido) {
+            <p class="campo-error">Ingresá tu correo electrónico.</p>
+          } @else if (emailFormatoInvalido) {
+            <p class="campo-error">Ingresá un correo válido.</p>
+          }
         </div>
 
         <div class="campo">
@@ -88,6 +94,7 @@
               required
               autocomplete="current-password"
               placeholder="••••••••"
+              [attr.aria-invalid]="passwordInvalido"
             />
             <button
               type="button"
@@ -128,6 +135,9 @@
               }
             </button>
           </div>
+          @if (passwordInvalido) {
+            <p class="campo-error">Ingresá tu contraseña.</p>
+          }
         </div>
 
         @if (errorMessage) {
