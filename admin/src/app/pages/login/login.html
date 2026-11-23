@@ -1,35 +1,46 @@
 <div class="login-shell">
   <!-- Panel de marca: columna izquierda en escritorio, cabecera arriba en móvil -->
   <aside class="marca-panel">
+    <span class="marca-forma marca-forma--1" aria-hidden="true"></span>
+    <span class="marca-forma marca-forma--2" aria-hidden="true"></span>
+    <span class="marca-forma marca-forma--3" aria-hidden="true"></span>
+
     <div class="marca-top">
       <div class="marca-logo-chip">
         @if (logoUrl()) {
-          <img class="marca-logo" [src]="logoUrl()" alt="Logo de la tienda" />
+          <img class="marca-logo" [src]="logoUrl()" alt="Logo de Everly" />
         } @else {
-          <span class="marca-emoji">E</span>
+          <span class="marca-emoji" aria-hidden="true">E</span>
         }
       </div>
-      <span class="marca-nombre">
-        Everly
-        <span>Admin</span>
-      </span>
+      <div class="marca-identidad">
+        <span class="marca-nombre">Everly</span>
+        <span class="marca-rol">Administración</span>
+      </div>
     </div>
 
     <div class="marca-mensaje">
-      <h1>Todo tu clothing en un solo lugar</h1>
+      <h1>Toda tu moda en un solo lugar</h1>
       <p>
         Gestioná catálogo, ventas, pedidos, envíos y caja de Everly desde un panel
         claro y rápido.
       </p>
+      <span class="marca-linea" aria-hidden="true"></span>
+      <ul class="marca-chips" aria-label="Módulos del panel">
+        <li>Catálogo</li>
+        <li>Pedidos</li>
+        <li>Envíos</li>
+        <li>Caja</li>
+      </ul>
     </div>
 
-    <p class="marca-pie">Prendas únicas · Bolivia</p>
+    <p class="marca-pie">Vestidos y enterizos · Bolivia</p>
   </aside>
 
   <!-- Formulario -->
   <main class="login-panel">
     <div class="login-card">
-      <p class="login-kicker">Todo tu clothing en un solo lugar</p>
+      <p class="login-kicker">Panel administrativo</p>
 
       <h2 class="login-titulo">Iniciar sesión</h2>
       <p class="login-subtitulo">Ingresá con tu cuenta de administrador.</p>
