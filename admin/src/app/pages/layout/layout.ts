@@ -21,6 +21,7 @@ export class LayoutComponent implements OnInit {
 
   readonly usuario = this.auth.usuario;
   readonly menuAbierto = signal(false);
+  readonly cerrando = signal(false);
   readonly gruposAbiertos = signal<Record<string, boolean>>({ general: false, ventas: false, envios: false, catalogo: false, compras: false, caja: false, sistema: false });
   readonly grupoAbierto = signal<string | null>(null);
   readonly logoUrl = signal<string | null>(null);
@@ -153,8 +154,12 @@ export class LayoutComponent implements OnInit {
   }
 
   cerrarSesion(): void {
+    if (this.cerrando()) {
+      return;
+    }
+    this.cerrando.set(true);
     this.auth.cerrarSesion();
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']).finally(() => this.cerrando.set(false));
   }
 
   inicial(): string {

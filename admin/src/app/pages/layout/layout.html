@@ -178,7 +178,7 @@
         <span class="user-name">{{ usuario()?.name ?? 'Administrador' }}</span>
         <span class="user-role">{{ usuario()?.role ?? '' }}</span>
       </div>
-      <button type="button" class="logout" title="Cerrar sesión" (click)="cerrarSesion()">
+      <button type="button" class="logout" title="Cerrar sesión" (click)="cerrarSesion()" [disabled]="cerrando()">
         ⏻
       </button>
     </div>

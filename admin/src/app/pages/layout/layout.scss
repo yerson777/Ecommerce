@@ -295,6 +295,11 @@
   color: var(--violet-dark);
 }
 
+.logout:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ---------------- Main ---------------- */
 .main {
   display: flex;

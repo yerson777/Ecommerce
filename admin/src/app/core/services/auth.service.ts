@@ -68,10 +68,16 @@ export class AuthService extends ApiService {
   }
 
   cerrarSesion(): void {
-    this.logout().subscribe({
-      next: () => this.finalizarSesion(),
-      error: () => this.finalizarSesion(),
-    });
+    // Invalida el token en el servidor sin esperar la respuesta: la limpieza
+    // local y la navegación no deben depender del backend.
+    this.logout().subscribe({ error: () => undefined });
+    this.limpiarSesionLocal();
+  }
+
+  limpiarSesionLocal(): void {
+    this.tokenService.clearToken();
+    this.usuario.set(null);
+    localStorage.removeItem(CACHE_KEY);
   }
 
   private setUsuario(usuario: AuthUser | null): void {
@@ -94,11 +100,5 @@ export class AuthService extends ApiService {
       localStorage.removeItem(CACHE_KEY);
       return null;
     }
-  }
-
-  private finalizarSesion(): void {
-    this.tokenService.clearToken();
-    this.usuario.set(null);
-    localStorage.removeItem(CACHE_KEY);
   }
 }
