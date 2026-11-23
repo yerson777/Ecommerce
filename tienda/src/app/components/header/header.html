@@ -13,6 +13,7 @@
       class="menu-toggle"
       [class.menu-toggle--activo]="menuAbierto()"
       [attr.aria-expanded]="menuAbierto()"
+      aria-controls="menu-navegacion"
       aria-label="Abrir menú"
       (click)="alternarMenu()"
     >
@@ -21,7 +22,7 @@
       <span></span>
     </button>
 
-    <nav class="nav" [class.nav--abierto]="menuAbierto()">
+    <nav id="menu-navegacion" class="nav" [class.nav--abierto]="menuAbierto()">
       <a
         routerLink="/"
         routerLinkActive="activo"

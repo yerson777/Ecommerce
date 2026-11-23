@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal, Signal } from '@angular/core';
+import { Component, effect, HostListener, inject, OnDestroy, signal, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
@@ -12,7 +12,7 @@ import { ConfiguracionService } from '../../core/services/configuracion.service'
   styleUrl: './header.scss',
   templateUrl: './header.html',
 })
-export class Header {
+export class Header implements OnDestroy {
   readonly conteo: Signal<number>;
   readonly menuAbierto = signal(false);
   readonly menuUsuarioAbierto = signal(false);
@@ -30,6 +30,17 @@ export class Header {
         this.menuAbierto.set(false);
         this.menuUsuarioAbierto.set(false);
       });
+
+    effect(() => {
+      const abierto = this.menuAbierto();
+      if (abierto) {
+        document.addEventListener('pointerdown', this.onDocumentPointerDown);
+        document.addEventListener('keydown', this.onDocumentKeyDown);
+      } else {
+        document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+        document.removeEventListener('keydown', this.onDocumentKeyDown);
+      }
+    });
   }
 
   alternarMenu(): void {
@@ -38,6 +49,36 @@ export class Header {
 
   cerrarMenu(): void {
     this.menuAbierto.set(false);
+  }
+
+  private onDocumentPointerDown = (evento: PointerEvent): void => {
+    const target = evento.target as Element | null;
+    if (!target) {
+      return;
+    }
+    const dentroDelMenu = target.closest('.menu-toggle') || target.closest('.nav');
+    if (!dentroDelMenu) {
+      evento.preventDefault();
+      this.cerrarMenu();
+    }
+  };
+
+  private onDocumentKeyDown = (evento: KeyboardEvent): void => {
+    if (evento.key === 'Escape') {
+      evento.preventDefault();
+      this.cerrarMenuYEnfocarBoton();
+    }
+  };
+
+  private cerrarMenuYEnfocarBoton(): void {
+    this.cerrarMenu();
+    const boton = document.querySelector<HTMLElement>('.menu-toggle');
+    boton?.focus();
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+    document.removeEventListener('keydown', this.onDocumentKeyDown);
   }
 
   alternarUsuario(): void {
