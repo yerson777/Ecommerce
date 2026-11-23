@@ -220,7 +220,7 @@ class DashboardController extends Controller
             ->orderBy('fecha_pedido')
             ->orderByDesc('id')
             ->select('pedidos.*')
-            ->selectRaw("$pagado as pagado_calc")
+            ->selectRaw("$pagado as pagos_completados_total")
             ->limit(self::TOP)
             ->get()
             ->map(fn (Pedido $p) => [

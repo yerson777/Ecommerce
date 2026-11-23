@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { ApiResponse } from '../models/api-response';
 import {
   ConfiguracionHistorial,
@@ -12,6 +12,8 @@ import { ApiService } from './api.service';
 
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionService extends ApiService {
+  private logoPublico$: Observable<ApiResponse<ConfiguracionTienda>> | null = null;
+
   constructor(http: HttpClient) {
     super(http);
   }
@@ -45,7 +47,12 @@ export class ConfiguracionService extends ApiService {
 
   /** Endpoint público (sin sesión) para obtener logo_url en el login. */
   logoTienda(): Observable<ApiResponse<ConfiguracionTienda>> {
-    return this.get<ApiResponse<ConfiguracionTienda>>('/v1/store/configuracion');
+    if (!this.logoPublico$) {
+      this.logoPublico$ = this.get<ApiResponse<ConfiguracionTienda>>(
+        '/v1/store/configuracion',
+      ).pipe(shareReplay(1));
+    }
+    return this.logoPublico$;
   }
 
   actualizarTienda(datos: FormData): Observable<ApiResponse<ConfiguracionTienda>> {

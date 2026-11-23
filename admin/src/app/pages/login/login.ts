@@ -68,11 +68,14 @@ export class LoginComponent {
 
     this.auth.login(this.email(), this.password()).subscribe({
       next: (res) => {
-        this.loading = false;
         if (res.success && res.data) {
           this.auth.iniciarSesion(res.data);
-          this.router.navigate(['/dashboard']);
+          void this.router.navigate(['/dashboard']).finally(() => {
+            this.loading = false;
+          });
+          return;
         }
+        this.loading = false;
       },
       error: (err) => {
         this.loading = false;

@@ -31,7 +31,6 @@ class NotificacionController extends Controller
     {
         try {
             $query = Notificacion::query()
-                ->with(['pedido', 'cliente', 'pago'])
                 ->orderByDesc('created_at');
 
             if ($request->boolean('solo_no_leidas')) {
