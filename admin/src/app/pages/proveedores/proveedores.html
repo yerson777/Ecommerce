@@ -228,7 +228,7 @@
     } @else if (detalle(); as p) {
       <div class="modal-body">
         <div class="ficha">
-          <div>
+          <div class="ficha-nombre">
             <span class="ficha-label">Nombre</span>
             <strong>{{ p.nombre }}</strong>
           </div>
@@ -240,7 +240,7 @@
             <span class="ficha-label">Ciudad</span>
             <strong>{{ p.ciudad || '—' }}</strong>
           </div>
-          <div>
+          <div class="ficha-contacto">
             <span class="ficha-label">Contacto</span>
             <strong>{{ p.contacto || '—' }}</strong>
           </div>
@@ -250,7 +250,13 @@
           </div>
           <div>
             <span class="ficha-label">Estado</span>
-            <strong>{{ p.activo ? 'Activo' : 'Inactivo' }}</strong>
+            <strong class="ficha-estado-texto">{{ p.activo ? 'Activo' : 'Inactivo' }}</strong>
+            <app-badge
+              class="ficha-estado-badge"
+              [tone]="p.activo ? 'success' : 'neutral'"
+            >
+              {{ p.activo ? 'Activo' : 'Inactivo' }}
+            </app-badge>
           </div>
           <div>
             <span class="ficha-label">Compras</span>
@@ -260,7 +266,7 @@
             <span class="ficha-label">Prendas</span>
             <strong>{{ p.prendas_count ?? 0 }}</strong>
           </div>
-          <div>
+          <div class="ficha-total">
             <span class="ficha-label">Total comprado</span>
             <strong>$ {{ p.total_comprado ?? '0.00' }}</strong>
           </div>

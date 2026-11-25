@@ -226,6 +226,10 @@
   margin-bottom: 2px;
 }
 
+.ficha-estado-badge {
+  display: none;
+}
+
 .section-title {
   margin: 4px 0 0;
   font-size: 16px;
@@ -235,5 +239,71 @@
 @media (max-width: 640px) {
   .form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .ficha {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.55rem, 2.2vw, 0.875rem);
+    padding: clamp(0.65rem, 2.6vw, 0.875rem);
+  }
+
+  .ficha > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .ficha-nombre,
+  .ficha-contacto,
+  .ficha-total {
+    grid-column: 1 / -1;
+  }
+
+  .ficha-nombre strong {
+    font-size: clamp(1rem, 4vw, 1.1rem);
+    line-height: 1.35;
+  }
+
+  .ficha strong {
+    overflow-wrap: anywhere;
+  }
+
+  .ficha-estado-texto {
+    display: none;
+  }
+
+  .ficha-estado-badge {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 359px) {
+  .ficha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 500px) and (min-width: 560px),
+  (orientation: landscape) and (max-height: 600px) and (min-width: 560px) {
+  .ficha {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(0.5rem, 1.4vw, 0.75rem);
+    padding: clamp(0.55rem, 1.5vw, 0.75rem);
+  }
+
+  .ficha > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .ficha-nombre,
+  .ficha-contacto,
+  .ficha-total {
+    grid-column: auto;
+  }
+
+  .ficha strong {
+    overflow-wrap: anywhere;
   }
 }

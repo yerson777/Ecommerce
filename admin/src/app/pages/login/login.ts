@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { finalize, timeout } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { mensajeError } from '../../core/utils/mensajes-error';
@@ -15,8 +16,8 @@ import { mensajeError } from '../../core/utils/mensajes-error';
 export class LoginComponent {
   email = signal('');
   password = signal('');
-  errorMessage: string | null = null;
-  loading = false;
+  readonly errorMessage = signal<string | null>(null);
+  readonly loading = signal(false);
   logoUrl = signal<string | null>(null);
   /** Alterna la visibilidad de la contraseña (solo presentación). */
   verPassword = signal(false);
@@ -57,30 +58,44 @@ export class LoginComponent {
   }
 
   async onSubmit(): Promise<void> {
+    if (this.loading()) {
+      return;
+    }
+
     this.enviado = true;
-    this.errorMessage = null;
+    this.errorMessage.set(null);
 
     if (this.emailInvalido || this.emailFormatoInvalido || this.passwordInvalido) {
       return;
     }
 
-    this.loading = true;
+    this.loading.set(true);
 
-    this.auth.login(this.email(), this.password()).subscribe({
-      next: (res) => {
-        if (res.success && res.data) {
-          this.auth.iniciarSesion(res.data);
-          void this.router.navigate(['/dashboard']).finally(() => {
-            this.loading = false;
-          });
-          return;
-        }
-        this.loading = false;
-      },
-      error: (err) => {
-        this.loading = false;
-        this.errorMessage = mensajeError(err, true);
-      },
-    });
+    let navegando = false;
+
+    this.auth
+      .login(this.email(), this.password())
+      .pipe(
+        timeout(15000),
+        finalize(() => {
+          if (!navegando) {
+            this.loading.set(false);
+          }
+        }),
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            navegando = true;
+            this.auth.iniciarSesion(res.data);
+            void this.router.navigate(['/dashboard']).finally(() => {
+              this.loading.set(false);
+            });
+          }
+        },
+        error: (err) => {
+          this.errorMessage.set(mensajeError(err, true));
+        },
+      });
   }
 }

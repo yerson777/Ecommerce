@@ -178,8 +178,10 @@
 }
 
 /* en rail colapsado (sin hover), aunque esté abierto ocultamos items: solo icono */
-.sidebar:not(:hover) .nav-group--abierto .nav-group__items {
-  display: none;
+@media (min-width: 768px) {
+  .sidebar:not(:hover) .nav-group--abierto .nav-group__items {
+    display: none;
+  }
 }
 
 .nav-link {

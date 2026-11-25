@@ -38,9 +38,10 @@ export class LayoutComponent implements OnInit {
 
   constructor() {
     this.router.events
-      .pipe(filter((evento) => evento instanceof NavigationEnd))
+      .pipe(filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd))
       .subscribe((evento) => {
         this.menuAbierto.set(false);
+        this.actualizarGrupoPorRuta(evento.urlAfterRedirects);
       });
     this.cargarLogo();
   }
@@ -57,24 +58,13 @@ export class LayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.actualizarGrupoPorRuta(this.router.url);
     if (!this.usuario()) {
       this.auth.cargarUsuario();
     }
   }
 
   private actualizarGrupoPorRuta(url: string): void {
-    // En móvil (<768px) no expandir ningún grupo automáticamente al cargar.
-    // Los ítems activos siguen resaltados por routerLinkActive en el template.
-    if (window.innerWidth <= 767) {
-      const estadoVacio: Record<string, boolean> = {};
-      for (const g of Object.keys(this.rutasGrupo)) {
-        estadoVacio[g] = false;
-      }
-      this.gruposAbiertos.set(estadoVacio);
-      this.grupoAbierto.set(null);
-      return;
-    }
-
     const ruta = url.split('?')[0].split('#')[0];
     for (const [grupo, rutas] of Object.entries(this.rutasGrupo)) {
       if (rutas.some((r) => ruta === r || ruta.startsWith(r + '/'))) {
