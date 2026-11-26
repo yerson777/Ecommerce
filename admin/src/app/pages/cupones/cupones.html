@@ -180,7 +180,6 @@
     [title]="editando() ? 'Editar cupón' : 'Nuevo cupón'"
     (closed)="cerrarModal()"
   >
-    <div class="modal-body">
       @if (errorFormulario()) {
         <div class="alert alert-error">{{ errorFormulario() }}</div>
       }
@@ -293,7 +292,6 @@
         <input type="checkbox" id="cupon-activo" [(ngModel)]="form.activo" />
         <label for="cupon-activo">Cupón activo</label>
       </div>
-    </div>
 
     <div class="modal-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
@@ -315,7 +313,6 @@
         <app-spinner [size]="30" />
       </div>
     } @else {
-      <div class="modal-body">
         <div class="detalle-head">
           <div>
             <span class="mono detalle-codigo">{{ detalle()!.codigo }}</span>
@@ -373,7 +370,6 @@
             </div>
           }
         </div>
-      </div>
     }
 
     @if (!cargandoDetalle() && detalle()) {

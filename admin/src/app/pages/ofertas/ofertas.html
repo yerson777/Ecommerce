@@ -146,7 +146,6 @@
     width="720px"
     (closed)="cerrarModal()"
   >
-    <div class="modal-body">
       @if (errorFormulario()) {
         <div class="alert alert-error">{{ errorFormulario() }}</div>
       }
@@ -301,7 +300,6 @@
           <label for="oferta-activa">Oferta activa</label>
         </div>
       </div>
-    </div>
 
     <div class="modal-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>

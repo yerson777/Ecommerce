@@ -156,7 +156,6 @@
     width="820px"
     (closed)="cerrarModal()"
   >
-    <div class="modal-body">
       @if (errorFormulario()) {
         <div class="alert alert-error">{{ errorFormulario() }}</div>
       }
@@ -347,7 +346,6 @@
           }
         </div>
       }
-    </div>
 
     <div class="modal-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
@@ -369,7 +367,6 @@
         <app-spinner [size]="30" />
       </div>
     } @else if (detalle(); as c) {
-      <div class="modal-body">
         <div class="ficha">
           <div>
             <span class="ficha-label">Proveedor</span>
@@ -466,7 +463,6 @@
             </table>
           </div>
         }
-      </div>
     }
     <div class="modal-actions" modal-footer>
       <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
