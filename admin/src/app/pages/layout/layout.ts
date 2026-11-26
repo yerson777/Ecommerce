@@ -138,7 +138,8 @@ export class LayoutComponent implements OnInit {
 
   @HostListener('window:resize')
   alRedimensionar(): void {
-    if (window.innerWidth > 768) {
+    const movilH = '(max-width: 767px), (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 1024px) and (pointer: coarse)';
+    if (!window.matchMedia(movilH).matches) {
       this.cerrarMenu();
     }
   }
