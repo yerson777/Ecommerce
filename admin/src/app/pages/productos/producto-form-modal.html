@@ -208,17 +208,6 @@
       }
     </div>
 
-    <div class="form-actions" modal-footer>
-      <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando()">Cancelar</button>
-      @if (!esEdicion) {
-        <button type="button" class="btn btn-outline" (click)="guardar(true)" [disabled]="guardando()">
-          Guardar y agregar otra
-        </button>
-      }
-      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
-        {{ guardando() ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear producto' }}
-      </button>
-    </div>
   } @else {
     @let p = producto();
     @if (p) {
@@ -301,11 +290,26 @@
           </div>
         }
 
-        <div class="form-actions" modal-footer>
-          <button type="button" class="btn btn-primary" (click)="cerrar()">Cerrar</button>
-        </div>
       </div>
     }
   }
 </div>
+
+@if (!readonly) {
+  <div class="form-actions" modal-footer>
+    <button type="button" class="btn btn-ghost" (click)="cerrar()" [disabled]="guardando()">Cancelar</button>
+    @if (!esEdicion) {
+      <button type="button" class="btn btn-outline" (click)="guardar(true)" [disabled]="guardando()">
+        Guardar y agregar otra
+      </button>
+    }
+    <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear producto' }}
+    </button>
+  </div>
+} @else if (producto()) {
+  <div class="form-actions" modal-footer>
+    <button type="button" class="btn btn-primary" (click)="cerrar()">Cerrar</button>
+  </div>
+}
 </app-modal>

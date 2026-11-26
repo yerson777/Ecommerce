@@ -390,10 +390,11 @@
         <label>Motivo de anulación (opcional)</label>
         <input class="input" [(ngModel)]="motivoAnular" placeholder="Motivo..." />
       </div>
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cancelarTransicion()">Cancelar</button>
-        <button type="button" class="btn btn-danger" (click)="anularPago()" [disabled]="transicionando">Anular pago</button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cancelarTransicion()">Cancelar</button>
+      <button type="button" class="btn btn-danger" (click)="anularPago()" [disabled]="transicionando">Anular pago</button>
     </div>
   </app-modal>
 }

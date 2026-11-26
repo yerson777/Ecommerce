@@ -185,32 +185,35 @@
 
       <div class="field">
         <label>Prendas</label>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Prenda</th>
-              <th>Precio</th>
-              <th>Reingresa</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
               <tr>
-                <td data-label="Prenda">{{ nombrePrenda(prenda) }}</td>
-                <td data-label="Precio">{{ moneda(prenda.precio_unitario) }}</td>
-                <td data-label="Reingresa">{{ prenda.reingresa === false ? 'No (dañada)' : 'Sí' }}</td>
+                <th>Prenda</th>
+                <th>Precio</th>
+                <th>Reingresa</th>
               </tr>
-            } @empty {
-              <tr><td colspan="3">Sin prendas registradas.</td></tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (prenda of devolucion.prendas ?? []; track prenda.producto_id) {
+                <tr>
+                  <td data-label="Prenda">{{ nombrePrenda(prenda) }}</td>
+                  <td data-label="Precio">{{ moneda(prenda.precio_unitario) }}</td>
+                  <td data-label="Reingresa">{{ prenda.reingresa === false ? 'No (dañada)' : 'Sí' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3">Sin prendas registradas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="imprimir(devolucion)">Imprimir comprobante</button>
-        <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="imprimir(devolucion)">Imprimir comprobante</button>
+      <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
     </div>
   </app-modal>
 }
@@ -331,12 +334,13 @@
         <div class="error-box">{{ registrar().error }}</div>
       }
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarRegistrar()" [attr.disabled]="registrar().guardando ? '' : null">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="registrarDevolucion()" [attr.disabled]="registrar().guardando ? '' : null">
-          {{ registrar().guardando ? 'Registrando…' : 'Registrar devolución' }}
-        </button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarRegistrar()" [attr.disabled]="registrar().guardando ? '' : null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="registrarDevolucion()" [attr.disabled]="registrar().guardando ? '' : null">
+        {{ registrar().guardando ? 'Registrando…' : 'Registrar devolución' }}
+      </button>
     </div>
   </app-modal>
 }

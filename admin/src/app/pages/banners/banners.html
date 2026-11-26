@@ -276,12 +276,13 @@
         </label>
       </div>
 
-      <div class="actions-right" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
-          {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}
-        </button>
-      </div>
+    </div>
+
+    <div class="actions-right" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear banner' }}
+      </button>
     </div>
   </app-modal>
 }

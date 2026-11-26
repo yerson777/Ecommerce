@@ -180,12 +180,13 @@
         <div class="error-box">{{ crear().error }}</div>
       }
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarCrear()" [attr.disabled]="crear().guardando ? '' : null">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="crearReserva()" [attr.disabled]="crear().guardando ? '' : null">
-          {{ crear().guardando ? 'Reservando…' : 'Reservar prenda' }}
-        </button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarCrear()" [attr.disabled]="crear().guardando ? '' : null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="crearReserva()" [attr.disabled]="crear().guardando ? '' : null">
+        {{ crear().guardando ? 'Reservando…' : 'Reservar prenda' }}
+      </button>
     </div>
   </app-modal>
 }
@@ -224,12 +225,13 @@
         <div class="error-box">{{ convertir().error }}</div>
       }
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="confirmarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">
-          {{ convertir().guardando ? 'Procesando…' : 'Confirmar venta' }}
-        </button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="confirmarConvertir()" [attr.disabled]="convertir().guardando ? '' : null">
+        {{ convertir().guardando ? 'Procesando…' : 'Confirmar venta' }}
+      </button>
     </div>
   </app-modal>
 }
@@ -331,9 +333,10 @@
         }
       </div>
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarDetalle()">Cerrar</button>
     </div>
   </app-modal>
 }

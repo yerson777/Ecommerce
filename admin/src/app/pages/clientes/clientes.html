@@ -433,22 +433,25 @@
           </div>
         }
 
-        <div class="form-actions" modal-footer>
-          <button type="button" class="btn btn-outline" (click)="editarCliente(detalle)">Editar</button>
-          @if (detalle.bloqueado) {
-            <button type="button" class="btn btn-outline" (click)="desbloquear(detalle)">Desbloquear</button>
-          } @else {
-            <button type="button" class="btn btn-ghost btn-danger-text" (click)="solicitarBloqueo(detalle)">
-              Bloquear
-            </button>
-          }
-          <span class="spacer"></span>
-          <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
-        </div>
       </div>
     } @else {
       <div class="center">
         <app-spinner [size]="26" />
+      </div>
+    }
+
+    @if (detalle(); as detalle) {
+      <div class="form-actions" modal-footer>
+        <button type="button" class="btn btn-outline" (click)="editarCliente(detalle)">Editar</button>
+        @if (detalle.bloqueado) {
+          <button type="button" class="btn btn-outline" (click)="desbloquear(detalle)">Desbloquear</button>
+        } @else {
+          <button type="button" class="btn btn-ghost btn-danger-text" (click)="solicitarBloqueo(detalle)">
+            Bloquear
+          </button>
+        }
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-primary" (click)="cerrarDetalle()">Cerrar</button>
       </div>
     }
   </app-modal>

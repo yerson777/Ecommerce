@@ -184,12 +184,13 @@
         </div>
       }
 
-      <div class="modal-actions" modal-footer>
-        <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
-        <button type="button" class="btn btn-primary" [disabled]="guardando()" (click)="guardar()">
-          {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear usuario' }}
-        </button>
-      </div>
+    </div>
+
+    <div class="modal-actions" modal-footer>
+      <button type="button" class="btn btn-ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" [disabled]="guardando()" (click)="guardar()">
+        {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear usuario' }}
+      </button>
     </div>
   </app-modal>
 }

@@ -1567,3 +1567,19 @@ app-modal .modal-footer [modal-footer] .btn-danger {
   border-color: var(--red-strong);
   color: var(--red-strong);
 }
+
+@media screen and (max-width: 560px) {
+  app-modal .modal > .modal-body .form-grid,
+  app-modal .modal > .modal-body .detail-grid,
+  app-modal .modal > .modal-body .detalle-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+}
+
+@media screen and (min-width: 561px) and (max-width: 900px) {
+  app-modal .modal > .modal-body .detail-grid,
+  app-modal .modal > .modal-body .detalle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
