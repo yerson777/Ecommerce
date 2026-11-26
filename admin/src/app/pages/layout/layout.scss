@@ -178,7 +178,7 @@
 }
 
 /* en rail colapsado (sin hover), aunque esté abierto ocultamos items: solo icono */
-@media (min-width: 768px) {
+@media (min-width: 1025px), (min-width: 768px) and (orientation: portrait), (min-width: 768px) and (pointer: fine) {
   .sidebar:not(:hover) .nav-group--abierto .nav-group__items {
     display: none;
   }
@@ -368,8 +368,8 @@
   z-index: 54;
 }
 
-/* ---------------- Móvil (<768px): sidebar drawer ---------------- */
-@media (max-width: 767px) {
+/* ---------------- Móvil (<768px) o táctil horizontal: sidebar drawer ---------------- */
+@media (max-width: 767px), (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 1024px) and (pointer: coarse) {
   .shell {
     grid-template-columns: 1fr;
     min-width: 0;
@@ -389,6 +389,18 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-sm);
     margin: 0;
+
+    @media (orientation: landscape) and (max-height: 600px) {
+      position: static;
+      top: auto;
+      left: auto;
+      padding: 0.25rem 0.5rem;
+      min-height: 44px;
+      max-height: 44px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
   }
 
   .menu-toggle {
@@ -444,11 +456,16 @@
 
   .content {
     padding-top: 60px;
+
+    @media (orientation: landscape) and (max-height: 600px) {
+      padding-top: 0;
+    }
   }
 }
 
 /* ---------------- Tablet (768px - 1023px): sidebar colapsado ---------------- */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1023px) and (min-height: 601px) and (pointer: fine),
+       (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
   .shell {
     grid-template-columns: auto 1fr;
     min-width: 0;
@@ -515,7 +532,7 @@
 /* ---------------- Sidebar anclado al viewport (>=768px) ----------------
    El sidebar acompaña el scroll, ocupa siempre toda la altura y su menú
    hace scroll internamente mientras el perfil/cerrar sesión queda abajo. */
-@media (min-width: 768px) {
+@media (min-width: 1025px), (min-width: 768px) and (orientation: portrait), (min-width: 768px) and (pointer: fine) {
   .sidebar {
     position: sticky;
     top: 0;
@@ -546,4 +563,48 @@ table {
   max-width: 100%;
   overflow-x: auto;
   display: block;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .shell {
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .main {
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 0;
+    min-width: 0;
+  }
+
+  .sidebar--abierto {
+    width: min(80vw, var(--sidebar-width));
+  }
+
+  .notif {
+    position: static;
+    top: auto;
+    left: auto;
+    padding: 0.25rem 0.5rem;
+    min-height: 44px;
+    max-height: 44px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    z-index: auto;
+  }
+
+  .menu-toggle {
+    position: static;
+  }
+
+  .content {
+    padding-top: 0;
+  }
 }
