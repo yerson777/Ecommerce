@@ -1583,3 +1583,13 @@ app-modal .modal-footer [modal-footer] .btn-danger {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .page {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}

@@ -1,6 +1,6 @@
 import { Component, ElementRef, HostListener, inject, OnInit, signal, viewChild } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfiguracionService } from '../../core/services/configuracion.service';
@@ -18,6 +18,9 @@ export class LayoutComponent implements OnInit {
   private readonly config = inject(ConfiguracionService);
 
   private readonly sidebar = viewChild<ElementRef<HTMLElement>>('sidebar');
+  private readonly shell = viewChild<ElementRef<HTMLElement>>('shell');
+  private rutaActual = '';
+  private triggerNavegacion: string | undefined;
 
   readonly usuario = this.auth.usuario;
   readonly menuAbierto = signal(false);
@@ -38,10 +41,25 @@ export class LayoutComponent implements OnInit {
 
   constructor() {
     this.router.events
-      .pipe(filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd))
+      .pipe(takeUntilDestroyed())
       .subscribe((evento) => {
+        if (evento instanceof NavigationStart) {
+          this.triggerNavegacion = evento.navigationTrigger;
+          return;
+        }
+        if (!(evento instanceof NavigationEnd)) {
+          return;
+        }
         this.menuAbierto.set(false);
         this.actualizarGrupoPorRuta(evento.urlAfterRedirects);
+        const ruta = evento.urlAfterRedirects.split('?')[0].split('#')[0];
+        if (this.rutaActual && ruta !== this.rutaActual) {
+          this.shell()?.nativeElement.scrollTo({ top: 0 });
+          if (this.triggerNavegacion !== 'popstate') {
+            window.scrollTo({ top: 0 });
+          }
+        }
+        this.rutaActual = ruta;
       });
     this.cargarLogo();
   }
