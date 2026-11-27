@@ -523,6 +523,110 @@
   }
 }
 
+/* Horizontal de poca altura (celular/tablet chica): dos paneles lado a lado. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 44%) minmax(0, 56%);
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .marca-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.7rem;
+    height: 100vh;
+    height: 100dvh;
+    padding: calc(0.75rem + env(safe-area-inset-top)) 0.9rem
+      calc(0.75rem + env(safe-area-inset-bottom)) calc(0.9rem + env(safe-area-inset-left));
+    border-radius: 0;
+    text-align: center;
+  }
+
+  .marca-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .marca-logo-chip {
+    width: clamp(64px, 16dvh, 88px);
+    height: clamp(64px, 16dvh, 88px);
+    aspect-ratio: auto;
+    padding: 0.4rem;
+    border-radius: 16px;
+  }
+
+  .marca-mensaje {
+    max-width: 100%;
+  }
+
+  .marca-mensaje h1 {
+    font-size: clamp(1.2rem, 3.4vw, 1.8rem);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .marca-mensaje p,
+  .marca-linea,
+  .marca-chips,
+  .marca-pie {
+    display: none;
+  }
+
+  .login-panel {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    padding: calc(0.75rem + env(safe-area-inset-top))
+      calc(0.9rem + env(safe-area-inset-right))
+      calc(0.75rem + env(safe-area-inset-bottom)) 0.9rem;
+  }
+
+  .login-card {
+    margin: auto;
+    max-width: 420px;
+    padding: clamp(1rem, 2.4dvh, 1.5rem);
+  }
+
+  .login-kicker {
+    margin-bottom: 0.2rem;
+  }
+
+  .login-titulo {
+    font-size: clamp(1.25rem, 2.4vw, 1.55rem);
+  }
+
+  .login-subtitulo {
+    margin: 0.2rem 0 0.9rem;
+  }
+
+  .login-form {
+    gap: 0.7rem;
+  }
+
+  .ver-password {
+    width: 44px;
+    height: 44px;
+  }
+
+  .campo-control--password input {
+    padding-right: 3.4rem;
+  }
+
+  .submit {
+    margin-top: 0.15rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marca-forma,
   .marca-top,
