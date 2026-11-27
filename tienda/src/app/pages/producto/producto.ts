@@ -157,9 +157,22 @@ export class ProductoComponent implements OnInit {
 
   cambiarFoto(url: string): void {
     this.fotoActiva.set(url);
+    this.zoomActivo.set(false);
+    this.zoomImagenEstilo.set({});
   }
 
-  onZoomMover(evento: MouseEvent): void {
+  onZoomEntrar(evento: PointerEvent): void {
+    if (evento.pointerType !== 'mouse') {
+      return;
+    }
+    this.zoomActivo.set(true);
+  }
+
+  onZoomMover(evento: PointerEvent): void {
+    if (evento.pointerType !== 'mouse') {
+      return;
+    }
+
     const origen = this.zoomOrigen?.nativeElement;
     if (!origen) {
       return;
@@ -173,10 +186,16 @@ export class ProductoComponent implements OnInit {
     const x = this.acotar((evento.clientX - rect.left) / rect.width, 0, 1);
     const y = this.acotar((evento.clientY - rect.top) / rect.height, 0, 1);
 
+    this.zoomActivo.set(true);
     this.zoomImagenEstilo.set({
       'transform-origin': `${x * 100}% ${y * 100}%`,
       transform: 'scale(3)',
     });
+  }
+
+  onZoomSalir(): void {
+    this.zoomActivo.set(false);
+    this.zoomImagenEstilo.set({});
   }
 
   private acotar(valor: number, minimo: number, maximo: number): number {

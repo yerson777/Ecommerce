@@ -9,9 +9,10 @@
             #zoomOrigen
             class="zoom-origen"
             [class.zoom-origen--activo]="zoomActivo()"
-            (mousemove)="onZoomMover($event)"
-            (mouseenter)="zoomActivo.set(true)"
-            (mouseleave)="zoomActivo.set(false)"
+            (pointerenter)="onZoomEntrar($event)"
+            (pointermove)="onZoomMover($event)"
+            (pointerleave)="onZoomSalir()"
+            (pointercancel)="onZoomSalir()"
           >
             <img
               *ngIf="fotoActiva()"
