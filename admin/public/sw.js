@@ -1,5 +1,5 @@
-const CACHE_NAME = 'everly-admin-v1';
-
+// Service worker mínimo: NO cachea nada (solo permite instalar la PWA).
+// Ninguna petición se guarda: todo va a la red por defecto.
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
 });
@@ -9,5 +9,5 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  return;
+  // Sin respondWith: no se cachea nada, la petición va a la red por defecto.
 });
