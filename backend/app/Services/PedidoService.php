@@ -865,7 +865,7 @@ class PedidoService
     {
         $producto->forceFill([
             'estado' => Producto::ESTADO_DISPONIBLE,
-            'publicado' => true,
+            'publicado' => false,
         ])->save();
 
         $this->inventario->registrarHistorial(

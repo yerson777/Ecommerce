@@ -135,6 +135,14 @@ class Producto extends Model
         return ! $this->publicado;
     }
 
+    /**
+     * Una prenda vendida no puede publicarse en la tienda.
+     */
+    public function puedePublicarse(): bool
+    {
+        return $this->estado !== self::ESTADO_VENDIDA;
+    }
+
     public function diasEnInventario(): ?int
     {
         $referencia = $this->fecha_publicacion ?? $this->fecha_ingreso ?? $this->created_at;

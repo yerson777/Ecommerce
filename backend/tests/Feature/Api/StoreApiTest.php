@@ -60,6 +60,23 @@ class StoreApiTest extends TestCase
         $this->assertFalse($nombres->contains('Oculto'));
     }
 
+    public function test_listado_publico_no_muestra_vendidas_aunque_esten_publicadas(): void
+    {
+        $this->crearProducto(['nombre' => 'Disponible visible']);
+        $this->crearProducto([
+            'nombre' => 'Vendida publicada',
+            'estado' => 'vendida',
+            'publicado' => true,
+        ]);
+
+        $response = $this->getJson('/api/v1/store/products');
+        $response->assertStatus(200);
+
+        $nombres = collect($response->json('data'))->pluck('nombre');
+        $this->assertTrue($nombres->contains('Disponible visible'));
+        $this->assertFalse($nombres->contains('Vendida publicada'));
+    }
+
     public function test_listado_publico_no_expone_costo_margen_ni_datos_administrativos(): void
     {
         $this->crearProducto(['costo' => 10, 'precio' => 100]);

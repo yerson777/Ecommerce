@@ -178,7 +178,7 @@ class VentaController extends Controller
                     $anterior = $producto->estado;
                     $producto->forceFill([
                         'estado' => Producto::ESTADO_DISPONIBLE,
-                        'publicado' => true,
+                        'publicado' => false,
                     ])->save();
 
                     $this->inventario->registrarHistorial(

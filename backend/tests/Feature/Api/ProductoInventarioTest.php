@@ -178,6 +178,19 @@ class ProductoInventarioTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors('estado');
     }
 
+    public function test_no_se_puede_publicar_producto_vendido(): void
+    {
+        $producto = $this->crearProducto(['estado' => 'vendida', 'publicado' => false]);
+
+        $this->withHeaders($this->headers())->putJson("/api/v1/admin/productos/{$producto->id}", [
+            'publicado' => true,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('publicado');
+
+        $this->assertDatabaseHas('productos', ['id' => $producto->id, 'publicado' => 0]);
+    }
+
     public function test_reservar_producto_disponible(): void
     {
         $producto = $this->crearProducto();

@@ -108,7 +108,7 @@ class PedidosDevolucionApiTest extends TestCase
 
         $this->producto->refresh();
         $this->assertSame('disponible', $this->producto->estado);
-        $this->assertTrue($this->producto->publicado);
+        $this->assertFalse($this->producto->publicado);
 
         $this->withToken($this->token)
             ->getJson('/api/v1/admin/caja/saldo')

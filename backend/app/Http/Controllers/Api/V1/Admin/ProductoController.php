@@ -115,6 +115,12 @@ class ProductoController extends Controller
 
         $publicadoNuevo = $datos['publicado'] ?? null;
 
+        if ($publicadoNuevo === true && ! $producto->puedePublicarse()) {
+            throw ValidationException::withMessages([
+                'publicado' => 'Una prenda vendida no se puede publicar.',
+            ]);
+        }
+
         if (array_key_exists('marca_id', $datos) || array_key_exists('marca_nombre', $datos)) {
             $datos['marca_id'] = $this->resolverMarcaId($datos);
             unset($datos['marca_nombre']);

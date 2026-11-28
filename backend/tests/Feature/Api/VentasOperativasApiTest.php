@@ -253,7 +253,7 @@ class VentasOperativasApiTest extends TestCase
 
         $prenda = $producto->fresh();
         $this->assertSame('disponible', $prenda->estado);
-        $this->assertTrue((bool) $prenda->publicado);
+        $this->assertFalse((bool) $prenda->publicado);
 
         $this->assertSame('reembolsado', Pago::firstOrFail()->estado);
 
@@ -300,6 +300,11 @@ class VentasOperativasApiTest extends TestCase
             ->assertStatus(200);
 
         $this->assertSame('disponible', $producto->fresh()->estado);
+
+        // Tras el reingreso queda despublicada: el admin la publica manualmente.
+        $this->withToken($this->token)
+            ->putJson("/api/v1/admin/productos/{$producto->id}", ['publicado' => true])
+            ->assertStatus(200);
 
         // La misma prenda vuelve a comprarse (tienda) y se completa el pedido.
         $this->postJson('/api/v1/store/pedidos', [
