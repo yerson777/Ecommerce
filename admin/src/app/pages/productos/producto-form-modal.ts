@@ -133,7 +133,7 @@ export class ProductoFormModalComponent implements OnInit {
       f.descripcion = actual.descripcion ?? '';
       f.costo = Number(actual.costo);
       f.precio = Number(actual.precio);
-      f.publicado = actual.publicado;
+      f.publicado = actual.estado === 'vendida' ? false : actual.publicado;
       f.fecha_ingreso = actual.fecha_ingreso ?? '';
 
       this.precioBloqueado = actual.estado !== 'disponible';
@@ -252,7 +252,7 @@ export class ProductoFormModalComponent implements OnInit {
       costo: f.costo,
       precio: f.precio,
       estado: this.esEdicion ? undefined : 'disponible',
-      publicado: f.publicado,
+      publicado: this.esEdicion && this.producto()?.estado === 'vendida' ? false : f.publicado,
       fecha_ingreso: f.fecha_ingreso || null,
     };
 
@@ -282,7 +282,8 @@ export class ProductoFormModalComponent implements OnInit {
       },
       error: (err: ApiError) => {
         this.guardando.set(false);
-        this.errorBanner.set(err.message ?? 'No se pudo guardar el producto.');
+        const detalle = err.errors?.['publicado']?.[0];
+        this.errorBanner.set(detalle ?? err.message ?? 'No se pudo guardar el producto.');
         this.errores.set(err.errors ?? null);
       },
     });

@@ -177,10 +177,14 @@
                     }
                   </td>
                   <td data-label="Publicado">
-                    <label class="switch">
+                    <label
+                      class="switch"
+                      [attr.title]="producto.estado === 'vendida' ? 'No se puede publicar una prenda vendida' : null"
+                    >
                       <input
                         type="checkbox"
-                        [checked]="producto.publicado"
+                        [checked]="producto.estado === 'vendida' ? false : producto.publicado"
+                        [disabled]="producto.estado === 'vendida'"
                         (change)="cambiarPublicado(producto)"
                       />
                       <span class="slider"></span>

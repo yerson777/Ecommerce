@@ -3,6 +3,7 @@ import { formatearMoneda } from '../../core/utils/formato';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InventarioResumen } from '../../core/models/dashboard';
+import { ApiError } from '../../core/models/api-response';
 import { Paginated } from '../../core/models/paginated';
 import {
   CategoriaRef,
@@ -410,6 +411,10 @@ export class InventarioComponent implements OnInit {
   }
 
   cambiarPublicado(producto: Producto): void {
+    if (producto.estado === 'vendida') {
+      return;
+    }
+
     this.productosService.actualizar(producto.id, { publicado: !producto.publicado }).subscribe({
       next: (res) => {
         if (res.success) {
@@ -418,7 +423,10 @@ export class InventarioComponent implements OnInit {
           this.cargar();
         }
       },
-      error: (err) => this.toast.error(err.message ?? 'No se pudo cambiar la publicación.'),
+      error: (err: ApiError) => {
+        const detalle = err.errors?.['publicado']?.[0];
+        this.toast.error(detalle ?? err.message ?? 'No se pudo cambiar la publicación.');
+      },
     });
   }
 

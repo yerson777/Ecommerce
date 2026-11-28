@@ -14,6 +14,7 @@ import {
   TallaRef,
   TONO_ESTADO,
 } from '../../core/models/producto';
+import { ApiError } from '../../core/models/api-response';
 import { Paginated } from '../../core/models/paginated';
 import { CatalogosService } from '../../core/services/catalogos.service';
 import { InventarioService } from '../../core/services/inventario.service';
@@ -304,6 +305,10 @@ export class ProductosComponent implements OnInit {
   }
 
   cambiarPublicado(producto: Producto): void {
+    if (producto.estado === 'vendida') {
+      return;
+    }
+
     if (producto.estado !== 'disponible' && producto.publicado) {
       this.ocultarObjetivo = producto;
       return;
@@ -329,8 +334,9 @@ export class ProductosComponent implements OnInit {
           this.cargar();
         }
       },
-      error: (err) => {
-        this.toast.error(err.message ?? 'No se pudo cambiar la publicación.');
+      error: (err: ApiError) => {
+        const detalle = err.errors?.['publicado']?.[0];
+        this.toast.error(detalle ?? err.message ?? 'No se pudo cambiar la publicación.');
       },
     });
   }

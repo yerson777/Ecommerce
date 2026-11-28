@@ -137,8 +137,16 @@
         <textarea class="textarea" [(ngModel)]="forma.descripcion" name="descripcion"></textarea>
       </div>
 
-      <label class="check">
-        <input type="checkbox" [(ngModel)]="forma.publicado" name="publicado" />
+      <label
+        class="check"
+        [attr.title]="esEdicion && producto()?.estado === 'vendida' ? 'No se puede publicar una prenda vendida' : null"
+      >
+        <input
+          type="checkbox"
+          [(ngModel)]="forma.publicado"
+          name="publicado"
+          [disabled]="esEdicion && producto()?.estado === 'vendida'"
+        />
         <span>Publicado en la tienda</span>
       </label>
 
