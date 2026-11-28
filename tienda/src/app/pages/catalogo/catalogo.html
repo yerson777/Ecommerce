@@ -134,7 +134,7 @@
     </div>
 
     <ng-container *ngIf="!cargando() && !error()">
-      <div class="grid" *ngIf="productos().length > 0">
+      <div class="grid catalogo-grid" *ngIf="productos().length > 0">
         <div
           class="card producto-card"
           *ngFor="let producto of productos()"

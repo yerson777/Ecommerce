@@ -241,3 +241,10 @@
     justify-content: center;
   }
 }
+
+.catalogo-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 12rem));
+  justify-content: center;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

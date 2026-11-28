@@ -270,3 +270,20 @@
     box-shadow: none;
   }
 }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .header {
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+
+  .header.header--oculto {
+    transform: translateY(-100%);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) and (prefers-reduced-motion: reduce) {
+  .header {
+    transition: none;
+  }
+}
